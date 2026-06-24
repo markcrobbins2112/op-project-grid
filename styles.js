@@ -30,7 +30,7 @@ module.exports = {
           color: var(--text-muted, #888888) !important;
           border-bottom: 2px solid var(--background-modifier-border, #3a3a3a) !important;
           padding: 6px 8px !important;
-          vertical-align: middle !important;
+          vertical-align: middle;
           position: relative !important;
         }
         .projectgrid-filter-wrapper {
@@ -78,22 +78,11 @@ module.exports = {
         }
   
         .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
-        
-        /* NO WRAP AND NO UNDERLINE FOR NOTE FIELDS */
-        .note-title-cell { 
-          font-weight: 500 !important;
-          white-space: nowrap !important;
-          overflow: hidden !important;
-          text-overflow: ellipsis !important;
-        }
-        .projectgrid-matrix-link {
-          text-decoration: none !important;
-        }
-        .projectgrid-matrix-link:hover {
-          text-decoration: none !important; /* Forces underline off on hover states */
-        }
-  
+        .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; }
+        .projectgrid-matrix-link { text-decoration: none !important; }
+        .projectgrid-matrix-link:hover { text-decoration: none !important; }
         .action-icon-cell { text-align: center !important; }
+  
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
@@ -134,29 +123,56 @@ module.exports = {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.03)) !important;
         }
   
-        .projectgrid-yaml-select {
+        /* CUSTOM FIELD SIMULATED DROPDOWN BUTTONS */
+        .projectgrid-custom-select-btn {
           background-color: var(--background-secondary, #252525) !important;
           color: var(--text-normal, #dddddd) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 4px !important;
-          padding: 2px 4px !important;
+          padding: 2px 16px 2px 6px !important;
           font-size: 11px !important;
-          max-width: 90px !important;
+          min-width: 65px !important;
+          max-width: 95px !important;
+          display: inline-block !important;
           cursor: pointer !important;
+          position: relative !important;
+          user-select: none !important;
+          text-align: left !important;
         }
-        .projectgrid-yaml-select:focus {
+        .projectgrid-custom-select-btn:after {
+          content: "▾" !important;
+          position: absolute !important;
+          right: 6px !important;
+          top: 2px !important;
+          color: var(--text-muted) !important;
+        }
+        .projectgrid-custom-select-btn:focus {
           border-color: var(--text-accent, #70a1ff) !important;
           outline: none !important;
         }
-        .projectgrid-aip-icon-btn {
-          display: inline-block !important;
-          text-decoration: none !important;
-          font-size: 14px !important;
-          cursor: pointer !important;
-          opacity: 0.7 !important;
-          transition: transform 0.1s ease, opacity 0.1s ease !important;
+  
+        /* ROTATING HUE INNER GLOW SELECTION BAR */
+        .projectgrid-custom-dropdown-list {
+          position: absolute !important;
+          background-color: var(--background-secondary, #202020) !important;
+          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
+          border-radius: 4px !important;
+          margin: 4px 0 0 0 !important;
+          padding: 4px 0 !important;
+          list-style: none !important;
+          z-index: 10010 !important;
+          min-width: 95px !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
         }
-        .projectgrid-aip-icon-btn:hover { opacity: 1.0 !important; transform: scale(1.15) !important; }
+        .projectgrid-custom-dropdown-item {
+          padding: 4px 8px !important;
+          cursor: pointer !important;
+          color: var(--text-normal) !important;
+        }
+        .projectgrid-item-indicator-focused {
+          background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.06)) !important;
+          animation: projectgrid-hue-cycle 2s linear infinite !important;
+        }
   
         .projectgrid-command-picker {
           position: absolute !important;
@@ -175,7 +191,6 @@ module.exports = {
           border-radius: 4px !important;
           color: var(--text-normal, #ffffff) !important;
           font-size: 12px !important;
-          transition: background-color 0.1s ease, color 0.1s ease !important;
         }
         .projectgrid-picker-highlight,
         .projectgrid-picker-item:hover {

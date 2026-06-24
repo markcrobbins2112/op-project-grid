@@ -36,13 +36,19 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: TITLE ICONS (DOPUS, CURSOR, OBSIDIAN) NOW ATTACH TO DYNAMIC DROPDOWNS FOR MULTI-SELECT FILTERING
+    headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
+      <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
+      <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
+    `);
+
     const launcherColumns = [
       { icon: '📁', key: 'dopus', options: ['Active'] },
       { icon: '💻', key: 'cursor', options: ['Active'] },
       { icon: '💜', key: 'obsidian', options: ['Active'] }
     ];
 
+    // FIX: STARS COLUMN ACCURATELY CAPTURES ICON OBJECT AS "⭐" AND CARRIES MULTI-SELECT HORIZONTAL FILTER ARRAYS
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -57,7 +63,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
-    // Pre-build row models mapping layout data tracks cleanly
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -72,13 +77,11 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Append launcher title dropups to header row
     launcherColumns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
     });
 
-    // Append YAML metadata dropups to header row
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
