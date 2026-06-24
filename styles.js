@@ -1,3 +1,7 @@
+// ==========================================
+// START OF FILE: styles.js
+// ==========================================
+
 module.exports = {
     injectStyles() {
       if (document.getElementById('obsidian-projectgrid-styles')) return;
@@ -6,21 +10,34 @@ module.exports = {
       styleEl.id = 'obsidian-projectgrid-styles';
   
       styleEl.innerHTML = `
+        /* Breakout rules to bypass core 700px width restrictions */
+        .cm-embed-block:has(.projectgrid-matrix-table),
+        .block-language-projectgrid {
+          max-width: 100% !important;
+          width: 100% !important;
+          grid-column: 1 / -1 !important;
+        }
+  
+        /* Compact data grid constraints */
         .projectgrid-matrix-table {
           width: 100% !important;
           border-collapse: collapse !important;
           margin-top: 12px !important;
           margin-bottom: 12px !important;
-          font-size: 13px !important;
-          line-height: 1.5 !important;
+          font-size: 11px !important;
+          line-height: 1.4 !important;
+          position: relative !important;
         }
         .projectgrid-matrix-table th {
           font-weight: 600 !important;
           color: var(--text-muted, #888888) !important;
           border-bottom: 2px solid var(--background-modifier-border, #3a3a3a) !important;
-          padding: 8px 10px !important;
+          padding: 6px 8px !important;
           vertical-align: middle !important;
+          position: relative !important;
         }
+  
+        /* Integrated search input dashboard tools */
         .projectgrid-filter-wrapper {
           position: relative !important;
           display: flex !important;
@@ -30,48 +47,151 @@ module.exports = {
         .projectgrid-filter-input {
           width: 100% !important;
           padding: 4px 24px 4px 8px !important;
-          font-size: 12px !important;
+          font-size: 11px !important;
           border-radius: 4px !important;
           border: 1px solid var(--background-modifier-border, #3a3a3a) !important;
           background-color: var(--background-primary, #1e1e1e) !important;
           color: var(--text-normal, #ffffff) !important;
-          height: 26px !important;
+          height: 24px !important;
         }
         .projectgrid-clear-btn {
           position: absolute !important;
           right: 8px !important;
           cursor: pointer !important;
           color: var(--text-muted, #888888) !important;
-          font-size: 11px !important;
+          font-size: 10px !important;
           visibility: hidden;
           user-select: none !important;
-          transition: color 0.15s ease !important;
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
+  
+        /* HUE-CYCLING ANIMATION WITH AN INNER GLOW STYLE LOOK */
+        @keyframes projectgrid-hue-cycle {
+          0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
+          100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
+        }
         .projectgrid-matrix-row {
           border-bottom: 1px solid var(--background-modifier-border, #2a2a2a) !important;
-          transition: background-color 0.15s ease !important;
+          position: relative !important;
+          box-sizing: border-box !important;
         }
         .projectgrid-matrix-row:hover {
-          background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.02)) !important;
+          background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
-        .projectgrid-matrix-cell { padding: 8px 10px !important; vertical-align: middle !important; }
+        .projectgrid-row-focused {
+          background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
+          animation: projectgrid-hue-cycle 3s linear infinite !important;
+        }
+  
+        .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
         .note-title-cell { font-weight: 500 !important; }
         .action-icon-cell { text-align: center !important; }
+  
+        /* DROP-UP SELECTION MODALS FOR EACH ENTRY */
+        .projectgrid-header-dropup-trigger {
+          cursor: pointer !important;
+          display: inline-block !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          user-select: none !important;
+          font-size: 14px !important;
+        }
+        .projectgrid-header-dropup-trigger:hover {
+          background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.05)) !important;
+        }
+        .projectgrid-dropup-panel {
+          position: absolute !important;
+          bottom: 100% !important;
+          left: 0 !important;
+          background-color: var(--background-secondary, #202020) !important;
+          border: 1px solid var(--background-modifier-border, #3a3a3a) !important;
+          border-radius: 6px !important;
+          padding: 8px !important;
+          z-index: 9999 !important;
+          box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3) !important;
+          display: none;
+          min-width: 140px !important;
+          max-height: 220px !important;
+          overflow-y: auto !important;
+        }
+        .projectgrid-dropup-panel.is-open { display: block !important; }
+        .projectgrid-dropup-option {
+          display: flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          padding: 4px 6px !important;
+          cursor: pointer !important;
+          user-select: none !important;
+          color: var(--text-normal, #ffffff) !important;
+        }
+        .projectgrid-dropup-option:hover {
+          background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.03)) !important;
+        }
+  
+        /* IN-LINE FIELD EDITORS DROP DOWNS */
+        .projectgrid-yaml-select {
+          background-color: var(--background-secondary, #252525) !important;
+          color: var(--text-normal, #dddddd) !important;
+          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
+          border-radius: 4px !important;
+          padding: 2px 4px !important;
+          font-size: 11px !important;
+          max-width: 90px !important;
+          cursor: pointer !important;
+        }
+        .projectgrid-yaml-select:focus {
+          border-color: var(--text-accent, #70a1ff) !important;
+          outline: none !important;
+        }
+  
+        /* QUICK PROTOCOL SHORTCUT INTERFACES */
         .projectgrid-aip-icon-btn {
           display: inline-block !important;
           text-decoration: none !important;
-          font-size: 15px !important;
+          font-size: 14px !important;
           cursor: pointer !important;
-          opacity: 0.75 !important;
-          transition: transform 0.15s ease, opacity 0.15s ease !important;
+          opacity: 0.7 !important;
+          transition: transform 0.1s ease, opacity 0.1s ease !important;
         }
-        .projectgrid-aip-icon-btn:hover { opacity: 1.0 !important; transform: scale(1.15) !important; }
+        .projectgrid-aip-icon-btn:hover {
+          opacity: 1.0 !important;
+          transform: scale(1.15) !important;
+        }
         .projectgrid-matrix-link { color: var(--text-accent, #70a1ff) !important; text-decoration: none !important; }
         .projectgrid-matrix-link:hover { text-decoration: underline !important; }
         .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
+  
+        /* AUTOMATED INTERFACE COMMAND COMMAND WHEEL OPTIONS */
+        .projectgrid-command-picker {
+          position: absolute !important;
+          background-color: var(--background-secondary, #1e1e1e) !important;
+          border: 1px solid var(--text-accent, #70a1ff) !important;
+          border-radius: 6px !important;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+          z-index: 10000 !important;
+          padding: 6px !important;
+          min-width: 200px !important;
+          box-sizing: border-box !important;
+        }
+        .projectgrid-picker-item {
+          padding: 6px 10px !important;
+          cursor: pointer !important;
+          border-radius: 4px !important;
+          color: var(--text-normal, #ffffff) !important;
+          font-size: 12px !important;
+          transition: background-color 0.1s ease, color 0.1s ease !important;
+        }
+        .projectgrid-picker-highlight,
+        .projectgrid-picker-item:hover {
+          background-color: var(--text-accent, #70a1ff) !important;
+          color: #000000 !important;
+        }
       `;
       document.head.appendChild(styleEl);
     }
   };
+  
+  // ==========================================
+  // END OF FILE: styles.js
+  // ==========================================
   
