@@ -36,20 +36,19 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Convert table text headers into direct compact icon layout blocks
-    headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 5%; text-align: center;">📁</th>
-      <th style="width: 5%; text-align: center;">💻</th>
-      <th style="width: 5%; text-align: center;">💜</th>
-    `);
+    // FIX: TITLE ICONS (DOPUS, CURSOR, OBSIDIAN) NOW ATTACH TO DYNAMIC DROPDOWNS FOR MULTI-SELECT FILTERING
+    const launcherColumns = [
+      { icon: '📁', key: 'dopus', options: ['Active'] },
+      { icon: '💻', key: 'cursor', options: ['Active'] },
+      { icon: '💜', key: 'obsidian', options: ['Active'] }
+    ];
 
-    // Invert the default dropup list item arrays to read number-first format tracking parameters
     const columnDropdowns = [
-      { icon: '⭐', key: 'stars', options: ['⬛','0 ⭐','1 ⭐','2 ⭐','3 ⭐','4 ⭐','5 ⭐'] },
-      { icon: '💲', key: 'value', options: ['⬛','0 💲','1 💲','2 💲','3 💲','4 💲','5 💲','6 💲','7 💲','8 💲','9 💲'] },
-      { icon: '🐘', key: 'size', options: ['⬛','0 🐘','1 🐘','2 🐘','3 🐘','4 🐘','5 🐘'] },
-      { icon: '🎱', key: 'depth', options: ['⬛','0 🎱','1 🎱','2 🎱','3 🎱','4 🎱','5 🎱'] },
-      { icon: '🏅', key: 'priority', options: ['⬛','0 🏅','1 🏅','2 🏅','3 🏅','4 🏅','5 🏅'] },
+      { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
+      { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
+      { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
+      { icon: '🎱', key: 'depth', options: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'] },
+      { icon: '🏅', key: 'priority', options: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'] },
       { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
       { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
       { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] }
@@ -58,6 +57,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
+    // Pre-build row models mapping layout data tracks cleanly
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -65,13 +65,20 @@ module.exports = class ProjectGridPlugin extends Plugin {
         const frontmatter = fileCache ? fileCache.frontmatter : null;
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
-        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef);
+        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
         
         tableBody.appendChild(rowRef.element);
         rowsArray.push(rowRef);
       }
     });
 
+    // Append launcher title dropups to header row
+    launcherColumns.forEach(col => {
+      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
+      headerRow.appendChild(dropupTh);
+    });
+
+    // Append YAML metadata dropups to header row
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);

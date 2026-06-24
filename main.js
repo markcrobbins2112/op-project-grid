@@ -62,40 +62,40 @@ return {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        /* DEFINITIVE OVERLAY GLOW ROW INDICATOR TRACKS */
-        @keyframes projectgrid-border-glow-cycle {
-          0% { border-color: #ff4757; filter: hue-rotate(0deg); }
-          100% { border-color: #ff4757; filter: hue-rotate(360deg); }
+        @keyframes projectgrid-hue-cycle {
+          0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
+          100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
         }
         .projectgrid-matrix-row {
           border-bottom: 1px solid var(--background-modifier-border, #2a2a2a) !important;
           position: relative !important;
+          box-sizing: border-box !important;
         }
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
-        }
-        .projectgrid-row-focused::after {
-          content: "" !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          border: 2px solid #ff4757 !important;
-          box-sizing: border-box !important;
-          pointer-events: none !important;
-          z-index: 10 !important;
-          animation: projectgrid-border-glow-cycle 3s linear infinite !important;
+          animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
   
         .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
-        .note-title-cell { font-weight: 500 !important; }
-        .action-icon-cell { text-align: center !important; }
+        
+        /* NO WRAP AND NO UNDERLINE FOR NOTE FIELDS */
+        .note-title-cell { 
+          font-weight: 500 !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+        .projectgrid-matrix-link {
+          text-decoration: none !important;
+        }
+        .projectgrid-matrix-link:hover {
+          text-decoration: none !important; /* Forces underline off on hover states */
+        }
   
-        /* DROP-UP MULTI-SELECT PANEL DESIGN SHEETS */
+        .action-icon-cell { text-align: center !important; }
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
@@ -143,7 +143,7 @@ return {
           border-radius: 4px !important;
           padding: 2px 4px !important;
           font-size: 11px !important;
-          max-width: 95px !important;
+          max-width: 90px !important;
           cursor: pointer !important;
         }
         .projectgrid-yaml-select:focus {
@@ -158,13 +158,7 @@ return {
           opacity: 0.7 !important;
           transition: transform 0.1s ease, opacity 0.1s ease !important;
         }
-        .projectgrid-aip-icon-btn:hover {
-          opacity: 1.0 !important;
-          transform: scale(1.15) !important;
-        }
-        .projectgrid-matrix-link { text-decoration: none !important; font-weight: bold !important; }
-        .projectgrid-matrix-link:hover { text-decoration: underline !important; }
-        .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
+        .projectgrid-aip-icon-btn:hover { opacity: 1.0 !important; transform: scale(1.15) !important; }
   
         .projectgrid-command-picker {
           position: absolute !important;
@@ -474,34 +468,11 @@ return {
 };
 })();
 const UiBuilder = (function() {
+const UiDropdown = (function() {
 return {
-    generateHeaderCell() {
-      const noteHeaderCell = document.createElement('th');
-      noteHeaderCell.style.width = '25%';
-      
-      const filterContainer = document.createElement('div');
-      filterContainer.className = 'projectgrid-filter-wrapper';
-  
-      const filterInput = document.createElement('input');
-      filterInput.type = 'text';
-      filterInput.placeholder = 'Filter notes...';
-      filterInput.className = 'projectgrid-filter-input';
-  
-      const clearButton = document.createElement('span');
-      clearButton.className = 'projectgrid-clear-btn';
-      clearButton.innerHTML = '✕';
-  
-      filterContainer.appendChild(filterInput);
-      filterContainer.appendChild(clearButton);
-      noteHeaderCell.appendChild(filterContainer);
-  
-      return { cell: noteHeaderCell, input: filterInput, clearBtn: clearButton };
-    },
-  
     buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
       const th = document.createElement('th');
       th.style.width = '8%';
-      th.style.textAlign = 'center';
       
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
@@ -549,113 +520,196 @@ return {
       th.appendChild(trigger);
       th.appendChild(panel);
       return th;
-    },
-  
-    buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference) {
-      const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
-      const tableRow = document.createElement('tr');
-      tableRow.className = 'projectgrid-matrix-row';
-  
-      // Note Cell with Alphabetical Hue Spectral Multi-Mapping rules
-      const noteCell = document.createElement('td');
-      noteCell.className = 'projectgrid-matrix-cell note-title-cell';
-      const fileAnchor = document.createElement('a');
-      fileAnchor.className = 'internal-link projectgrid-matrix-link';
-      fileAnchor.setAttribute('data-href', expectedNotePath);
-      
-      const cleanFileName = `+${folder.name}.md`;
-      fileAnchor.textContent = cleanFileName;
-  
-      // --- AUTOMATED COLOR SHIFT ALGORITHM ---
-      // A=0, Z=25, maps clean spectrum where Z bends back to Red (0 to 360 loop)
-      const firstChar = folder.name.charAt(0).toLowerCase();
-      let charCode = firstChar.charCodeAt(0) - 97; 
-      if (charCode < 0 || charCode > 25) charCode = 0; // Fallback bound
-      const hueAngle = Math.round((charCode / 26) * 360);
-      fileAnchor.style.color = `hsl(${hueAngle}, 95%, 65%)`;
-  
-      fileAnchor.addEventListener('click', (evt) => {
-        evt.preventDefault();
-        app.workspace.openLinkText(expectedNotePath, '', false);
-      });
-      noteCell.appendChild(fileAnchor);
-      tableRow.appendChild(noteCell);
-  
-      // Protocol launch cells
-      const actions = [
-        { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
-        { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
-        { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault' }
-      ];
-  
-      actions.forEach(act => {
-        const cell = document.createElement('td');
-        cell.className = 'projectgrid-matrix-cell action-icon-cell';
-        cell.innerHTML = `<a href="aip://${act.protocol}/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="${act.title}">${act.icon}</a>`;
-        tableRow.appendChild(cell);
-      });
-  
-      // YAML Fields configuration with inverted number-first layouts
-      const fieldsConfig = [
-        { key: 'stars', defaults: ['0','1','2','3','4','5'], icon: '⭐', revOrder: true },
-        { key: 'value', defaults: ['0','1','2','3','4','5','6','7','8','9'], icon: '💲', revOrder: true },
-        { key: 'size', defaults: ['0','1','2','3','4','5'], icon: '🐘', revOrder: true },
-        { key: 'depth', defaults: ['0','1','2','3','4','5'], icon: '🎱', revOrder: true },
-        { key: 'priority', defaults: ['0','1','2','3','4','5'], icon: '🏅', revOrder: true },
-        { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], icon: '', revOrder: false },
-        { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], icon: '', revOrder: false },
-        { key: 'target', defaults: ['ce', 'op', 'app', 'link'], icon: '', revOrder: false }
-      ];
-  
-      rowTrackingReference.yamlMetadataValues = {};
-  
-      fieldsConfig.forEach(cfg => {
-        const cell = document.createElement('td');
-        cell.className = 'projectgrid-matrix-cell select-cell';
-        
-        const select = document.createElement('select');
-        select.className = 'projectgrid-yaml-select';
-        
-        const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-        rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
-  
-        let options = [...cfg.defaults];
-        if (rawVal && !options.includes(rawVal)) options.push(rawVal);
-        
-        // Null option shows a literal dark placeholder square emoji
-        select.appendChild(new Option('⬛', ''));
-        
-        options.forEach(opt => {
-          // Apply inverted alignment layouts so number parameters appear strictly before item emojis
-          const displayLabel = (cfg.revOrder && cfg.icon) ? `${opt} ${cfg.icon}` : opt;
-          select.appendChild(new Option(displayLabel, opt));
-        });
-        
-        select.value = rawVal;
-  
-        select.addEventListener('change', async () => {
-          const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
-          if (fileAbstract) {
-            await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
-              if (select.value === '') {
-                delete fm[cfg.key];
-                rowTrackingReference.yamlMetadataValues[cfg.key] = '⬛';
-              } else {
-                fm[cfg.key] = select.value;
-                rowTrackingReference.yamlMetadataValues[cfg.key] = select.value;
-              }
-            });
-            if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-          }
-        });
-  
-        cell.appendChild(select);
-        tableRow.appendChild(cell);
-      });
-  
-      return tableRow;
     }
   };
+})();
+const UiRow = (function() {
+const UiColor = (function() {
+return {
+    getColorForFirstCharacter(filename) {
+      if (!filename) return 'var(--text-accent)';
+      const cleanStr = filename.replace(/^\+/, '').trim().toUpperCase();
+      if (cleanStr.length === 0) return 'var(--text-accent)';
+      
+      const code = cleanStr.charCodeAt(0);
+      // Map strictly over uppercase alphabet bounds (A=65 to Z=90)
+      if (code >= 65 && code <= 90) {
+        const step = (code - 65) / 25; 
+        const hue = step * 360; 
+        return `hsl(${hue}, 85%, 65%)`; 
+      }
+      return 'var(--text-normal)';
+    }
+  };
+})();
+
+return {
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+    const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
+    const tableRow = document.createElement('tr');
+    tableRow.className = 'projectgrid-matrix-row';
+
+    // Column 1: Core Note hyperlink cell
+    const noteCell = document.createElement('td');
+    noteCell.className = 'projectgrid-matrix-cell note-title-cell';
+    const fileAnchor = document.createElement('a');
+    fileAnchor.className = 'internal-link projectgrid-matrix-link';
+    fileAnchor.setAttribute('data-href', expectedNotePath);
+    fileAnchor.textContent = `+${folder.name}.md`;
+    
+    fileAnchor.style.color = UiColor.getColorForFirstCharacter(folder.name);
+    
+    fileAnchor.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      app.workspace.openLinkText(expectedNotePath, '', false);
+    });
+    noteCell.appendChild(fileAnchor);
+    tableRow.appendChild(noteCell);
+
+    // Columns 2-4: Launcher cells with dedicated filtering metadata attributes
+    rowTrackingReference.launcherValues = { dopus: 'Active', cursor: 'Active', obsidian: 'Active' };
+
+    const actions = [
+      { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
+      { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
+      { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault' }
+    ];
+
+    actions.forEach(act => {
+      const cell = document.createElement('td');
+      cell.className = 'projectgrid-matrix-cell action-icon-cell';
+      cell.innerHTML = `<a href="aip://${act.protocol}/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="${act.title}">${act.icon}</a>`;
+      tableRow.appendChild(cell);
+    });
+
+    // Columns 5-12: YAML Metadata dropdown field configurations
+    const fieldsConfig = [
+      { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
+      { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
+      { key: 'size', defaults: ['0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'], isExtendable: false },
+      { key: 'depth', defaults: ['0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'], isExtendable: false },
+      { key: 'priority', defaults: ['0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'], isExtendable: false },
+      { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], isExtendable: false },
+      { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], isExtendable: true },
+      { key: 'target', defaults: ['ce', 'op', 'app', 'link'], isExtendable: true }
+    ];
+
+    rowTrackingReference.yamlMetadataValues = {};
+
+    fieldsConfig.forEach((cfg, fieldIdx) => {
+      const cell = document.createElement('td');
+      cell.className = 'projectgrid-matrix-cell select-cell';
+      
+      const select = document.createElement('select');
+      select.className = 'projectgrid-yaml-select';
+      select.setAttribute('data-field-index', fieldIdx);
+      
+      const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
+      rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+
+      let options = [...cfg.defaults];
+      if (rawVal && !options.includes(rawVal)) options.push(rawVal);
+      
+      select.appendChild(new Option('⬛', ''));
+      options.forEach(opt => select.appendChild(new Option(opt, opt)));
+      select.value = rawVal;
+
+      // FIX: FORCE DROPDOWN TO ALWAYS BE TALL ENOUGH TO REVEAL ALL ITEMS WITHOUT INTERNAL SCROLLBARS
+      select.addEventListener('focus', () => {
+        select.size = select.options.length; // Dynamically expands element height to completely match options count
+        select.style.position = 'absolute';
+        select.style.zIndex = '10005';
+        select.style.height = 'auto'; // Breaks free from restricted row heights
+      });
+
+      const collapseSelector = () => {
+        select.size = 1; // Snaps back safely to single row layout
+        select.style.position = 'static';
+        select.style.height = ''; 
+      };
+
+      select.addEventListener('blur', collapseSelector);
+
+      select.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Escape') {
+          evt.preventDefault();
+          collapseSelector();
+          filterInput.focus();
+        } else if (evt.key === 'ArrowDown' && evt.altKey) {
+          evt.preventDefault();
+          select.focus();
+        } else if (!cfg.isExtendable && (evt.key === 'ArrowRight' || evt.key === 'ArrowLeft')) {
+          evt.preventDefault();
+          collapseSelector();
+          const rowSelects = tableRow.querySelectorAll('.projectgrid-yaml-select');
+          let nextIdx = fieldIdx + (evt.key === 'ArrowRight' ? 1 : -1);
+          if (nextIdx >= 0 && nextIdx < rowSelects.length) rowSelects[nextIdx].focus();
+        }
+      });
+
+      select.addEventListener('change', async () => {
+        const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
+        if (fileAbstract) {
+          await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
+            if (select.value === '') {
+              delete fm[cfg.key];
+              rowTrackingReference.yamlMetadataValues[cfg.key] = '⬛';
+            } else {
+              fm[cfg.key] = select.value;
+              rowTrackingReference.yamlMetadataValues[cfg.key] = select.value;
+            }
+          });
+          
+          collapseSelector();
+          if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+          
+          const rowSelects = tableRow.querySelectorAll('.projectgrid-yaml-select');
+          if (fieldIdx + 1 < rowSelects.length) rowSelects[fieldIdx + 1].focus();
+          else filterInput.focus();
+        }
+      });
+
+      cell.appendChild(select);
+      tableRow.appendChild(cell);
+    });
+
+    return tableRow;
+  }
+};
+})();
+
+return {
+  generateHeaderCell() {
+    const noteHeaderCell = document.createElement('th');
+    noteHeaderCell.style.width = '25%';
+    
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'projectgrid-filter-wrapper';
+
+    const filterInput = document.createElement('input');
+    filterInput.type = 'text';
+    filterInput.placeholder = 'Filter notes...';
+    filterInput.className = 'projectgrid-filter-input';
+
+    const clearButton = document.createElement('span');
+    clearButton.className = 'projectgrid-clear-btn';
+    clearButton.innerHTML = '✕';
+
+    filterContainer.appendChild(filterInput);
+    filterContainer.appendChild(clearButton);
+    noteHeaderCell.appendChild(filterContainer);
+
+    return { cell: noteHeaderCell, input: filterInput, clearBtn: clearButton };
+  },
+
+  buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
+    return UiDropdown.buildHeaderDropup(titleIcon, key, defaults, rowsArray);
+  },
+
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+  }
+};
 })();
 
 module.exports = class ProjectGridPlugin extends Plugin {
@@ -687,20 +741,19 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Convert table text headers into direct compact icon layout blocks
-    headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 5%; text-align: center;">📁</th>
-      <th style="width: 5%; text-align: center;">💻</th>
-      <th style="width: 5%; text-align: center;">💜</th>
-    `);
+    // FIX: TITLE ICONS (DOPUS, CURSOR, OBSIDIAN) NOW ATTACH TO DYNAMIC DROPDOWNS FOR MULTI-SELECT FILTERING
+    const launcherColumns = [
+      { icon: '📁', key: 'dopus', options: ['Active'] },
+      { icon: '💻', key: 'cursor', options: ['Active'] },
+      { icon: '💜', key: 'obsidian', options: ['Active'] }
+    ];
 
-    // Invert the default dropup list item arrays to read number-first format tracking parameters
     const columnDropdowns = [
-      { icon: '⭐', key: 'stars', options: ['⬛','0 ⭐','1 ⭐','2 ⭐','3 ⭐','4 ⭐','5 ⭐'] },
-      { icon: '💲', key: 'value', options: ['⬛','0 💲','1 💲','2 💲','3 💲','4 💲','5 💲','6 💲','7 💲','8 💲','9 💲'] },
-      { icon: '🐘', key: 'size', options: ['⬛','0 🐘','1 🐘','2 🐘','3 🐘','4 🐘','5 🐘'] },
-      { icon: '🎱', key: 'depth', options: ['⬛','0 🎱','1 🎱','2 🎱','3 🎱','4 🎱','5 🎱'] },
-      { icon: '🏅', key: 'priority', options: ['⬛','0 🏅','1 🏅','2 🏅','3 🏅','4 🏅','5 🏅'] },
+      { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
+      { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
+      { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
+      { icon: '🎱', key: 'depth', options: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'] },
+      { icon: '🏅', key: 'priority', options: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'] },
       { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
       { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
       { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] }
@@ -709,6 +762,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
+    // Pre-build row models mapping layout data tracks cleanly
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -716,13 +770,20 @@ module.exports = class ProjectGridPlugin extends Plugin {
         const frontmatter = fileCache ? fileCache.frontmatter : null;
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
-        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef);
+        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
         
         tableBody.appendChild(rowRef.element);
         rowsArray.push(rowRef);
       }
     });
 
+    // Append launcher title dropups to header row
+    launcherColumns.forEach(col => {
+      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
+      headerRow.appendChild(dropupTh);
+    });
+
+    // Append YAML metadata dropups to header row
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
