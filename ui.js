@@ -29,15 +29,16 @@ module.exports = {
     buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
       const th = document.createElement('th');
       th.style.width = '8%';
+      th.style.textAlign = 'center';
       
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
+      trigger.setAttribute('data-key', key);
       trigger.textContent = titleIcon;
   
       const panel = document.createElement('div');
       panel.className = 'projectgrid-dropup-panel';
   
-      // Track chosen state parameters globally across active note instances
       const activeFilters = new Set(defaults);
   
       defaults.forEach(opt => {
@@ -49,13 +50,9 @@ module.exports = {
         checkbox.checked = true;
   
         checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            activeFilters.add(opt);
-          } else {
-            activeFilters.delete(opt);
-          }
+          if (checkbox.checked) activeFilters.add(opt);
+          else activeFilters.delete(opt);
           
-          // Push the active filter criteria tracking states straight back into row objects
           rowsArray.forEach(row => {
             if (!row.dropdownFilters) row.dropdownFilters = {};
             const currentVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
@@ -87,13 +84,24 @@ module.exports = {
       const tableRow = document.createElement('tr');
       tableRow.className = 'projectgrid-matrix-row';
   
+      // Note Cell with Alphabetical Hue Spectral Multi-Mapping rules
       const noteCell = document.createElement('td');
       noteCell.className = 'projectgrid-matrix-cell note-title-cell';
       const fileAnchor = document.createElement('a');
       fileAnchor.className = 'internal-link projectgrid-matrix-link';
       fileAnchor.setAttribute('data-href', expectedNotePath);
-      fileAnchor.textContent = `+${folder.name}.md`;
       
+      const cleanFileName = `+${folder.name}.md`;
+      fileAnchor.textContent = cleanFileName;
+  
+      // --- AUTOMATED COLOR SHIFT ALGORITHM ---
+      // A=0, Z=25, maps clean spectrum where Z bends back to Red (0 to 360 loop)
+      const firstChar = folder.name.charAt(0).toLowerCase();
+      let charCode = firstChar.charCodeAt(0) - 97; 
+      if (charCode < 0 || charCode > 25) charCode = 0; // Fallback bound
+      const hueAngle = Math.round((charCode / 26) * 360);
+      fileAnchor.style.color = `hsl(${hueAngle}, 95%, 65%)`;
+  
       fileAnchor.addEventListener('click', (evt) => {
         evt.preventDefault();
         app.workspace.openLinkText(expectedNotePath, '', false);
@@ -101,6 +109,7 @@ module.exports = {
       noteCell.appendChild(fileAnchor);
       tableRow.appendChild(noteCell);
   
+      // Protocol launch cells
       const actions = [
         { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
         { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
@@ -114,15 +123,16 @@ module.exports = {
         tableRow.appendChild(cell);
       });
   
+      // YAML Fields configuration with inverted number-first layouts
       const fieldsConfig = [
-        { key: 'stars', defaults: ['0','1','2','3','4','5'], icon: '⭐' },
-        { key: 'value', defaults: ['0','1','2','3','4','5','6','7','8','9'], icon: '💲' },
-        { key: 'size', defaults: ['0','1','2','3','4','5'], icon: '🐘' },
-        { key: 'depth', defaults: ['0','1','2','3','4','5'], icon: '🎱' },
-        { key: 'priority', defaults: ['0','1','2','3','4','5'], icon: '🏅' },
-        { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], icon: '' },
-        { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], icon: '' },
-        { key: 'target', defaults: ['ce', 'op', 'app', 'link'], icon: '' }
+        { key: 'stars', defaults: ['0','1','2','3','4','5'], icon: '⭐', revOrder: true },
+        { key: 'value', defaults: ['0','1','2','3','4','5','6','7','8','9'], icon: '💲', revOrder: true },
+        { key: 'size', defaults: ['0','1','2','3','4','5'], icon: '🐘', revOrder: true },
+        { key: 'depth', defaults: ['0','1','2','3','4','5'], icon: '🎱', revOrder: true },
+        { key: 'priority', defaults: ['0','1','2','3','4','5'], icon: '🏅', revOrder: true },
+        { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], icon: '', revOrder: false },
+        { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], icon: '', revOrder: false },
+        { key: 'target', defaults: ['ce', 'op', 'app', 'link'], icon: '', revOrder: false }
       ];
   
       rowTrackingReference.yamlMetadataValues = {};
@@ -135,20 +145,17 @@ module.exports = {
         select.className = 'projectgrid-yaml-select';
         
         const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-        
-        // Save data values inside reference variables for the dropup filtering checks
         rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
   
         let options = [...cfg.defaults];
-        if (rawVal && !options.includes(rawVal)) {
-          options.push(rawVal);
-        }
+        if (rawVal && !options.includes(rawVal)) options.push(rawVal);
         
-        // FIX: Apply literal dark square emoji when the property returns null/blank
-        select.appendChild(new Option(`${cfg.icon} ⬛`, ''));
+        // Null option shows a literal dark placeholder square emoji
+        select.appendChild(new Option('⬛', ''));
         
         options.forEach(opt => {
-          const displayLabel = cfg.icon ? `${cfg.icon} ${opt}` : opt;
+          // Apply inverted alignment layouts so number parameters appear strictly before item emojis
+          const displayLabel = (cfg.revOrder && cfg.icon) ? `${opt} ${cfg.icon}` : opt;
           select.appendChild(new Option(displayLabel, opt));
         });
         

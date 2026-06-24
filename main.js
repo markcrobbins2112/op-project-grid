@@ -12,15 +12,12 @@ return {
       styleEl.id = 'obsidian-projectgrid-styles';
   
       styleEl.innerHTML = `
-        /* Breakout rules to bypass core 700px width restrictions */
         .cm-embed-block:has(.projectgrid-matrix-table),
         .block-language-projectgrid {
           max-width: 100% !important;
           width: 100% !important;
           grid-column: 1 / -1 !important;
         }
-  
-        /* Compact data grid constraints */
         .projectgrid-matrix-table {
           width: 100% !important;
           border-collapse: collapse !important;
@@ -38,8 +35,6 @@ return {
           vertical-align: middle !important;
           position: relative !important;
         }
-  
-        /* Integrated search input dashboard tools */
         .projectgrid-filter-wrapper {
           position: relative !important;
           display: flex !important;
@@ -67,29 +62,40 @@ return {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        /* HUE-CYCLING ANIMATION WITH AN INNER GLOW STYLE LOOK */
-        @keyframes projectgrid-hue-cycle {
-          0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
-          100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
+        /* DEFINITIVE OVERLAY GLOW ROW INDICATOR TRACKS */
+        @keyframes projectgrid-border-glow-cycle {
+          0% { border-color: #ff4757; filter: hue-rotate(0deg); }
+          100% { border-color: #ff4757; filter: hue-rotate(360deg); }
         }
         .projectgrid-matrix-row {
           border-bottom: 1px solid var(--background-modifier-border, #2a2a2a) !important;
           position: relative !important;
-          box-sizing: border-box !important;
         }
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
-          animation: projectgrid-hue-cycle 3s linear infinite !important;
+        }
+        .projectgrid-row-focused::after {
+          content: "" !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          border: 2px solid #ff4757 !important;
+          box-sizing: border-box !important;
+          pointer-events: none !important;
+          z-index: 10 !important;
+          animation: projectgrid-border-glow-cycle 3s linear infinite !important;
         }
   
         .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
         .note-title-cell { font-weight: 500 !important; }
         .action-icon-cell { text-align: center !important; }
   
-        /* DROP-UP SELECTION MODALS FOR EACH ENTRY */
+        /* DROP-UP MULTI-SELECT PANEL DESIGN SHEETS */
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
@@ -130,7 +136,6 @@ return {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.03)) !important;
         }
   
-        /* IN-LINE FIELD EDITORS DROP DOWNS */
         .projectgrid-yaml-select {
           background-color: var(--background-secondary, #252525) !important;
           color: var(--text-normal, #dddddd) !important;
@@ -138,15 +143,13 @@ return {
           border-radius: 4px !important;
           padding: 2px 4px !important;
           font-size: 11px !important;
-          max-width: 90px !important;
+          max-width: 95px !important;
           cursor: pointer !important;
         }
         .projectgrid-yaml-select:focus {
           border-color: var(--text-accent, #70a1ff) !important;
           outline: none !important;
         }
-  
-        /* QUICK PROTOCOL SHORTCUT INTERFACES */
         .projectgrid-aip-icon-btn {
           display: inline-block !important;
           text-decoration: none !important;
@@ -159,11 +162,10 @@ return {
           opacity: 1.0 !important;
           transform: scale(1.15) !important;
         }
-        .projectgrid-matrix-link { color: var(--text-accent, #70a1ff) !important; text-decoration: none !important; }
+        .projectgrid-matrix-link { text-decoration: none !important; font-weight: bold !important; }
         .projectgrid-matrix-link:hover { text-decoration: underline !important; }
         .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
   
-        /* AUTOMATED INTERFACE COMMAND COMMAND WHEEL OPTIONS */
         .projectgrid-command-picker {
           position: absolute !important;
           background-color: var(--background-secondary, #1e1e1e) !important;
@@ -499,15 +501,16 @@ return {
     buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
       const th = document.createElement('th');
       th.style.width = '8%';
+      th.style.textAlign = 'center';
       
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
+      trigger.setAttribute('data-key', key);
       trigger.textContent = titleIcon;
   
       const panel = document.createElement('div');
       panel.className = 'projectgrid-dropup-panel';
   
-      // Track chosen state parameters globally across active note instances
       const activeFilters = new Set(defaults);
   
       defaults.forEach(opt => {
@@ -519,13 +522,9 @@ return {
         checkbox.checked = true;
   
         checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            activeFilters.add(opt);
-          } else {
-            activeFilters.delete(opt);
-          }
+          if (checkbox.checked) activeFilters.add(opt);
+          else activeFilters.delete(opt);
           
-          // Push the active filter criteria tracking states straight back into row objects
           rowsArray.forEach(row => {
             if (!row.dropdownFilters) row.dropdownFilters = {};
             const currentVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
@@ -557,13 +556,24 @@ return {
       const tableRow = document.createElement('tr');
       tableRow.className = 'projectgrid-matrix-row';
   
+      // Note Cell with Alphabetical Hue Spectral Multi-Mapping rules
       const noteCell = document.createElement('td');
       noteCell.className = 'projectgrid-matrix-cell note-title-cell';
       const fileAnchor = document.createElement('a');
       fileAnchor.className = 'internal-link projectgrid-matrix-link';
       fileAnchor.setAttribute('data-href', expectedNotePath);
-      fileAnchor.textContent = `+${folder.name}.md`;
       
+      const cleanFileName = `+${folder.name}.md`;
+      fileAnchor.textContent = cleanFileName;
+  
+      // --- AUTOMATED COLOR SHIFT ALGORITHM ---
+      // A=0, Z=25, maps clean spectrum where Z bends back to Red (0 to 360 loop)
+      const firstChar = folder.name.charAt(0).toLowerCase();
+      let charCode = firstChar.charCodeAt(0) - 97; 
+      if (charCode < 0 || charCode > 25) charCode = 0; // Fallback bound
+      const hueAngle = Math.round((charCode / 26) * 360);
+      fileAnchor.style.color = `hsl(${hueAngle}, 95%, 65%)`;
+  
       fileAnchor.addEventListener('click', (evt) => {
         evt.preventDefault();
         app.workspace.openLinkText(expectedNotePath, '', false);
@@ -571,6 +581,7 @@ return {
       noteCell.appendChild(fileAnchor);
       tableRow.appendChild(noteCell);
   
+      // Protocol launch cells
       const actions = [
         { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
         { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
@@ -584,15 +595,16 @@ return {
         tableRow.appendChild(cell);
       });
   
+      // YAML Fields configuration with inverted number-first layouts
       const fieldsConfig = [
-        { key: 'stars', defaults: ['0','1','2','3','4','5'], icon: '⭐' },
-        { key: 'value', defaults: ['0','1','2','3','4','5','6','7','8','9'], icon: '💲' },
-        { key: 'size', defaults: ['0','1','2','3','4','5'], icon: '🐘' },
-        { key: 'depth', defaults: ['0','1','2','3','4','5'], icon: '🎱' },
-        { key: 'priority', defaults: ['0','1','2','3','4','5'], icon: '🏅' },
-        { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], icon: '' },
-        { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], icon: '' },
-        { key: 'target', defaults: ['ce', 'op', 'app', 'link'], icon: '' }
+        { key: 'stars', defaults: ['0','1','2','3','4','5'], icon: '⭐', revOrder: true },
+        { key: 'value', defaults: ['0','1','2','3','4','5','6','7','8','9'], icon: '💲', revOrder: true },
+        { key: 'size', defaults: ['0','1','2','3','4','5'], icon: '🐘', revOrder: true },
+        { key: 'depth', defaults: ['0','1','2','3','4','5'], icon: '🎱', revOrder: true },
+        { key: 'priority', defaults: ['0','1','2','3','4','5'], icon: '🏅', revOrder: true },
+        { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], icon: '', revOrder: false },
+        { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], icon: '', revOrder: false },
+        { key: 'target', defaults: ['ce', 'op', 'app', 'link'], icon: '', revOrder: false }
       ];
   
       rowTrackingReference.yamlMetadataValues = {};
@@ -605,20 +617,17 @@ return {
         select.className = 'projectgrid-yaml-select';
         
         const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-        
-        // Save data values inside reference variables for the dropup filtering checks
         rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
   
         let options = [...cfg.defaults];
-        if (rawVal && !options.includes(rawVal)) {
-          options.push(rawVal);
-        }
+        if (rawVal && !options.includes(rawVal)) options.push(rawVal);
         
-        // FIX: Apply literal dark square emoji when the property returns null/blank
-        select.appendChild(new Option(`${cfg.icon} ⬛`, ''));
+        // Null option shows a literal dark placeholder square emoji
+        select.appendChild(new Option('⬛', ''));
         
         options.forEach(opt => {
-          const displayLabel = cfg.icon ? `${cfg.icon} ${opt}` : opt;
+          // Apply inverted alignment layouts so number parameters appear strictly before item emojis
+          const displayLabel = (cfg.revOrder && cfg.icon) ? `${opt} ${cfg.icon}` : opt;
           select.appendChild(new Option(displayLabel, opt));
         });
         
@@ -678,19 +687,20 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
+    // Convert table text headers into direct compact icon layout blocks
     headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 5%; text-align: center;">Dopus</th>
-      <th style="width: 5%; text-align: center;">Cursor</th>
-      <th style="width: 5%; text-align: center;">Obsidian</th>
+      <th style="width: 5%; text-align: center;">📁</th>
+      <th style="width: 5%; text-align: center;">💻</th>
+      <th style="width: 5%; text-align: center;">💜</th>
     `);
 
-    // Define configuration data properties for the Icon-Only Dropup Table Headers
+    // Invert the default dropup list item arrays to read number-first format tracking parameters
     const columnDropdowns = [
-      { icon: '⭐', key: 'stars', options: ['⬛','0','1','2','3','4','5'] },
-      { icon: '💲', key: 'value', options: ['⬛','0','1','2','3','4','5','6','7','8','9'] },
-      { icon: '🐘', key: 'size', options: ['⬛','0','1','2','3','4','5'] },
-      { icon: '🎱', key: 'depth', options: ['⬛','0','1','2','3','4','5'] },
-      { icon: '🏅', key: 'priority', options: ['⬛','0','1','2','3','4','5'] },
+      { icon: '⭐', key: 'stars', options: ['⬛','0 ⭐','1 ⭐','2 ⭐','3 ⭐','4 ⭐','5 ⭐'] },
+      { icon: '💲', key: 'value', options: ['⬛','0 💲','1 💲','2 💲','3 💲','4 💲','5 💲','6 💲','7 💲','8 💲','9 💲'] },
+      { icon: '🐘', key: 'size', options: ['⬛','0 🐘','1 🐘','2 🐘','3 🐘','4 🐘','5 🐘'] },
+      { icon: '🎱', key: 'depth', options: ['⬛','0 🎱','1 🎱','2 🎱','3 🎱','4 🎱','5 🎱'] },
+      { icon: '🏅', key: 'priority', options: ['⬛','0 🏅','1 🏅','2 🏅','3 🏅','4 🏅','5 🏅'] },
       { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
       { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
       { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] }
@@ -699,7 +709,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
-    // Construct row states beforehand so dropup header elements link correctly into the array references
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -714,7 +723,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Append the dropup selector cells straight into the header elements row tracks
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);

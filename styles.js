@@ -10,15 +10,12 @@ module.exports = {
       styleEl.id = 'obsidian-projectgrid-styles';
   
       styleEl.innerHTML = `
-        /* Breakout rules to bypass core 700px width restrictions */
         .cm-embed-block:has(.projectgrid-matrix-table),
         .block-language-projectgrid {
           max-width: 100% !important;
           width: 100% !important;
           grid-column: 1 / -1 !important;
         }
-  
-        /* Compact data grid constraints */
         .projectgrid-matrix-table {
           width: 100% !important;
           border-collapse: collapse !important;
@@ -36,8 +33,6 @@ module.exports = {
           vertical-align: middle !important;
           position: relative !important;
         }
-  
-        /* Integrated search input dashboard tools */
         .projectgrid-filter-wrapper {
           position: relative !important;
           display: flex !important;
@@ -65,29 +60,40 @@ module.exports = {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        /* HUE-CYCLING ANIMATION WITH AN INNER GLOW STYLE LOOK */
-        @keyframes projectgrid-hue-cycle {
-          0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
-          100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
+        /* DEFINITIVE OVERLAY GLOW ROW INDICATOR TRACKS */
+        @keyframes projectgrid-border-glow-cycle {
+          0% { border-color: #ff4757; filter: hue-rotate(0deg); }
+          100% { border-color: #ff4757; filter: hue-rotate(360deg); }
         }
         .projectgrid-matrix-row {
           border-bottom: 1px solid var(--background-modifier-border, #2a2a2a) !important;
           position: relative !important;
-          box-sizing: border-box !important;
         }
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
-          animation: projectgrid-hue-cycle 3s linear infinite !important;
+        }
+        .projectgrid-row-focused::after {
+          content: "" !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          border: 2px solid #ff4757 !important;
+          box-sizing: border-box !important;
+          pointer-events: none !important;
+          z-index: 10 !important;
+          animation: projectgrid-border-glow-cycle 3s linear infinite !important;
         }
   
         .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
         .note-title-cell { font-weight: 500 !important; }
         .action-icon-cell { text-align: center !important; }
   
-        /* DROP-UP SELECTION MODALS FOR EACH ENTRY */
+        /* DROP-UP MULTI-SELECT PANEL DESIGN SHEETS */
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
@@ -128,7 +134,6 @@ module.exports = {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.03)) !important;
         }
   
-        /* IN-LINE FIELD EDITORS DROP DOWNS */
         .projectgrid-yaml-select {
           background-color: var(--background-secondary, #252525) !important;
           color: var(--text-normal, #dddddd) !important;
@@ -136,15 +141,13 @@ module.exports = {
           border-radius: 4px !important;
           padding: 2px 4px !important;
           font-size: 11px !important;
-          max-width: 90px !important;
+          max-width: 95px !important;
           cursor: pointer !important;
         }
         .projectgrid-yaml-select:focus {
           border-color: var(--text-accent, #70a1ff) !important;
           outline: none !important;
         }
-  
-        /* QUICK PROTOCOL SHORTCUT INTERFACES */
         .projectgrid-aip-icon-btn {
           display: inline-block !important;
           text-decoration: none !important;
@@ -157,11 +160,10 @@ module.exports = {
           opacity: 1.0 !important;
           transform: scale(1.15) !important;
         }
-        .projectgrid-matrix-link { color: var(--text-accent, #70a1ff) !important; text-decoration: none !important; }
+        .projectgrid-matrix-link { text-decoration: none !important; font-weight: bold !important; }
         .projectgrid-matrix-link:hover { text-decoration: underline !important; }
         .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
   
-        /* AUTOMATED INTERFACE COMMAND COMMAND WHEEL OPTIONS */
         .projectgrid-command-picker {
           position: absolute !important;
           background-color: var(--background-secondary, #1e1e1e) !important;

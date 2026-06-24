@@ -36,19 +36,20 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
+    // Convert table text headers into direct compact icon layout blocks
     headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 5%; text-align: center;">Dopus</th>
-      <th style="width: 5%; text-align: center;">Cursor</th>
-      <th style="width: 5%; text-align: center;">Obsidian</th>
+      <th style="width: 5%; text-align: center;">📁</th>
+      <th style="width: 5%; text-align: center;">💻</th>
+      <th style="width: 5%; text-align: center;">💜</th>
     `);
 
-    // Define configuration data properties for the Icon-Only Dropup Table Headers
+    // Invert the default dropup list item arrays to read number-first format tracking parameters
     const columnDropdowns = [
-      { icon: '⭐', key: 'stars', options: ['⬛','0','1','2','3','4','5'] },
-      { icon: '💲', key: 'value', options: ['⬛','0','1','2','3','4','5','6','7','8','9'] },
-      { icon: '🐘', key: 'size', options: ['⬛','0','1','2','3','4','5'] },
-      { icon: '🎱', key: 'depth', options: ['⬛','0','1','2','3','4','5'] },
-      { icon: '🏅', key: 'priority', options: ['⬛','0','1','2','3','4','5'] },
+      { icon: '⭐', key: 'stars', options: ['⬛','0 ⭐','1 ⭐','2 ⭐','3 ⭐','4 ⭐','5 ⭐'] },
+      { icon: '💲', key: 'value', options: ['⬛','0 💲','1 💲','2 💲','3 💲','4 💲','5 💲','6 💲','7 💲','8 💲','9 💲'] },
+      { icon: '🐘', key: 'size', options: ['⬛','0 🐘','1 🐘','2 🐘','3 🐘','4 🐘','5 🐘'] },
+      { icon: '🎱', key: 'depth', options: ['⬛','0 🎱','1 🎱','2 🎱','3 🎱','4 🎱','5 🎱'] },
+      { icon: '🏅', key: 'priority', options: ['⬛','0 🏅','1 🏅','2 🏅','3 🏅','4 🏅','5 🏅'] },
       { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
       { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
       { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] }
@@ -57,7 +58,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
-    // Construct row states beforehand so dropup header elements link correctly into the array references
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -72,7 +72,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Append the dropup selector cells straight into the header elements row tracks
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
