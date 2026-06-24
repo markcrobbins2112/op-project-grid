@@ -1,0 +1,11 @@
+{
+    "id": "file-tree-projectgrid",
+    "name": "!!ProjectGrid Folder Note Visualizer",
+    "version": "1.0.0",
+    "minAppVersion": "1.0.0",
+    "description": "Processes custom codeblocks starting with 'projectgrid' to display directories that carry folder notes in a grid array configuration layout.",
+    "author": "AI Collaborator",
+    "authorUrl": "https://obsidian.md",
+    "isDesktopOnly": false
+  }
+  
