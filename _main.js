@@ -33,22 +33,21 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableHeader = document.createElement('thead');
     const headerRow = document.createElement('tr');
 
+    // Column 1: Core dynamic search input filter field container (25% width)
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
+    // Columns 2, 3, 4: Generates the 3 unique static table header icons
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    const launcherColumns = [
-      { icon: '📁', key: 'dopus', options: ['Active'] },
-      { icon: '💻', key: 'cursor', options: ['Active'] },
-      { icon: '💜', key: 'obsidian', options: ['Active'] }
-    ];
+    // FIX: COMPLETELY ELIMINATED THE launcherColumns ARRAY LOOP TO STOP THE 3 DUPLICATE ICONS FROM SHIFTING COLS
 
-    // FIX: STARS COLUMN ACCURATELY CAPTURES ICON OBJECT AS "⭐" AND CARRIES MULTI-SELECT HORIZONTAL FILTER ARRAYS
+    // Define the 8 exact YAML frontmatter metadata columns (Columns 5 through 12)
+    // Stars column (⭐) explicitly includes the comprehensive choice array to render all choices inside the dropup panel
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -63,6 +62,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
+    // Pre-assemble row model references mapping metadata values instantly
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -77,11 +77,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    launcherColumns.forEach(col => {
-      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
-      headerRow.appendChild(dropupTh);
-    });
-
+    // Build and append the 8 interactive YAML metadata dropup filter headers directly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);

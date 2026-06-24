@@ -26,8 +26,7 @@ module.exports = {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    rowTrackingReference.launcherValues = { dopus: 'Active', cursor: 'Active', obsidian: 'Active' };
-
+    // Columns 2, 3, 4: Standard Launcher links mapping the 3 action protocols
     const actions = [
       { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
       { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
@@ -41,6 +40,7 @@ module.exports = {
       tableRow.appendChild(cell);
     });
 
+    // Columns 5 through 12: Matches the 8 exact frontmatter keys with corrected option values
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -78,28 +78,27 @@ module.exports = {
         if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; }
       };
 
-      // FIX: APPEND LIST CONTAINER DIRECTLY TO DOCUMENT BODY TO BYPASS TABLE OVERFLOW CLIPPING
       const openDropdown = () => {
         closeDropdown();
         activeDropdown = document.createElement('ul');
         activeDropdown.className = 'projectgrid-custom-dropdown-list';
         
-        // Calculate coordinate bounding boxes dynamically relative to the window viewport
         const rect = btn.getBoundingClientRect();
         activeDropdown.style.position = 'fixed';
         activeDropdown.style.top = `${rect.bottom + window.scrollY}px`;
         activeDropdown.style.left = `${rect.left + window.scrollX}px`;
         activeDropdown.style.width = `${Math.max(rect.width, 100)}px`;
-        activeDropdown.style.zIndex = '200000'; // Higher parent priority layer
+        activeDropdown.style.zIndex = '200000';
         
         optionsList.forEach((opt, oIdx) => {
           const li = document.createElement('li');
           li.className = 'projectgrid-custom-dropdown-item';
           li.textContent = opt;
-          if (oIdx === selectionIdx) li.classList.add('projectgrid-item-indicator-focused');
+          
+          if (oIdx === selectionIdx) li.classList.add('projectgrid-row-focused');
           
           li.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // Stop blur events from firing prematurely
+            e.preventDefault();
             commitSelection(opt);
           });
           activeDropdown.appendChild(li);
@@ -127,7 +126,6 @@ module.exports = {
           closeDropdown();
           if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
           
-          // Move focus to next column automatically after picking a selection
           const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
           if (fieldIdx + 1 < siblingButtons.length) {
             siblingButtons[fieldIdx + 1].focus();
@@ -137,17 +135,15 @@ module.exports = {
         }
       };
 
-      btn.addEventListener('focus', openDropdown);
       btn.addEventListener('blur', () => {
-        // Safe buffer to check if click landed inside portal list items
         setTimeout(closeDropdown, 120);
       });
       btn.addEventListener('mousedown', (e) => { 
         e.stopPropagation(); 
+        btn.focus();
         if (activeDropdown) closeDropdown(); else openDropdown(); 
       });
 
-      // COMPREHENSIVE RE-KEYING ACCORDING TO NAVIGATION REQUIREMENTS
       btn.addEventListener('keydown', (evt) => {
         if (activeDropdown) {
           if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
@@ -159,40 +155,39 @@ module.exports = {
             }
 
             activeDropdown.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((li, lIdx) => {
-              if (lIdx === selectionIdx) li.classList.add('projectgrid-item-indicator-focused');
-              else li.classList.remove('projectgrid-item-indicator-focused');
+              if (lIdx === selectionIdx) li.classList.add('projectgrid-row-focused');
+              else li.classList.remove('projectgrid-row-focused');
             });
             return;
           } else if (evt.key === 'Enter') {
             evt.preventDefault();
-            commitSelection(optionsList[selectionIdx]); // Commits selection and focus goes to next cell
+            commitSelection(optionsList[selectionIdx]);
             return;
           } else if (evt.key === 'Escape') {
             evt.preventDefault();
             closeDropdown();
-            btn.focus(); // Escape closes the open list and returns focus directly to current column button
+            btn.focus();
             return;
           }
         }
 
-        // CONTROL RIGGING WHEN LIST IS CLOSED
         if (!activeDropdown) {
           if (evt.key === 'Escape') {
             evt.preventDefault();
-            filterInput.focus(); // Escape on a closed list returns focus straight back to search field box
+            filterInput.focus();
           } else if (evt.key === 'Tab') {
             evt.preventDefault();
             const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
             let nextIdx = fieldIdx + (evt.shiftKey ? -1 : 1);
             
             if (nextIdx >= 0 && nextIdx < siblingButtons.length) {
-              siblingButtons[nextIdx].focus(); // Tab and Shift+Tab on closed lists move focus horizontally
+              siblingButtons[nextIdx].focus();
             } else if (nextIdx < 0) {
-              filterInput.focus(); // Wrap back around safely to text filter if exiting row boundary backwards
+              filterInput.focus();
             }
           } else if (evt.key === 'ArrowDown' && evt.altKey) {
             evt.preventDefault();
-            openDropdown(); // Alt + Down opens the portal dropdown menu natively
+            openDropdown();
           } else if (!cfg.isExtendable && (evt.key === 'ArrowRight' || evt.key === 'ArrowLeft')) {
             evt.preventDefault();
             const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
