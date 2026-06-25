@@ -10,7 +10,9 @@ module.exports = {
           100% { border-color: #ff4757; filter: hue-rotate(360deg); }
         }
   
+        /* DEFINITIVE SYSTEM OVERLAY PORTALS MATRIX */
         .projectgrid-focus-overlay-portal,
+        .projectgrid-input-overlay-portal,
         .projectgrid-row-overlay-portal {
           position: fixed !important;
           pointer-events: none !important;
@@ -21,12 +23,19 @@ module.exports = {
           animation: projectgrid-master-hue-spin 3s linear infinite !important;
         }
         
+        /* Stacking Layer 1: Topmost overlay for menus, dropdown items, and popup pickers */
         .projectgrid-focus-overlay-portal {
           z-index: 999999 !important;
         }
         
-        .projectgrid-row-overlay-portal {
+        /* Stacking Layer 2: Middle overlay for text fields and filter headers */
+        .projectgrid-input-overlay-portal {
           z-index: 999998 !important;
+        }
+        
+        /* Stacking Layer 3: Base overlay following the highlighted project row */
+        .projectgrid-row-overlay-portal {
+          z-index: 999997 !important;
         }
   
         .projectgrid-matrix-row {

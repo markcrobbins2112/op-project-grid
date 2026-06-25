@@ -48,6 +48,8 @@ module.exports = {
           align-items: center !important;
           width: 100% !important;
         }
+        
+        /* FIX: FORCE GREY FOCUS BOX INDICATORS TO DROP COMPLETELY OUT */
         .projectgrid-filter-input {
           width: 100% !important;
           padding: 4px 24px 4px 8px !important;
@@ -57,7 +59,16 @@ module.exports = {
           background-color: var(--background-primary, #1e1e1e) !important;
           color: var(--text-normal, #ffffff) !important;
           height: 24px !important;
+          outline: none !important;
+          box-shadow: none !important;
         }
+        .projectgrid-filter-input:focus {
+          background-color: var(--background-primary, #1e1e1e) !important;
+          border-color: var(--background-modifier-border, #3a3a3a) !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        
         .projectgrid-clear-btn {
           position: absolute !important;
           right: 8px !important;

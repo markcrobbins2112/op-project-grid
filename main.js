@@ -51,6 +51,8 @@ return {
           align-items: center !important;
           width: 100% !important;
         }
+        
+        /* FIX: FORCE GREY FOCUS BOX INDICATORS TO DROP COMPLETELY OUT */
         .projectgrid-filter-input {
           width: 100% !important;
           padding: 4px 24px 4px 8px !important;
@@ -60,7 +62,16 @@ return {
           background-color: var(--background-primary, #1e1e1e) !important;
           color: var(--text-normal, #ffffff) !important;
           height: 24px !important;
+          outline: none !important;
+          box-shadow: none !important;
         }
+        .projectgrid-filter-input:focus {
+          background-color: var(--background-primary, #1e1e1e) !important;
+          border-color: var(--background-modifier-border, #3a3a3a) !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        
         .projectgrid-clear-btn {
           position: absolute !important;
           right: 8px !important;
@@ -94,7 +105,9 @@ return {
           100% { border-color: #ff4757; filter: hue-rotate(360deg); }
         }
   
+        /* DEFINITIVE SYSTEM OVERLAY PORTALS MATRIX */
         .projectgrid-focus-overlay-portal,
+        .projectgrid-input-overlay-portal,
         .projectgrid-row-overlay-portal {
           position: fixed !important;
           pointer-events: none !important;
@@ -105,12 +118,19 @@ return {
           animation: projectgrid-master-hue-spin 3s linear infinite !important;
         }
         
+        /* Stacking Layer 1: Topmost overlay for menus, dropdown items, and popup pickers */
         .projectgrid-focus-overlay-portal {
           z-index: 999999 !important;
         }
         
-        .projectgrid-row-overlay-portal {
+        /* Stacking Layer 2: Middle overlay for text fields and filter headers */
+        .projectgrid-input-overlay-portal {
           z-index: 999998 !important;
+        }
+        
+        /* Stacking Layer 3: Base overlay following the highlighted project row */
+        .projectgrid-row-overlay-portal {
+          z-index: 999997 !important;
         }
   
         .projectgrid-matrix-row {
@@ -170,6 +190,7 @@ return {
         }
         .projectgrid-header-dropup-trigger:hover { background-color: transparent !important; }
   
+        /* MENU PANELS FLOAT HIGH ABOVE ALL ROW INDICATORS NATIVELY */
         .projectgrid-dropup-panel {
           display: flex !important;
           flex-direction: column !important; 
@@ -182,7 +203,22 @@ return {
           max-height: 260px !important;
           overflow-y: auto !important;
           box-sizing: border-box !important;
+          z-index: 600000 !important; 
         }
+        
+        /* UN-FOCUSABLE UN-CLICKABLE LABELS FOR DESCRIPTION ENHANCEMENTS */
+        .projectgrid-dropup-header-title {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          color: var(--text-accent, #70a1ff) !important;
+          padding: 4px 6px !important;
+          border-bottom: 1px dashed var(--background-modifier-border, #3d3d3d) !important;
+          margin-bottom: 4px !important;
+          user-select: none !important;
+          pointer-events: none !important;
+        }
+  
         .projectgrid-dropup-option {
           display: flex !important;
           align-items: center !important;
@@ -195,6 +231,7 @@ return {
           box-sizing: border-box !important;
           width: 100% !important;
           border: 2px solid transparent !important;
+          background-color: transparent !important;
         }
         .projectgrid-dropup-option:hover { background-color: transparent !important; }
         .projectgrid-dropup-option input[type="checkbox"] { margin: 0 !important; cursor: pointer !important; }
@@ -227,9 +264,9 @@ return {
           margin: 4px 0 0 0 !important;
           padding: 4px 0 !important;
           list-style: none !important;
-          z-index: 10010 !important;
           box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
           box-sizing: border-box !important;
+          z-index: 600000 !important; 
         }
         .projectgrid-custom-dropdown-item {
           padding: 4px 4px !important;
@@ -239,6 +276,7 @@ return {
           font-size: 11px !important;
           box-sizing: border-box !important;
           width: 100% !important;
+          border: 2px solid transparent !important;
           background-color: transparent !important;
         }
   
@@ -248,10 +286,10 @@ return {
           border: 1px solid #3d3d3d !important; 
           border-radius: 6px !important;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-          z-index: 500000 !important; 
           padding: 6px !important;
           min-width: 220px !important;
           box-sizing: border-box !important;
+          z-index: 650000 !important; 
         }
         .projectgrid-picker-item {
           padding: 6px 10px !important;
@@ -260,6 +298,8 @@ return {
           color: var(--text-normal, #ffffff) !important;
           font-size: 12px !important;
           box-sizing: border-box !important;
+          border: 2px solid transparent !important; 
+          background-color: transparent !important; 
         }
       `;
     }
@@ -323,10 +363,10 @@ return {
         {
           name: '⚙️ System',
           items: [
-            // FIX: SYSTEM CONTROLLER MENU APPENDS MULTI-CHAIN COLUMN SORTING DISPATCH OPTIONS
-            { name: '🔀 Sort Chain: Status > Priority > Stars', action: () => this.executeMultiColumnSort(rowsArray, ['status', 'priority', 'stars']) },
-            { name: '🔀 Sort Chain: Stars > Value > Size', action: () => this.executeMultiColumnSort(rowsArray, ['stars', 'value', 'size']) },
-            { name: '🔀 Sort Chain: Lang > Target > Status', action: () => this.executeMultiColumnSort(rowsArray, ['lang', 'target', 'status']) },
+            // --- FIX: INTEGRATE ADVANCED 3-COLUMN SORT CHAIN PICKER ACTION MATRICES ---
+            { name: '📶 Sort: Status ➔ Stars ➔ Priority', action: () => this.executeThreeColumnSortChain(rowsArray, ['status', 'stars', 'priority']) },
+            { name: '📶 Sort: Priority ➔ Value ➔ Size', action: () => this.executeThreeColumnSortChain(rowsArray, ['priority', 'value', 'size']) },
+            { name: '📶 Sort: Lang ➔ Target ➔ Stars', action: () => this.executeThreeColumnSortChain(rowsArray, ['lang', 'target', 'stars']) },
             { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
             { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
           ]
@@ -334,30 +374,34 @@ return {
       ];
     },
   
-    // FIX: ADVANCED TRIPLE-TIER DATA MATRIX CHRONOLOGICAL MULTI-COLUMN SORT ENGINE
-    executeMultiColumnSort(rowsArray, sortKeysChain) {
-      const parentTableBody = rowsArray[0].element.parentElement;
-      
+    // FIX: STABLE THREE COLUMN TIER SORT CHAIN COMPUTATION ENGINE
+    executeThreeColumnSortChain(rowsArray, keysArray) {
+      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      if (!parentTableBody) return;
+  
       rowsArray.sort((rowA, rowB) => {
-        // Isolate chain layer variables explicitly
-        const k1 = sortKeysChain[0], k2 = sortKeysChain[1], k3 = sortKeysChain[2];
-        
-        const vA1 = String(rowA.yamlMetadataValues[k1] || '⬛'), vB1 = String(rowB.yamlMetadataValues[k1] || '⬛');
-        const vA2 = String(rowA.yamlMetadataValues[k2] || '⬛'), vB2 = String(rowB.yamlMetadataValues[k2] || '⬛');
-        const vA3 = String(rowA.yamlMetadataValues[k3] || '⬛'), vB3 = String(rowB.yamlMetadataValues[k3] || '⬛');
+        const valsA = rowA.yamlMetadataValues || {};
+        const valsB = rowB.yamlMetadataValues || {};
   
-        // Tier 1 Compare Evaluation
-        if (vA1 !== vB1) return vA1.localeCompare(vB1);
-        // Tier 2 Compare Evaluation
-        if (vA2 !== vB2) return vA2.localeCompare(vB2);
-        // Tier 3 Compare Evaluation
-        return vA3.localeCompare(vB3);
+        // Layer 1 Check: First target key sorting comparison rules
+        const valA1 = String(valsA[keysArray[0]] || '').replace(/[^\w]/g, '');
+        const valB1 = String(valsB[keysArray[0]] || '').replace(/[^\w]/g, '');
+        if (valA1 !== valB1) return valA1.localeCompare(valB1, undefined, { numeric: true });
+  
+        // Layer 2 Check: Tie breaker falls back to second target key
+        const valA2 = String(valsA[keysArray[1]] || '').replace(/[^\w]/g, '');
+        const valB2 = String(valsB[keysArray[1]] || '').replace(/[^\w]/g, '');
+        if (valA2 !== valB2) return valA2.localeCompare(valB2, undefined, { numeric: true });
+  
+        // Layer 3 Check: Final tie breaker falls back onto third target key sorting parameters
+        const valA3 = String(valsA[keysArray[2]] || '').replace(/[^\w]/g, '');
+        const valB3 = String(valsB[keysArray[2]] || '').replace(/[^\w]/g, '');
+        return valA3.localeCompare(valB3, undefined, { numeric: true });
       });
   
-      // Detach and re-append sorted row elements onto the master parent body layout track
-      rowsArray.forEach(rowObj => {
-        parentTableBody.appendChild(rowObj.element);
-      });
+      // Re-append DOM node structures inside parent container canvas to reflect changes
+      rowsArray.forEach(row => parentTableBody.appendChild(row.element));
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   
     openHeaderDropup(key) {
@@ -365,7 +409,7 @@ return {
       if (trigger) {
         const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
         trigger.dispatchEvent(mousedownEvent);
-        setTimeout(() => { trigger.focus(); }, 50);
+        setTimeout(() => trigger.focus(), 50);
       }
     },
   
@@ -404,7 +448,7 @@ return {
       const picker = document.createElement('div');
       picker.className = 'projectgrid-command-picker';
       
-      // FIX: Map coordinates dynamically relative to the window viewport to bypass card layer restraints
+      // Position parameters tracking viewports boundary targets cleanly
       const rect = filterInput.getBoundingClientRect();
       picker.style.top = `${rect.bottom + window.scrollY + 4}px`;
       picker.style.left = `${rect.left + window.scrollX}px`;
@@ -413,6 +457,7 @@ return {
         const el = document.createElement('div');
         el.className = 'projectgrid-picker-item';
         
+        // FIX: ENSURE BOTH CONTEXT CLASSES ARE LAYERED ON GENERATION AHEAD OF KEYBOARD SCAN EVENTS
         if (idx === selectedIndex) {
           el.classList.add('projectgrid-picker-highlight');
           el.classList.add('projectgrid-row-focused');
@@ -428,7 +473,7 @@ return {
         picker.appendChild(el);
       });
   
-      document.body.appendChild(picker); // Attached straight to highest body tracking scope
+      document.body.appendChild(picker); 
   
       const outsideClickListener = (e) => {
         if (!picker.contains(e.target) && e.target !== filterInput) {
@@ -444,20 +489,23 @@ return {
     destroyActivePickers(containerElement) {
       const existing = document.querySelectorAll('.projectgrid-command-picker');
       existing.forEach(p => p.remove());
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     }
   };
 })();
 
 return {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; 
+    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
+    let activePickerEl = null;
 
     const closeAllPickers = () => {
       pickerLevel = 0;
       MenuDom.destroyActivePickers(containerElement);
+      activePickerEl = null;
       filterInput.focus();
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
@@ -472,7 +520,7 @@ return {
           pickerLevel = 1;
           activeIndex = 0;
           activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-          render();
+          renderMenu();
         }
       }
     });
@@ -480,29 +528,41 @@ return {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
-      if (pickerLevel > 0) {
+      if (pickerLevel > 0 && activePickerEl) {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
+          
           activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
-          render();
+          
+          // FIX: INLINE FOCUS UPDATE SWAPS CLASSES AND REPOSITION REGIONS WITHOUT ERASING THE MENU DOM
+          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
+          items.forEach((item, idx) => {
+            if (idx === activeIndex) {
+              item.classList.add('projectgrid-picker-highlight');
+              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
+            } else {
+              item.classList.remove('projectgrid-picker-highlight');
+            }
+          });
+          return;
         } else if (evt.key === 'Enter') {
           evt.preventDefault();
           executeSelection();
+          return;
         } else if (evt.key === 'Escape') {
           evt.preventDefault();
           if (pickerLevel === 2) {
             pickerLevel = 1;
             activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeIndex = storedCategoryIndex;
-            render();
+            renderMenu();
           } else {
             closeAllPickers();
           }
+          return;
         }
-        return;
       }
 
-      // --- CRITICAL DOWNSTREAM ROW SELECTION ENGINE FIXED OVERLAY SYNCS ---
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
@@ -519,21 +579,22 @@ return {
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
         
-        // Ensure row indicators follow focus cleanly
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
 
-    const render = () => {
-      const pickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+    const renderMenu = () => {
+      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
         activeIndex = idx;
         executeSelection();
       }, closeAllPickers);
 
       setTimeout(() => {
-        const targetItem = pickerEl.querySelectorAll('.projectgrid-picker-item')[activeIndex];
-        if (targetItem && window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetItem);
+        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
+        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
+          window.ProjectGridUpdateFocusOverlay(activeItem);
+        }
       }, 10);
     };
 
@@ -543,7 +604,7 @@ return {
         activeItems = activeItems[activeIndex].items;
         pickerLevel = 2;
         activeIndex = 0;
-        render();
+        renderMenu();
       } else if (pickerLevel === 2) {
         const selectedAction = activeItems[activeIndex].action;
         closeAllPickers();
@@ -708,18 +769,19 @@ return {
   
         const rect = trigger.getBoundingClientRect();
         activePanel.style.position = 'fixed';
-        
-        // FIX 1: ALTER BOUNDING BOX POSITION FROM RECT.BOTTOM TO RECT.TOP TO FORCE DROP-UP BEHAVIOR
-        // Using an implicit margin offset handles vertical clearance smoothly
         activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
         activePanel.style.left = `${rect.left + window.scrollX}px`;
-        activePanel.style.zIndex = '300000';
-        activePanel.style.height = 'auto';
+  
+        const labelHeader = document.createElement('div');
+        labelHeader.className = 'projectgrid-dropup-header-title';
+        labelHeader.textContent = `📋 Column: ${key.toUpperCase()}`;
+        activePanel.appendChild(labelHeader);
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
           
+          // FIX: ROUTE THE DROPDOWN LIST TARGET HIGHLIGHTS EXCLUSIVELY TO YOUR TOPMOST FOCUS OVERLAY PORTAL
           if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
             setTimeout(() => window.ProjectGridUpdateFocusOverlay(wrapper), 10);
           }
@@ -728,11 +790,8 @@ return {
           checkbox.type = 'checkbox';
           checkbox.tabIndex = -1; 
           
-          if (opt === '[ALL]') {
-            checkbox.checked = (activeFilters.size === defaults.length);
-          } else {
-            checkbox.checked = activeFilters.has(opt);
-          }
+          if (opt === '[ALL]') checkbox.checked = (activeFilters.size === defaults.length);
+          else checkbox.checked = activeFilters.has(opt);
   
           checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
@@ -757,18 +816,15 @@ return {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          boxes[0].checked = (activeFilters.size === defaults.length);
+          boxes.checked = (activeFilters.size === defaults.length);
           defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
-        // FIX 2: STRIP EXTRA ICON TRAILS NATIVELY TO RESOLVE FILTER RE-SYNC CACHE MISSES
         rowsArray.forEach(row => {
           if (!row.dropdownFilters) row.dropdownFilters = {};
-          
           const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
           const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
   
-          // Check if our active validation pool contains matching sanitized elements
           let isMatchFound = false;
           activeFilters.forEach(filterOpt => {
             const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
@@ -776,7 +832,6 @@ return {
               isMatchFound = true;
             }
           });
-  
           row.dropdownFilters[key] = isMatchFound;
         });
   
@@ -817,8 +872,9 @@ return {
         }
       });
   
+      // FIX: HEADER FILTER FIELD CONNECTS TO THE MIDDLE INPUT OVERLAY PORTAL
       trigger.addEventListener('focus', () => {
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(trigger);
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
       });
       trigger.addEventListener('blur', () => {
         setTimeout(() => {
@@ -827,6 +883,7 @@ return {
             closePanel();
           }
         }, 150);
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       });
   
       trigger.addEventListener('mousedown', (e) => {
@@ -996,6 +1053,7 @@ return {
         li.className = 'projectgrid-custom-dropdown-item';
         li.textContent = opt;
         
+        // Items focus traces topmost overlay portal loop
         if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
           setTimeout(() => window.ProjectGridUpdateFocusOverlay(li), 10);
         }
@@ -1022,18 +1080,21 @@ return {
       }
     };
 
+    // FIX: BUTTON INTERFACE TRIGGERS MIDDLE INPUTS OVERLAY AND ASSIGNS BASE MATRICES OVERLAY TO THE ACTIVE ROW
     btn.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(btn);
+      openDropdown();
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
     });
     
     btn.addEventListener('blur', () => {
       setTimeout(closeDropdown, 120);
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     });
     
-    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); if (activeDropdown) closeDropdown(); else openDropdown(); });
+    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); });
 
     btn.addEventListener('keydown', (evt) => {
       if (activeDropdown) {
@@ -1113,7 +1174,7 @@ return {
 
 return {
   generateHeaderCell() {
-    this.ensureFocusOverlaysExist();
+    this.ensureThreePortalsExist();
 
     const noteHeaderCell = document.createElement('th');
     noteHeaderCell.style.width = '25%';
@@ -1134,53 +1195,44 @@ return {
     filterContainer.appendChild(clearButton);
     noteHeaderCell.appendChild(filterContainer);
 
-    // Attach active search field focus event listeners to register overlay highlights instantly
     filterInput.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(filterInput);
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(filterInput);
     });
     filterInput.addEventListener('blur', () => {
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
     });
 
     return { cell: noteHeaderCell, input: filterInput, clearBtn: clearButton };
   },
 
-  // FIX: INITIALIZES DUAL SEPARATED NON-INTERACTIVE OVERLAY PORTALS APPENDED STRAIGHT TO DOM BODY
-  ensureFocusOverlaysExist() {
-    let focusOverlay = document.getElementById('projectgrid-global-focus-overlay');
-    if (!focusOverlay) {
-      focusOverlay = document.createElement('div');
-      focusOverlay.id = 'projectgrid-global-focus-overlay';
-      focusOverlay.className = 'projectgrid-focus-overlay-portal';
-      document.body.appendChild(focusOverlay);
-    }
+  ensureThreePortalsExist() {
+    const portals = [
+      { id: 'projectgrid-global-focus-overlay', class: 'projectgrid-focus-overlay-portal', winFunc: 'ProjectGridUpdateFocusOverlay' },
+      { id: 'projectgrid-global-input-overlay', class: 'projectgrid-input-overlay-portal', winFunc: 'ProjectGridUpdateInputOverlay' },
+      { id: 'projectgrid-global-row-overlay', class: 'projectgrid-row-overlay-portal', winFunc: 'ProjectGridUpdateRowOverlay' }
+    ];
 
-    let rowOverlay = document.getElementById('projectgrid-global-row-overlay');
-    if (!rowOverlay) {
-      rowOverlay = document.createElement('div');
-      rowOverlay.id = 'projectgrid-global-row-overlay';
-      rowOverlay.className = 'projectgrid-row-overlay-portal';
-      document.body.appendChild(rowOverlay);
-    }
+    portals.forEach(p => {
+      let el = document.getElementById(p.id);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = p.id;
+        el.className = p.class;
+        document.body.appendChild(el);
+      }
 
-    // Connect global window execution tracking macros
-    window.ProjectGridUpdateFocusOverlay = (targetElement) => {
-      if (!targetElement) { focusOverlay.style.display = 'none'; return; }
-      const rect = targetElement.getBoundingClientRect();
-      Object.assign(focusOverlay.style, {
-        display: 'block', top: `${rect.top + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: `${rect.width}px`, height: `${rect.height}px`
-      });
-    };
-
-    window.ProjectGridUpdateRowOverlay = (targetRow) => {
-      if (!targetRow) { rowOverlay.style.display = 'none'; return; }
-      const rect = targetRow.getBoundingClientRect();
-      Object.assign(rowOverlay.style, {
-        display: 'block', top: `${rect.top + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: `${rect.width}px`, height: `${rect.height}px`
-      });
-    };
+      window[p.winFunc] = (targetElement) => {
+        if (!targetElement) { el.style.display = 'none'; return; }
+        const rect = targetElement.getBoundingClientRect();
+        Object.assign(el.style, {
+          display: 'block',
+          top: `${rect.top + window.scrollY}px`,
+          left: `${rect.left + window.scrollX}px`,
+          width: `${rect.width}px`,
+          height: `${rect.height}px`
+        });
+      };
+    });
   },
 
   buildHeaderDropup(titleIcon, key, defaults, rowsArray) {

@@ -39,10 +39,10 @@ module.exports = {
         {
           name: '⚙️ System',
           items: [
-            // FIX: SYSTEM CONTROLLER MENU APPENDS MULTI-CHAIN COLUMN SORTING DISPATCH OPTIONS
-            { name: '🔀 Sort Chain: Status > Priority > Stars', action: () => this.executeMultiColumnSort(rowsArray, ['status', 'priority', 'stars']) },
-            { name: '🔀 Sort Chain: Stars > Value > Size', action: () => this.executeMultiColumnSort(rowsArray, ['stars', 'value', 'size']) },
-            { name: '🔀 Sort Chain: Lang > Target > Status', action: () => this.executeMultiColumnSort(rowsArray, ['lang', 'target', 'status']) },
+            // --- FIX: INTEGRATE ADVANCED 3-COLUMN SORT CHAIN PICKER ACTION MATRICES ---
+            { name: '📶 Sort: Status ➔ Stars ➔ Priority', action: () => this.executeThreeColumnSortChain(rowsArray, ['status', 'stars', 'priority']) },
+            { name: '📶 Sort: Priority ➔ Value ➔ Size', action: () => this.executeThreeColumnSortChain(rowsArray, ['priority', 'value', 'size']) },
+            { name: '📶 Sort: Lang ➔ Target ➔ Stars', action: () => this.executeThreeColumnSortChain(rowsArray, ['lang', 'target', 'stars']) },
             { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
             { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
           ]
@@ -50,30 +50,34 @@ module.exports = {
       ];
     },
   
-    // FIX: ADVANCED TRIPLE-TIER DATA MATRIX CHRONOLOGICAL MULTI-COLUMN SORT ENGINE
-    executeMultiColumnSort(rowsArray, sortKeysChain) {
-      const parentTableBody = rowsArray[0].element.parentElement;
-      
+    // FIX: STABLE THREE COLUMN TIER SORT CHAIN COMPUTATION ENGINE
+    executeThreeColumnSortChain(rowsArray, keysArray) {
+      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      if (!parentTableBody) return;
+  
       rowsArray.sort((rowA, rowB) => {
-        // Isolate chain layer variables explicitly
-        const k1 = sortKeysChain[0], k2 = sortKeysChain[1], k3 = sortKeysChain[2];
-        
-        const vA1 = String(rowA.yamlMetadataValues[k1] || '⬛'), vB1 = String(rowB.yamlMetadataValues[k1] || '⬛');
-        const vA2 = String(rowA.yamlMetadataValues[k2] || '⬛'), vB2 = String(rowB.yamlMetadataValues[k2] || '⬛');
-        const vA3 = String(rowA.yamlMetadataValues[k3] || '⬛'), vB3 = String(rowB.yamlMetadataValues[k3] || '⬛');
+        const valsA = rowA.yamlMetadataValues || {};
+        const valsB = rowB.yamlMetadataValues || {};
   
-        // Tier 1 Compare Evaluation
-        if (vA1 !== vB1) return vA1.localeCompare(vB1);
-        // Tier 2 Compare Evaluation
-        if (vA2 !== vB2) return vA2.localeCompare(vB2);
-        // Tier 3 Compare Evaluation
-        return vA3.localeCompare(vB3);
+        // Layer 1 Check: First target key sorting comparison rules
+        const valA1 = String(valsA[keysArray[0]] || '').replace(/[^\w]/g, '');
+        const valB1 = String(valsB[keysArray[0]] || '').replace(/[^\w]/g, '');
+        if (valA1 !== valB1) return valA1.localeCompare(valB1, undefined, { numeric: true });
+  
+        // Layer 2 Check: Tie breaker falls back to second target key
+        const valA2 = String(valsA[keysArray[1]] || '').replace(/[^\w]/g, '');
+        const valB2 = String(valsB[keysArray[1]] || '').replace(/[^\w]/g, '');
+        if (valA2 !== valB2) return valA2.localeCompare(valB2, undefined, { numeric: true });
+  
+        // Layer 3 Check: Final tie breaker falls back onto third target key sorting parameters
+        const valA3 = String(valsA[keysArray[2]] || '').replace(/[^\w]/g, '');
+        const valB3 = String(valsB[keysArray[2]] || '').replace(/[^\w]/g, '');
+        return valA3.localeCompare(valB3, undefined, { numeric: true });
       });
   
-      // Detach and re-append sorted row elements onto the master parent body layout track
-      rowsArray.forEach(rowObj => {
-        parentTableBody.appendChild(rowObj.element);
-      });
+      // Re-append DOM node structures inside parent container canvas to reflect changes
+      rowsArray.forEach(row => parentTableBody.appendChild(row.element));
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   
     openHeaderDropup(key) {
@@ -81,7 +85,7 @@ module.exports = {
       if (trigger) {
         const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
         trigger.dispatchEvent(mousedownEvent);
-        setTimeout(() => { trigger.focus(); }, 50);
+        setTimeout(() => trigger.focus(), 50);
       }
     },
   

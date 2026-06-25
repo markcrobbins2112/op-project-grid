@@ -40,6 +40,7 @@ module.exports = {
         li.className = 'projectgrid-custom-dropdown-item';
         li.textContent = opt;
         
+        // Items focus traces topmost overlay portal loop
         if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
           setTimeout(() => window.ProjectGridUpdateFocusOverlay(li), 10);
         }
@@ -66,18 +67,21 @@ module.exports = {
       }
     };
 
+    // FIX: BUTTON INTERFACE TRIGGERS MIDDLE INPUTS OVERLAY AND ASSIGNS BASE MATRICES OVERLAY TO THE ACTIVE ROW
     btn.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(btn);
+      openDropdown();
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
     });
     
     btn.addEventListener('blur', () => {
       setTimeout(closeDropdown, 120);
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     });
     
-    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); if (activeDropdown) closeDropdown(); else openDropdown(); });
+    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); });
 
     btn.addEventListener('keydown', (evt) => {
       if (activeDropdown) {

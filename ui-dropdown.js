@@ -31,18 +31,19 @@ module.exports = {
   
         const rect = trigger.getBoundingClientRect();
         activePanel.style.position = 'fixed';
-        
-        // FIX 1: ALTER BOUNDING BOX POSITION FROM RECT.BOTTOM TO RECT.TOP TO FORCE DROP-UP BEHAVIOR
-        // Using an implicit margin offset handles vertical clearance smoothly
         activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
         activePanel.style.left = `${rect.left + window.scrollX}px`;
-        activePanel.style.zIndex = '300000';
-        activePanel.style.height = 'auto';
+  
+        const labelHeader = document.createElement('div');
+        labelHeader.className = 'projectgrid-dropup-header-title';
+        labelHeader.textContent = `📋 Column: ${key.toUpperCase()}`;
+        activePanel.appendChild(labelHeader);
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
           
+          // FIX: ROUTE THE DROPDOWN LIST TARGET HIGHLIGHTS EXCLUSIVELY TO YOUR TOPMOST FOCUS OVERLAY PORTAL
           if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
             setTimeout(() => window.ProjectGridUpdateFocusOverlay(wrapper), 10);
           }
@@ -51,11 +52,8 @@ module.exports = {
           checkbox.type = 'checkbox';
           checkbox.tabIndex = -1; 
           
-          if (opt === '[ALL]') {
-            checkbox.checked = (activeFilters.size === defaults.length);
-          } else {
-            checkbox.checked = activeFilters.has(opt);
-          }
+          if (opt === '[ALL]') checkbox.checked = (activeFilters.size === defaults.length);
+          else checkbox.checked = activeFilters.has(opt);
   
           checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
@@ -80,18 +78,15 @@ module.exports = {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          boxes[0].checked = (activeFilters.size === defaults.length);
+          boxes.checked = (activeFilters.size === defaults.length);
           defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
-        // FIX 2: STRIP EXTRA ICON TRAILS NATIVELY TO RESOLVE FILTER RE-SYNC CACHE MISSES
         rowsArray.forEach(row => {
           if (!row.dropdownFilters) row.dropdownFilters = {};
-          
           const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
           const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
   
-          // Check if our active validation pool contains matching sanitized elements
           let isMatchFound = false;
           activeFilters.forEach(filterOpt => {
             const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
@@ -99,7 +94,6 @@ module.exports = {
               isMatchFound = true;
             }
           });
-  
           row.dropdownFilters[key] = isMatchFound;
         });
   
@@ -140,8 +134,9 @@ module.exports = {
         }
       });
   
+      // FIX: HEADER FILTER FIELD CONNECTS TO THE MIDDLE INPUT OVERLAY PORTAL
       trigger.addEventListener('focus', () => {
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(trigger);
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
       });
       trigger.addEventListener('blur', () => {
         setTimeout(() => {
@@ -150,6 +145,7 @@ module.exports = {
             closePanel();
           }
         }, 150);
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       });
   
       trigger.addEventListener('mousedown', (e) => {

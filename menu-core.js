@@ -7,14 +7,16 @@ const MenuDom = require('./menu-dom');
 
 module.exports = {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; 
+    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
+    let activePickerEl = null;
 
     const closeAllPickers = () => {
       pickerLevel = 0;
       MenuDom.destroyActivePickers(containerElement);
+      activePickerEl = null;
       filterInput.focus();
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
@@ -29,7 +31,7 @@ module.exports = {
           pickerLevel = 1;
           activeIndex = 0;
           activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-          render();
+          renderMenu();
         }
       }
     });
@@ -37,29 +39,41 @@ module.exports = {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
-      if (pickerLevel > 0) {
+      if (pickerLevel > 0 && activePickerEl) {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
+          
           activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
-          render();
+          
+          // FIX: INLINE FOCUS UPDATE SWAPS CLASSES AND REPOSITION REGIONS WITHOUT ERASING THE MENU DOM
+          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
+          items.forEach((item, idx) => {
+            if (idx === activeIndex) {
+              item.classList.add('projectgrid-picker-highlight');
+              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
+            } else {
+              item.classList.remove('projectgrid-picker-highlight');
+            }
+          });
+          return;
         } else if (evt.key === 'Enter') {
           evt.preventDefault();
           executeSelection();
+          return;
         } else if (evt.key === 'Escape') {
           evt.preventDefault();
           if (pickerLevel === 2) {
             pickerLevel = 1;
             activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeIndex = storedCategoryIndex;
-            render();
+            renderMenu();
           } else {
             closeAllPickers();
           }
+          return;
         }
-        return;
       }
 
-      // --- CRITICAL DOWNSTREAM ROW SELECTION ENGINE FIXED OVERLAY SYNCS ---
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
@@ -76,21 +90,22 @@ module.exports = {
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
         
-        // Ensure row indicators follow focus cleanly
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
 
-    const render = () => {
-      const pickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+    const renderMenu = () => {
+      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
         activeIndex = idx;
         executeSelection();
       }, closeAllPickers);
 
       setTimeout(() => {
-        const targetItem = pickerEl.querySelectorAll('.projectgrid-picker-item')[activeIndex];
-        if (targetItem && window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetItem);
+        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
+        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
+          window.ProjectGridUpdateFocusOverlay(activeItem);
+        }
       }, 10);
     };
 
@@ -100,7 +115,7 @@ module.exports = {
         activeItems = activeItems[activeIndex].items;
         pickerLevel = 2;
         activeIndex = 0;
-        render();
+        renderMenu();
       } else if (pickerLevel === 2) {
         const selectedAction = activeItems[activeIndex].action;
         closeAllPickers();

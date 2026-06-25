@@ -7,7 +7,7 @@ const UiRow = require('./ui-row');
 
 module.exports = {
   generateHeaderCell() {
-    this.ensureFocusOverlaysExist();
+    this.ensureThreePortalsExist();
 
     const noteHeaderCell = document.createElement('th');
     noteHeaderCell.style.width = '25%';
@@ -28,53 +28,44 @@ module.exports = {
     filterContainer.appendChild(clearButton);
     noteHeaderCell.appendChild(filterContainer);
 
-    // Attach active search field focus event listeners to register overlay highlights instantly
     filterInput.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(filterInput);
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(filterInput);
     });
     filterInput.addEventListener('blur', () => {
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
     });
 
     return { cell: noteHeaderCell, input: filterInput, clearBtn: clearButton };
   },
 
-  // FIX: INITIALIZES DUAL SEPARATED NON-INTERACTIVE OVERLAY PORTALS APPENDED STRAIGHT TO DOM BODY
-  ensureFocusOverlaysExist() {
-    let focusOverlay = document.getElementById('projectgrid-global-focus-overlay');
-    if (!focusOverlay) {
-      focusOverlay = document.createElement('div');
-      focusOverlay.id = 'projectgrid-global-focus-overlay';
-      focusOverlay.className = 'projectgrid-focus-overlay-portal';
-      document.body.appendChild(focusOverlay);
-    }
+  ensureThreePortalsExist() {
+    const portals = [
+      { id: 'projectgrid-global-focus-overlay', class: 'projectgrid-focus-overlay-portal', winFunc: 'ProjectGridUpdateFocusOverlay' },
+      { id: 'projectgrid-global-input-overlay', class: 'projectgrid-input-overlay-portal', winFunc: 'ProjectGridUpdateInputOverlay' },
+      { id: 'projectgrid-global-row-overlay', class: 'projectgrid-row-overlay-portal', winFunc: 'ProjectGridUpdateRowOverlay' }
+    ];
 
-    let rowOverlay = document.getElementById('projectgrid-global-row-overlay');
-    if (!rowOverlay) {
-      rowOverlay = document.createElement('div');
-      rowOverlay.id = 'projectgrid-global-row-overlay';
-      rowOverlay.className = 'projectgrid-row-overlay-portal';
-      document.body.appendChild(rowOverlay);
-    }
+    portals.forEach(p => {
+      let el = document.getElementById(p.id);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = p.id;
+        el.className = p.class;
+        document.body.appendChild(el);
+      }
 
-    // Connect global window execution tracking macros
-    window.ProjectGridUpdateFocusOverlay = (targetElement) => {
-      if (!targetElement) { focusOverlay.style.display = 'none'; return; }
-      const rect = targetElement.getBoundingClientRect();
-      Object.assign(focusOverlay.style, {
-        display: 'block', top: `${rect.top + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: `${rect.width}px`, height: `${rect.height}px`
-      });
-    };
-
-    window.ProjectGridUpdateRowOverlay = (targetRow) => {
-      if (!targetRow) { rowOverlay.style.display = 'none'; return; }
-      const rect = targetRow.getBoundingClientRect();
-      Object.assign(rowOverlay.style, {
-        display: 'block', top: `${rect.top + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: `${rect.width}px`, height: `${rect.height}px`
-      });
-    };
+      window[p.winFunc] = (targetElement) => {
+        if (!targetElement) { el.style.display = 'none'; return; }
+        const rect = targetElement.getBoundingClientRect();
+        Object.assign(el.style, {
+          display: 'block',
+          top: `${rect.top + window.scrollY}px`,
+          left: `${rect.left + window.scrollX}px`,
+          width: `${rect.width}px`,
+          height: `${rect.height}px`
+        });
+      };
+    });
   },
 
   buildHeaderDropup(titleIcon, key, defaults, rowsArray) {

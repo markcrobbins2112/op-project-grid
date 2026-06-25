@@ -48,6 +48,7 @@ module.exports = {
         }
         .projectgrid-header-dropup-trigger:hover { background-color: transparent !important; }
   
+        /* MENU PANELS FLOAT HIGH ABOVE ALL ROW INDICATORS NATIVELY */
         .projectgrid-dropup-panel {
           display: flex !important;
           flex-direction: column !important; 
@@ -60,7 +61,22 @@ module.exports = {
           max-height: 260px !important;
           overflow-y: auto !important;
           box-sizing: border-box !important;
+          z-index: 600000 !important; 
         }
+        
+        /* UN-FOCUSABLE UN-CLICKABLE LABELS FOR DESCRIPTION ENHANCEMENTS */
+        .projectgrid-dropup-header-title {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          color: var(--text-accent, #70a1ff) !important;
+          padding: 4px 6px !important;
+          border-bottom: 1px dashed var(--background-modifier-border, #3d3d3d) !important;
+          margin-bottom: 4px !important;
+          user-select: none !important;
+          pointer-events: none !important;
+        }
+  
         .projectgrid-dropup-option {
           display: flex !important;
           align-items: center !important;
@@ -73,6 +89,7 @@ module.exports = {
           box-sizing: border-box !important;
           width: 100% !important;
           border: 2px solid transparent !important;
+          background-color: transparent !important;
         }
         .projectgrid-dropup-option:hover { background-color: transparent !important; }
         .projectgrid-dropup-option input[type="checkbox"] { margin: 0 !important; cursor: pointer !important; }
@@ -105,9 +122,9 @@ module.exports = {
           margin: 4px 0 0 0 !important;
           padding: 4px 0 !important;
           list-style: none !important;
-          z-index: 10010 !important;
           box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
           box-sizing: border-box !important;
+          z-index: 600000 !important; 
         }
         .projectgrid-custom-dropdown-item {
           padding: 4px 4px !important;
@@ -117,6 +134,7 @@ module.exports = {
           font-size: 11px !important;
           box-sizing: border-box !important;
           width: 100% !important;
+          border: 2px solid transparent !important;
           background-color: transparent !important;
         }
   
@@ -126,10 +144,10 @@ module.exports = {
           border: 1px solid #3d3d3d !important; 
           border-radius: 6px !important;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-          z-index: 500000 !important; 
           padding: 6px !important;
           min-width: 220px !important;
           box-sizing: border-box !important;
+          z-index: 650000 !important; 
         }
         .projectgrid-picker-item {
           padding: 6px 10px !important;
@@ -138,6 +156,8 @@ module.exports = {
           color: var(--text-normal, #ffffff) !important;
           font-size: 12px !important;
           box-sizing: border-box !important;
+          border: 2px solid transparent !important; 
+          background-color: transparent !important; 
         }
       `;
     }
