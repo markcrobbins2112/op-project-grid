@@ -2454,19 +2454,66 @@ const fs = require('fs');
 const path = require('path');
 
 
+const TasksGitExtractor = (function() {
+// ==========================================
+// START OF FILE: tasks-git-extractor.js
+// ==========================================
+
+const fs = require('fs');
+const path = require('path');
+
+return {
+  extractRemoteUrl(absoluteFolderPath) {
+    try {
+      const configPath = path.join(absoluteFolderPath, '.git', 'config');
+      if (!fs.existsSync(configPath)) return '';
+
+      const content = fs.readFileSync(configPath, 'utf8');
+      const lines = content.split('\n');
+      
+      let insideRemoteOriginBlock = false;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        if (line.startsWith('[remote "origin"]')) {
+          insideRemoteOriginBlock = true;
+          continue;
+        }
+        
+        if (insideRemoteOriginBlock && line.startsWith('[')) {
+          break; // Entered a new section, break out
+        }
+        
+        if (insideRemoteOriginBlock && line.startsWith('url =')) {
+          return line.split('url =')[1].trim();
+        }
+      }
+    } catch (err) {
+      console.error('[ProjectGrid Git Extractor] Fail:', err.message);
+    }
+    return '';
+  }
+};
+
+globalThis.TasksGitExtractor = module.exports;
+
+// ==========================================
+// END OF FILE: tasks-git-extractor.js
+// ==========================================
+})();
+globalThis.TasksGitExtractor = TasksGitExtractor;
+
 return {
   scanVaultProjectsFolders(app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, filterInputElement) {
     const universalTagsSet = new Set();
-    // TRACKER STORAGE: Collects every unique markdown checkbox text description string found across the vault target files
     const actualVaultTasksSet = new Set();
     
     const targetFolders = app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
-    // Pass 1: Scan files to pre-aggregate all unique checkbox items to dynamically populate dropdown option pools
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       try {
-        const absolutePathOnDisk = path.join(absoluteVaultRoot, expectedNotePath);
+        const absolutePathOnDisk = path.join(absoluteVaultRoot, folder.path);
         if (fs.existsSync(absolutePathOnDisk)) {
           const fileContentBuffer = fs.readFileSync(absolutePathOnDisk, 'utf8');
           const linesArray = fileContentBuffer.split('\n');
@@ -2481,9 +2528,7 @@ return {
               const checkboxMatchSignature = currentLineText.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
               if (checkboxMatchSignature) {
                 const taskTextString = checkboxMatchSignature[2].trim();
-                if (taskTextString) {
-                  actualVaultTasksSet.add(taskTextString);
-                }
+                if (taskTextString) actualVaultTasksSet.add(taskTextString);
               }
             }
           }
@@ -2491,10 +2536,8 @@ return {
       } catch (e) {}
     });
 
-    // Globally cache the actual discovered text data strings array so other loops can match config targets
     window.ProjectGridDiscoveredActualTasksList = Array.from(actualVaultTasksSet).sort();
 
-    // Pass 2: Map row cells and compile frontmatter indicators matching note properties
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -2506,7 +2549,6 @@ return {
           rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
         }
 
-        // TASK SCRAPER BLOCK START
         let checkedTasksList = [];
         try {
           const absolutePathOnDisk = path.join(absoluteVaultRoot, expectedNotePath);
@@ -2525,25 +2567,36 @@ return {
                 if (checkboxMatchSignature) {
                   const isChecked = checkboxMatchSignature[1].toLowerCase() === 'x';
                   const taskTextString = checkboxMatchSignature[2].trim();
-                  
-                  if (isChecked && taskTextString) {
-                    checkedTasksList.push(taskTextString);
-                  }
+                  if (isChecked && taskTextString) checkedTasksList.push(taskTextString);
                 }
               }
             }
           }
-        } catch (fileErr) {
-          console.error(`[ProjectGrid Scraper] Failed to load markdown checkboxes for ${folder.name}:`, fileErr.message);
-        }
+        } catch (fileErr) {}
 
-        // Expose a text string of completed checkboxes to feed row validation states smoothly
         frontmatter['tasks'] = checkedTasksList.length > 0 ? checkedTasksList.join(', ') : '⬛';
-        // TASK SCRAPER BLOCK END
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowRef, filterInputElement);
         
+        // =========================================================================
+        // GIT REMOTE URL EXTRACTION HOOK
+        // =========================================================================
+        const gitCell = rowRef.element.querySelector('.projectgrid-readonly-scanner-td');
+        if (gitCell && gitCell.textContent === '✅') {
+          const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
+          const globalGitExtractorInstance = globalThis.TasksGitExtractor || TasksGitExtractor;
+          const remoteUrl = globalGitExtractorInstance.extractRemoteUrl(absoluteFolderDiskPath);
+          
+          if (remoteUrl) {
+            // Apply the URL onto the row data cache object and inject a clean HTML tooltip title hover
+            rowRef.gitRemoteUrl = remoteUrl;
+            gitCell.title = `Remote Origin: ${remoteUrl}`;
+            gitCell.style.cursor = 'help';
+          }
+        }
+        // =========================================================================
+
         tableBody.appendChild(rowRef.element);
         rowsArray.push(rowRef);
       }
@@ -2753,7 +2806,6 @@ return {
         });
       });
 
-      // FIX: Static, bulletproof backup map eliminates runtime object lookup race conditions entirely
       const headerIconsMap = {
         tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
         value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
@@ -2773,15 +2825,38 @@ return {
         else if (chainIdx === 1) baseIcon = '🟡' + baseIcon;
         else if (chainIdx === 2) baseIcon = '🔴' + baseIcon;
 
+        // Default list evaluation mapping
         let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
-        if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
+        // FIXED UNIFIED COUNTERS: Calculate precise checked / total ratios dynamically across scanner check fields
+        if (key === 'tasks' || key === 'created' || key === 'updated') {
           nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }
+        else if (key === 'git' || key === 'agents') {
+          // Checked metric = rows matching '✅' marker symbol status that are actively visible on screen
+          nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[key] === '✅').length;
+          nonNullTot = rowsArray.filter(r => r.yamlMetadataValues?.[key] === '✅').length;
+        }
 
         trigger.textContent = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
+      });
+
+      // Update Git & Agents headers that are plain text cells (not dropup triggers)
+      document.querySelectorAll('.projectgrid-matrix-table th').forEach(th => {
+        const contentStr = th.textContent.trim();
+        // Target headers based on literal emoji markers signatures
+        if (contentStr.startsWith('💿') || contentStr.startsWith('🤖')) {
+          const isGitColumn = contentStr.startsWith('💿');
+          const colKey = isGitColumn ? 'git' : 'agents';
+          const iconToken = isGitColumn ? '💿' : '🤖';
+
+          const checkedVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[colKey] === '✅').length;
+          const checkedTotal = rowsArray.filter(r => r.yamlMetadataValues?.[colKey] === '✅').length;
+          
+          th.textContent = `${iconToken} ${checkedVis}/${checkedTotal}`;
+        }
       });
 
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
@@ -2797,7 +2872,6 @@ return {
 
     filterInput.addEventListener('input', applyFilter);
 
-    // RESTORED: Localized keyboard events binding track fires perfectly now that initialization is safe
     MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {

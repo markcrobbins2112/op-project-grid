@@ -42,7 +42,6 @@ module.exports = {
         });
       });
 
-      // FIX: Static, bulletproof backup map eliminates runtime object lookup race conditions entirely
       const headerIconsMap = {
         tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
         value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
@@ -62,15 +61,38 @@ module.exports = {
         else if (chainIdx === 1) baseIcon = '🟡' + baseIcon;
         else if (chainIdx === 2) baseIcon = '🔴' + baseIcon;
 
+        // Default list evaluation mapping
         let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
-        if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
+        // FIXED UNIFIED COUNTERS: Calculate precise checked / total ratios dynamically across scanner check fields
+        if (key === 'tasks' || key === 'created' || key === 'updated') {
           nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }
+        else if (key === 'git' || key === 'agents') {
+          // Checked metric = rows matching '✅' marker symbol status that are actively visible on screen
+          nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[key] === '✅').length;
+          nonNullTot = rowsArray.filter(r => r.yamlMetadataValues?.[key] === '✅').length;
+        }
 
         trigger.textContent = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
+      });
+
+      // Update Git & Agents headers that are plain text cells (not dropup triggers)
+      document.querySelectorAll('.projectgrid-matrix-table th').forEach(th => {
+        const contentStr = th.textContent.trim();
+        // Target headers based on literal emoji markers signatures
+        if (contentStr.startsWith('💿') || contentStr.startsWith('🤖')) {
+          const isGitColumn = contentStr.startsWith('💿');
+          const colKey = isGitColumn ? 'git' : 'agents';
+          const iconToken = isGitColumn ? '💿' : '🤖';
+
+          const checkedVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[colKey] === '✅').length;
+          const checkedTotal = rowsArray.filter(r => r.yamlMetadataValues?.[colKey] === '✅').length;
+          
+          th.textContent = `${iconToken} ${checkedVis}/${checkedTotal}`;
+        }
       });
 
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
@@ -86,7 +108,6 @@ module.exports = {
 
     filterInput.addEventListener('input', applyFilter);
 
-    // RESTORED: Localized keyboard events binding track fires perfectly now that initialization is safe
     MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
