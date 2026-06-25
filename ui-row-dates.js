@@ -15,32 +15,34 @@ module.exports = {
     return `${yyyy}.${mm}.${dd} ${hh}`;
   },
 
-  appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference) {
+  // FIX: Added single cell execution handle to support dynamic configuration loop injection passes
+  appendSingleTimestampCell(tableRow, folder, absoluteVaultRoot, columnKey, rowTrackingReference) {
     const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
-    let createdDateStr = '0000.00.00 00';
-    let updatedDateStr = '0000.00.00 00';
+    let targetedDateStr = '0000.00.00 00';
 
     try {
       if (fs.existsSync(absoluteFolderDiskPath)) {
         const directoryStats = fs.statSync(absoluteFolderDiskPath);
-        createdDateStr = this.formatDateString(directoryStats.birthtime);
-        updatedDateStr = this.formatDateString(directoryStats.mtime);
+        
+        // Dynamically select the exact filesystem handle based on configuration requirements
+        if (columnKey === 'created') {
+          targetedDateStr = this.formatDateString(directoryStats.birthtime);
+        } else if (columnKey === 'updated') {
+          targetedDateStr = this.formatDateString(directoryStats.mtime);
+        }
       }
     } catch (err) {
-      console.error(`[ProjectGrid] Timestamp fetch error:`, err.message);
+      console.error(`[ProjectGrid] Dynamic timestamp tracking error:`, err.message);
     }
 
-    rowTrackingReference.folderDatesValues = { created: createdDateStr, updated: updatedDateStr };
+    // Cache metrics locally inside the state checker tracking registry register object records
+    rowTrackingReference.folderDatesValues = rowTrackingReference.folderDatesValues || {};
+    rowTrackingReference.folderDatesValues[columnKey] = targetedDateStr;
 
-    const createdCell = document.createElement('td');
-    createdCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    createdCell.textContent = createdDateStr;
-    tableRow.appendChild(createdCell);
-
-    const updatedCell = document.createElement('td');
-    updatedCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    updatedCell.textContent = updatedDateStr;
-    tableRow.appendChild(updatedCell);
+    const cell = document.createElement('td');
+    cell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
+    cell.textContent = targetedDateStr;
+    tableRow.appendChild(cell);
   }
 };
 

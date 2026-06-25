@@ -2,43 +2,43 @@
 // START OF FILE: ui-row-actions.js
 // ==========================================
 
-// FIX: Pull in Node's native File System module to perform direct physical disk lookups
 const fs = require('fs');
 const path = require('path');
 
 module.exports = {
-  appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app) {
-    const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
+  // FIX: Added singular execution handle to cleanly align launcher button injection with your dynamic configuration matrix loop
+  appendSingleLauncherButtonCell(tableRow, folder, absoluteVaultRoot, columnConfig, app) {
+    const absoluteLocalPath = path.join(absoluteVaultRoot, folder.path).replace(/[/\\]+/g, '\\');
     
-    // --- FIX: USE RAW UNMASKED DISK QUERIES TO IDENTIFY MOUNTED DIRECTORY JUNCTIONS ---
     const dotObsidianPhysicalPath = path.join(absoluteVaultRoot, folder.path, '.obsidian');
     const hasObsidianVault = fs.existsSync(dotObsidianPhysicalPath);
-    // ----------------------------------------------------------------------------------
 
-    const actions = [
-      { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus', isMissing: false },
-      { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor', isMissing: false },
-      { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault', isMissing: !hasObsidianVault }
-    ];
+    // Determine path missing states depending on the current iteration target protocol
+    let isVaultLinkMissing = false;
+    if (columnConfig.protocol === 'obsidian') {
+      isVaultLinkMissing = !hasObsidianVault;
+    }
 
-    actions.forEach(act => {
-      const cell = document.createElement('td');
-      cell.className = 'projectgrid-matrix-cell action-icon-cell';
-      
-      const fileAnchor = document.createElement('a');
-      fileAnchor.href = `aip://${act.protocol}/${absoluteLocalPath}`;
-      fileAnchor.className = 'projectgrid-aip-icon-btn';
-      fileAnchor.textContent = act.icon;
-      fileAnchor.title = act.title;
+    const cell = document.createElement('td');
+    cell.className = 'projectgrid-matrix-cell action-icon-cell';
+    
+    const fileAnchor = document.createElement('a');
+    fileAnchor.href = `aip://${columnConfig.protocol}/${absoluteLocalPath}`;
+    fileAnchor.className = 'projectgrid-aip-icon-btn';
+    fileAnchor.textContent = columnConfig.icon;
+    fileAnchor.title = `Open workspace path branch in ${columnConfig.label}`;
 
-      // Apply ghost transparency overlay strictly if the path is genuinely missing from your drive
-      if (act.isMissing) {
-        fileAnchor.classList.add('is-vault-missing');
-      }
+    if (isVaultLinkMissing) {
+      fileAnchor.classList.add('is-vault-missing');
+    }
 
-      cell.appendChild(fileAnchor);
-      tableRow.appendChild(cell);
-    });
+    // Write parameters to tracker structures safely
+    tableRow.rowTrackingReference = tableRow.rowTrackingReference || {};
+    tableRow.rowTrackingReference.launcherValues = tableRow.rowTrackingReference.launcherValues || {};
+    tableRow.rowTrackingReference.launcherValues[columnConfig.key] = columnConfig.icon;
+
+    cell.appendChild(fileAnchor);
+    tableRow.appendChild(cell);
   }
 };
 

@@ -6,6 +6,11 @@ const { Plugin } = require('obsidian');
 const StylesManager = require('./styles');
 const FilterManager = require('./filter');
 const UiBuilder = require('./ui');
+const MainToolbar = require('./main-toolbar');
+const MainScanner = require('./main-scanner');
+const GridConfig = require('./grid-config');
+const MenuState = require('./menu-state');
+const MenuDom = require('./menu-dom');
 
 module.exports = class ProjectGridPlugin extends Plugin {
   async onload() {
@@ -13,6 +18,93 @@ module.exports = class ProjectGridPlugin extends Plugin {
     StylesManager.injectStyles();
 
     window.ProjectGridTutorModeActive = false;
+    const pluginInstance = this;
+
+    this.app.workspace.on('layout-ready', () => {
+      if (!pluginInstance.scope) return;
+
+      // 1. UNIVERSAL PANEL ESCAPE OVERRIDE SHORTCUT
+      pluginInstance.scope.register([], 'Escape', (evt) => {
+        const widePanel = document.querySelector('.projectgrid-wide-tasks-portal');
+        if (widePanel) {
+          evt.preventDefault();
+          const activeTasksTrigger = document.querySelector('.projectgrid-tasks-trigger-btn:focus') || 
+                                     document.querySelector('.projectgrid-row-focused .projectgrid-tasks-trigger-btn') ||
+                                     document.querySelector('.projectgrid-tasks-trigger-btn');
+          widePanel.remove();
+          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          if (activeTasksTrigger) requestAnimationFrame(() => { activeTasksTrigger.focus(); });
+          return false;
+        }
+
+        const activeNode = document.activeElement;
+        if (activeNode && activeNode.closest('.projectgrid-matrix-table')) {
+          evt.preventDefault();
+          const container = activeNode.closest('.block-language-projectgrid') || document;
+          const filterInput = container.querySelector('.projectgrid-filter-input');
+          if (filterInput) { filterInput.focus(); filterInput.select(); }
+          return false;
+        }
+        return true; 
+      });
+
+      // 2. NEW BULLETPROOF SYSTEM COMMAND PICKER HOTKEY (Ctrl + Shift + Space)
+      // This official application scope hook guarantees execution priority over CodeMirror or Obsidian defaults
+      pluginInstance.scope.register(['Ctrl', 'Shift'], ' ', (evt) => {
+        evt.preventDefault();
+
+        // 📶 REAL-TIME TELEMETRY DIAGNOSTIC INDICATOR PASS
+        console.log(
+          '%c[ProjectGrid CAPTURE]%c Captured Ctrl+Shift+Space stroke. Active focus element:', 
+          'color: #00d2d3; font-weight: bold;', 
+          'color: default;', 
+          document.activeElement
+        );
+
+        // Dynamically discover the active block layout search query bar on screen
+        const filterInput = document.querySelector('.projectgrid-filter-input');
+        const containerElement = document.querySelector('.block-language-projectgrid') || document.body;
+
+        if (!filterInput) {
+          console.error('%c[ProjectGrid ERROR]%c Could not find .projectgrid-filter-input bar on screen!', 'color: #ee5253; font-weight: bold;');
+          return true;
+        }
+
+        // Force focus straight to the search field to maintain structural alignment tracks
+        filterInput.focus();
+        filterInput.select();
+
+        // Destroy any active pickers to refresh views cleanly
+        const existingPicker = document.querySelector('.projectgrid-command-picker');
+        if (existingPicker) {
+          existingPicker.remove();
+          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          return false;
+        }
+
+        const targetMenuStateInstance = globalThis.MenuState || MenuState;
+        
+        try {
+          // Look up active note lists rows registers
+          const rowsArray = window.ProjectGridActiveRowsTrackingArrayRegistryPool || [];
+          const activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, () => {
+            MenuDom.destroyActivePickers(containerElement);
+            filterInput.focus();
+          });
+
+          console.log('%c[ProjectGrid]%c Packaging dynamic picker layout data map items:', 'color: #10ac84; font-weight: bold;', 'color: default;', activeItems);
+
+          // Force programmatic invocation routing using MenuCore's internal dispatcher mechanics
+          if (window.ProjectGridTriggerMenuCorePickerSpawn) {
+            window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
+          }
+        } catch (err) {
+          console.error('%c[ProjectGrid EXCEPTION]%c Command Picker compilation crashed:', 'color: #ee5253; font-weight: bold;', 'color: default;', err.message);
+        }
+
+        return false; // Tells Obsidian to swallow this hotkey event completely
+      });
+    });
 
     this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
       this.renderProjectGridDashboard(sourceText, element);
@@ -29,99 +121,56 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const rootTarget = sourceText.trim() || "__";
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
 
-    const toolbar = document.createElement('div');
-    toolbar.className = 'projectgrid-toolbar';
-    
-    const toolbarBtn = document.createElement('button');
-    toolbarBtn.className = 'projectgrid-toolbar-btn';
-    toolbarBtn.innerHTML = '⚙️';
-    toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
-    toolbar.appendChild(toolbarBtn);
-
-    const tutorToggleBtn = document.createElement('button');
-    tutorToggleBtn.className = 'projectgrid-toolbar-btn projectgrid-tutor-toggle-btn';
-    tutorToggleBtn.innerHTML = '❔';
-    tutorToggleBtn.title = 'Toggle Tutor HUD Context Help Box Overlay (Ctrl+Alt+T)';
-    toolbar.appendChild(tutorToggleBtn);
-
-    const sortLabel = document.createElement('span');
-    sortLabel.id = 'projectgrid-sort-toolbar-label';
-    sortLabel.className = 'projectgrid-sort-indicator-label';
-    sortLabel.style.fontSize = '11px';
-    sortLabel.style.marginLeft = '8px';
-    sortLabel.style.color = 'var(--text-muted)';
-    sortLabel.textContent = '📶 Default Directory Sort Order';
-    toolbar.appendChild(sortLabel);
-    
-    containerElement.appendChild(toolbar);
-
     const headerSetup = UiBuilder.generateHeaderCell();
+    
+    // Wire up the top toolbar gear button to execute the exact same command trigger sequence
+    const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
+      const targetMenuStateInstance = globalThis.MenuState || MenuState;
+      const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
+        MenuDom.destroyActivePickers(containerElement);
+        headerSetup.input.focus();
+      });
+      if (window.ProjectGridTriggerMenuCorePickerSpawn) {
+        headerSetup.input.focus();
+        window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
+      }
+    });
 
     const tableElement = document.createElement('table');
     tableElement.className = 'projectgrid-matrix-table';
 
     const tableHeader = document.createElement('thead');
     const headerRow = document.createElement('tr');
-
     headerRow.appendChild(headerSetup.cell);
     
-    headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 7% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="tasks" title="Tasks Todo">🔧</div></th>
-      <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="created" title="Folder Created Date">🆕</div></th>
-      <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="updated" title="Folder Updated Date">🆙</div></th>
-      <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
-      <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
-      <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
-    `);
+    const activeConfig = globalThis.GridConfig || GridConfig;
 
-    const columnDropdowns = [
-      { icon: '🏷️', key: 'tags', options: ['⬛'] },
-      { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
-      { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
-      { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
-      { icon: '🎱', key: 'depth', options: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'] },
-      { icon: '🏅', key: 'priority', options: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'] },
-      { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
-      { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
-      { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] },
-      { icon: '💿', key: 'git', options: ['⬛', '✅', '❌'] },
-      { icon: '🤖', key: 'agents', options: ['⬛', '✅', '❌'] }
-    ];
+    if (activeConfig && activeConfig.columns) {
+      activeConfig.columns.forEach(col => {
+        if (col.key === 'title') return;
+        
+        if (col.type === 'timestamp' || col.type === 'launcher') {
+          headerRow.insertAdjacentHTML('beforeend', `
+            <th style="width: ${col.width} !important; text-align: center;" title="${col.label}">${col.icon}</th>
+          `);
+        } else {
+          const innerRowsArray = [];
+          const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.defaults || ['⬛'], innerRowsArray);
+          dropupTh.style.width = col.width;
+          headerRow.appendChild(dropupTh);
+        }
+      });
+    }
 
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
-    const universalTagsSet = new Set();
+    
+    // Globally register rows so our shortcut interceptor can pull data parameters on demand
+    window.ProjectGridActiveRowsTrackingArrayRegistryPool = rowsArray;
 
-    const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
-
-    targetFolders.forEach(folder => {
-      const expectedNotePath = `${folder.path}/+${folder.name}.md`;
-      if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
-        const fileCache = this.app.metadataCache.getCache(expectedNotePath);
-        const frontmatter = fileCache ? fileCache.frontmatter : null;
-
-        if (frontmatter && frontmatter.tags) {
-          const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
-          rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
-        }
-
-        const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
-        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
-        
-        tableBody.appendChild(rowRef.element);
-        rowsArray.push(rowRef);
-      }
-    });
-
-    const tagsConfig = columnDropdowns.find(c => c.key === 'tags');
-    if (tagsConfig) {
-      Array.from(universalTagsSet).sort().forEach(t => tagsConfig.options.push(t));
-    }
-
-    columnDropdowns.forEach(col => {
-      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
-      headerRow.appendChild(dropupTh);
-    });
+    const universalTagsSet = MainScanner.scanVaultProjectsFolders(
+      this.app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, headerSetup.input
+    );
 
     tableHeader.appendChild(headerRow);
     tableElement.appendChild(tableHeader);
@@ -129,40 +178,10 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    toolbarBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      headerSetup.input.focus();
-      const scrollLockEvt = new KeyboardEvent('keydown', { key: 'ScrollLock', bubbles: true });
-      window.dispatchEvent(scrollLockEvt);
-    });
-
-    const handleTutorToggle = () => {
-      window.ProjectGridTutorModeActive = !window.ProjectGridTutorModeActive;
-      if (window.ProjectGridTutorModeActive) {
-        tutorToggleBtn.classList.add('projectgrid-tutor-active');
-        tutorToggleBtn.style.backgroundColor = 'var(--text-accent, #70a1ff)';
-        tutorToggleBtn.style.color = '#000000';
-        if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
-          window.ProjectGridTriggerTutorHelpBoxRedraw(document.activeElement);
-        }
-      } else {
-        tutorToggleBtn.classList.remove('projectgrid-tutor-active');
-        tutorToggleBtn.style.backgroundColor = 'transparent';
-        tutorToggleBtn.style.color = 'var(--text-normal)';
-        const oldTip = document.getElementById('projectgrid-tutor-tooltip-portal');
-        if (oldTip) oldTip.style.display = 'none';
-      }
-    };
-
-    tutorToggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handleTutorToggle();
-    });
-
     const hotkeyListener = (evt) => {
       if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
         evt.preventDefault();
-        handleTutorToggle();
+        toolbarSetup.handleTutorToggle();
       }
     };
     window.removeEventListener('keydown', hotkeyListener);
@@ -170,8 +189,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
 
     if (rowsArray.length > 0) {
       containerElement.appendChild(tableElement);
-    } else {
-      containerElement.insertAdjacentHTML('beforeend', `<p class="projectgrid-empty-warning-message">ℹ️ *No folders matching \`${rootTarget}/Folder/+Folder.md\` were discovered.*</p>`);
     }
   }
 };

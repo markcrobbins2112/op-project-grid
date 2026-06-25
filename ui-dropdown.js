@@ -106,7 +106,12 @@ const uiDropdownModule = {
               handleToggle(fullOptionsList[selectionIdx], cb.checked);
             }
           } else if (e.key === 'Escape') {
-            e.preventDefault(); e.stopPropagation(); closePanel(); trigger.focus();
+            // FIX 1: Break CodeMirror's event tracking loops when escaping inside an open filter list panel
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            e.stopImmediatePropagation();
+            closePanel(); 
+            trigger.focus();
           }
         });
   
@@ -153,13 +158,35 @@ const uiDropdownModule = {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
+      // FIX 2: Use an active high-priority capturing listener parameter ("true") on the closed filter headers trigger
       trigger.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Escape') {
+          // Instantly block CodeMirror's canvas editor capture routine
+          evt.preventDefault();
+          evt.stopPropagation();
+          evt.stopImmediatePropagation();
+          
+          trigger.blur();
+
+          // Safely redirect focus right up into the main dashboard search field
+          const rootContainer = trigger.closest('.block-language-projectgrid') || document;
+          const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+          
+          if (targetInput) {
+            requestAnimationFrame(() => {
+              targetInput.focus();
+              targetInput.select();
+            });
+          }
+          return;
+        }
+
         if (!activePanel) {
           if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
             evt.preventDefault(); evt.stopPropagation(); openPanel();
           }
         }
-      });
+      }, true); // Capturing listener intercepts keystroke sequence first
   
       trigger.addEventListener('focus', () => {
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
@@ -180,7 +207,6 @@ const uiDropdownModule = {
     }
 };
 
-// FIX: Anchor directly to the global context window tracker to pass through custom IIFE script compiler constraints safely
 globalThis.UiDropdown = uiDropdownModule;
 module.exports = uiDropdownModule;
 

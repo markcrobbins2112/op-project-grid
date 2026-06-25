@@ -399,78 +399,176 @@ return {
 const FilterManager = (function() {
 const MenuCore = (function() {
 const MenuState = (function() {
-const MenuStateSort = (function() {
-return {
-    activeSortChain: [],
-  
-    executeDynamicSortChain(rowsArray) {
-      this.updateToolbarLabel();
-      window.ProjectGridActiveSortChainList = this.activeSortChain;
-  
-      const liveTableBody = document.querySelector('.projectgrid-matrix-table tbody');
-      if (!liveTableBody || !rowsArray || rowsArray.length === 0) {
-        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-        return;
+const GridConfig = (function() {
+const gridConfigModule = {
+    columns: [
+      {
+        key: 'title',
+        icon: '📝',
+        label: 'Project Note Title',
+        type: 'static',
+        width: '25%'
+      },
+      {
+        key: 'created',
+        icon: '🆕',
+        label: 'Created Date',
+        type: 'timestamp',
+        width: '6%'
+      },
+      {
+        key: 'updated',
+        icon: '🆙',
+        label: 'Updated Date',
+        type: 'timestamp',
+        width: '6%'
+      },
+      {
+        key: 'dopus',
+        icon: '📁',
+        label: 'Directory Opus',
+        type: 'launcher',
+        protocol: 'dopus',
+        width: '4%'
+      },
+      {
+        key: 'cursor',
+        icon: '💻',
+        label: 'Cursor Workspace',
+        type: 'launcher',
+        protocol: 'cursor',
+        width: '4%'
+      },
+      {
+        key: 'obsidian',
+        icon: '💜',
+        label: 'Obsidian Vault',
+        type: 'launcher',
+        protocol: 'obsidian',
+        width: '4%'
+      },
+      {
+        key: 'tasks',
+        icon: '🔧',
+        label: 'Tasks Todo',
+        type: 'yaml-select',
+        defaults: ['0/0', '0/1', '1/1', '0/2', '1/2', '2/2'],
+        isExtendable: true,
+        tutorKeys: '• Click: Focus tasks dropdown cell<br>• ArrowUp/Down: Shift vertical grid rows<br>• Escape: Focus main search input field',
+        width: '5%'
+      },
+      {
+        key: 'tags',
+        icon: '🏷️',
+        label: 'Tag Count',
+        type: 'tags-cell',
+        defaults: ['⬛'],
+        isExtendable: true,
+        tutorKeys: '• Type text: Filter or add custom tag values<br>• Enter: Toggle checkmark item state<br>• Escape: Close dropdown menu panel',
+        width: '6%'
+      },
+      {
+        key: 'stars',
+        icon: '⭐',
+        label: 'Stars Rating',
+        type: 'yaml-select',
+        defaults: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'],
+        isExtendable: false,
+        tutorKeys: '• Arrows Up/Down: Cycle value selection options<br>• Enter/Spacebar: Commit frontline choices<br>• Escape: Dismiss context container view panel',
+        width: '5%'
+      },
+      {
+        key: 'value',
+        icon: '💲',
+        label: 'Project Value',
+        type: 'yaml-select',
+        defaults: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'],
+        isExtendable: false,
+        tutorKeys: '• Arrows Up/Down: Change numeric parameter settings<br>• Tab/Shift+Tab: Horizontal navigation tracking',
+        width: '5%'
+      },
+      {
+        key: 'size',
+        icon: '🐘',
+        label: 'Folder Size',
+        type: 'yaml-select',
+        defaults: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'],
+        isExtendable: false,
+        tutorKeys: '• Highlight items using arrow hotkey channels<br>• Escape: Focus main search filter field',
+        width: '5%'
+      },
+      {
+        key: 'depth',
+        icon: '🎱',
+        label: 'Nesting Depth',
+        type: 'yaml-select',
+        defaults: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'],
+        isExtendable: false,
+        tutorKeys: '• Cycle cells frame focus parameters cleanly',
+        width: '5%'
+      },
+      {
+        key: 'priority',
+        icon: '🏅',
+        label: 'Priority Tier',
+        type: 'yaml-select',
+        defaults: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'],
+        isExtendable: false,
+        tutorKeys: '• Toggle priority weights instantly via keyboard items',
+        width: '5%'
+      },
+      {
+        key: 'status',
+        icon: '🚦',
+        label: 'Deployment Status',
+        type: 'yaml-select',
+        defaults: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'],
+        isExtendable: false,
+        tutorKeys: '• Modify status metadata tags dynamically',
+        width: '6%'
+      },
+      {
+        key: 'lang',
+        icon: '🔤',
+        label: 'Source Language',
+        type: 'yaml-select',
+        defaults: ['js', 'ts', 'au3', 'ahk'],
+        isExtendable: true,
+        tutorKeys: '• Type text: Append extensible text elements<br>• Escape: Shift cursor straight to main filter bar',
+        width: '5%'
+      },
+      {
+        key: 'target',
+        icon: '🎯',
+        label: 'Build Target',
+        type: 'yaml-select',
+        defaults: ['ce', 'op', 'app', 'link'],
+        isExtendable: true,
+        tutorKeys: '• Add custom compilation environment strings directly',
+        width: '5%'
+      },
+      {
+        key: 'git',
+        icon: '💿',
+        label: 'Git Repository',
+        type: 'scanner-check',
+        targetFile: '.git',
+        width: '4%'
+      },
+      {
+        key: 'agents',
+        icon: '🤖',
+        label: 'Agent Matrix File',
+        type: 'scanner-check',
+        targetFile: 'AGENTS.md',
+        width: '4%'
       }
-  
-      if (this.activeSortChain.length === 0) {
-        rowsArray.sort((a, b) => String(a.searchText || '').localeCompare(String(b.searchText || '')));
-      } else {
-        rowsArray.sort((rowA, rowB) => {
-          const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
-          const datesA = rowA.folderDatesValues || {}; const datesB = rowB.folderDatesValues || {};
-          const launchersA = rowA.launcherValues || {}; const launchersB = rowB.launcherValues || {};
-          
-          const mergedA = { ...valsA, ...datesA, ...launchersA }; 
-          const mergedB = { ...valsB, ...datesB, ...launchersB };
-  
-          for (let i = 0; i < this.activeSortChain.length; i++) {
-            const currentKey = this.activeSortChain[i];
-            let valA = ''; let valB = '';
-  
-            if (currentKey === 'created' || currentKey === 'updated') {
-              valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
-            } else if (currentKey === 'tasks') {
-              const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
-              const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
-              valA = String(taskStrA[0] || '0').padStart(5, '0');
-              valB = String(taskStrB[0] || '0').padStart(5, '0');
-            } else if (currentKey === 'tagcount') {
-              const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
-              const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
-              const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
-              valA = String(countA).padStart(5, '0'); valB = String(countB).padStart(5, '0');
-            } else {
-              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '');
-              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '');
-            }
-  
-            if (valA !== valB) {
-              return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
-            }
-          }
-          return 0;
-        });
-      }
-  
-      rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
-      window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
-      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-    },
-  
-    updateToolbarLabel() {
-      const indicator = document.getElementById('projectgrid-sort-toolbar-label'); if (!indicator) return;
-      if (this.activeSortChain.length === 0) {
-        indicator.textContent = '📶 Default Directory Sort Order'; indicator.style.color = 'var(--text-muted)';
-      } else {
-        const formattedChain = this.activeSortChain.map((k, idx) => {
-          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; 
-          return `${symbol}${k.toUpperCase()}`;
-        }).join(' ➔ ');
-        indicator.textContent = `📶 Sort Chain: ${formattedChain}`; indicator.style.color = 'var(--text-accent)';
-      }
-    }
+    ]
   };
+  
+  // FIX: Expose directly on the global scope to pass through custom IIFE bundler restrictions
+  globalThis.GridConfig = gridConfigModule;
+  return gridConfigModule;
 })();
 const MenuStateUtils = (function() {
 const UiDropdown = (function() {
@@ -578,7 +676,12 @@ const uiDropdownModule = {
               handleToggle(fullOptionsList[selectionIdx], cb.checked);
             }
           } else if (e.key === 'Escape') {
-            e.preventDefault(); e.stopPropagation(); closePanel(); trigger.focus();
+            // FIX 1: Break CodeMirror's event tracking loops when escaping inside an open filter list panel
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            e.stopImmediatePropagation();
+            closePanel(); 
+            trigger.focus();
           }
         });
   
@@ -625,13 +728,35 @@ const uiDropdownModule = {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
+      // FIX 2: Use an active high-priority capturing listener parameter ("true") on the closed filter headers trigger
       trigger.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Escape') {
+          // Instantly block CodeMirror's canvas editor capture routine
+          evt.preventDefault();
+          evt.stopPropagation();
+          evt.stopImmediatePropagation();
+          
+          trigger.blur();
+
+          // Safely redirect focus right up into the main dashboard search field
+          const rootContainer = trigger.closest('.block-language-projectgrid') || document;
+          const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+          
+          if (targetInput) {
+            requestAnimationFrame(() => {
+              targetInput.focus();
+              targetInput.select();
+            });
+          }
+          return;
+        }
+
         if (!activePanel) {
           if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
             evt.preventDefault(); evt.stopPropagation(); openPanel();
           }
         }
-      });
+      }, true); // Capturing listener intercepts keystroke sequence first
   
       trigger.addEventListener('focus', () => {
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
@@ -652,7 +777,6 @@ const uiDropdownModule = {
     }
 };
 
-// FIX: Anchor directly to the global context window tracker to pass through custom IIFE script compiler constraints safely
 globalThis.UiDropdown = uiDropdownModule;
 return uiDropdownModule;
 })();
@@ -713,95 +837,40 @@ return {
 };
 })();
 
-return {
-  get activeSortChain() { return MenuStateSort.activeSortChain; },
-  set activeSortChain(val) { MenuStateSort.activeSortChain = val; },
-
+const menuStateModule = {
   getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
     const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
-
-    const sortingFields = [
-      { key: 'tasks', label: 'Tasks Todo', icon: '🔧' },
-      { key: 'created', label: 'Created Date', icon: '🆕' },
-      { key: 'updated', label: 'Updated Date', icon: '🆙' },
-      { key: 'tagcount', label: 'Tag Count', icon: '🏷️' },
-      { key: 'stars', label: 'Stars', icon: '⭐' },
-      { key: 'value', label: 'Value', icon: '💲' },
-      { key: 'size', label: 'Size', icon: '🐘' },
-      { key: 'depth', label: 'Depth', icon: '🎱' },
-      { key: 'priority', label: 'Priority', icon: '🏅' },
-      { key: 'status', label: 'Status', icon: '🚦' },
-      { key: 'lang', label: 'Lang', icon: '🔤' },
-      { key: 'target', label: 'Target', icon: '🎯' }
-    ];
-
-    const sortMenuItems = [
-      { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
-    ];
-
-    sortingFields.forEach(field => {
-      const chainIndex = this.activeSortChain.indexOf(field.key);
-      let prefix = '⚫ ';
-      if (chainIndex === 0) prefix = '🟢 ';
-      else if (chainIndex === 1) prefix = '🟡 ';
-      else if (chainIndex === 2) prefix = '🔴 ';
-
-      sortMenuItems.push({
-        name: `${prefix}${field.icon} ${field.label}`,
-        action: () => this.handleSortChainClick(field.key, rowsArray)
-      });
-    });
+    
+    // SAFE FALLBACK PASS: Protect against un-instantiated global variables states during late module load frames
+    const config = globalThis.GridConfig || GridConfig || { columns: [] };
+    const columnsList = config.columns || [];
+    
+    const selectableColumns = columnsList.filter(c => c.type === 'yaml-select' || c.type === 'tags-cell');
 
     return [
       {
         name: '📁 Filters',
-        items: sortingFields.slice(4).map(f => ({ name: `${f.icon} ${f.label} Filter`, action: () => MenuStateUtils.openHeaderDropup(f.key) }))
+        items: selectableColumns.map(f => ({ name: `${f.icon} ${f.label} Filter`, action: () => MenuStateUtils.openHeaderDropup(f.key) }))
       },
       {
         name: '📊 Columns',
-        // FIX 2: Realigned hardcoded row index parameters to match your actual column ordering
-        items: [
-          { name: '🔧 Tasks Column', action: () => MenuStateUtils.focusRowCell(activeRow, 1) },
-          { name: '🏷️ Tags Column', action: () => MenuStateUtils.focusRowCell(activeRow, 7) }, // Was index 6
-          ...sortingFields.slice(4).map((f, i) => ({ 
-            name: `${f.icon} ${f.label} Column`, 
-            action: () => MenuStateUtils.focusRowCell(activeRow, 8 + i) // Was 7 + i
-          }))
-        ]
+        items: columnsList.map((col, idx) => ({
+          name: `${col.icon} ${col.label} Column`,
+          action: () => MenuStateUtils.focusRowCell(activeRow, idx)
+        }))
       },
       {
         name: '🚀 Launch',
-        items: [
-          { name: '📁 Directory Opus', action: () => MenuStateUtils.fireProtocol(activeRow, 'dopus') },
-          { name: '💻 Cursor Editor', action: () => MenuStateUtils.fireProtocol(activeRow, 'cursor') },
-          { name: '💜 Obsidian Vault', action: () => MenuStateUtils.fireProtocol(activeRow, 'obsidian') }
-        ]
-      },
-      { name: '📶 Sort', items: sortMenuItems },
-      {
-        name: '⚙️ System',
-        items: [
-          { name: '✕ Clear All Filters', action: () => MenuStateUtils.clearAllSystemFilters(filterInput) },
-          { name: '🔄 Reload Component', action: () => MenuStateUtils.reloadActiveAppWorkspace() }
-        ]
+        items: columnsList.filter(c => c.type === 'launcher').map(l => ({
+          name: `${l.icon} Open in ${l.label}`, action: () => MenuStateUtils.fireProtocol(activeRow, l.key)
+        }))
       }
     ];
-  },
-
-  handleSortChainClick(key, rowsArray) {
-    const existingIdx = this.activeSortChain.indexOf(key);
-    if (existingIdx > -1) this.activeSortChain.splice(existingIdx, 1);
-    else {
-      if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
-      else { this.activeSortChain.unshift(key); if (this.activeSortChain.length > 3) this.activeSortChain.pop(); }
-    }
-    MenuStateSort.executeDynamicSortChain(rowsArray);
-  },
-
-  clearSortPipeline(rowsArray) {
-    this.activeSortChain = []; MenuStateSort.executeDynamicSortChain(rowsArray);
   }
 };
+
+globalThis.MenuState = menuStateModule;
+return menuStateModule;
 })();
 const MenuDom = (function() {
 return {
@@ -873,16 +942,20 @@ return {
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
+    // RESTORED: Standard ScrollLock event capture sequence behaves exactly like your proven historical baseline
     window.addEventListener('keydown', (evt) => {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
+        
         if (document.activeElement !== filterInput) {
           filterInput.focus();
           filterInput.select();
         } else {
           pickerLevel = 1;
           activeIndex = 0;
-          activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+          
+          const targetMenuStateInstance = globalThis.MenuState || MenuState;
+          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
           renderMenu();
         }
       }
@@ -914,7 +987,8 @@ return {
           evt.preventDefault();
           if (pickerLevel === 2) {
             pickerLevel = 1;
-            activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeIndex = storedCategoryIndex;
             renderMenu();
           } else {
@@ -928,7 +1002,7 @@ return {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
         
-        let idx = rowsArray.findIndex(r => r.element.classList.contains('projectgrid-row-focused'));
+        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
         let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
 
         if (evt.key === 'ArrowDown') {
@@ -939,9 +1013,8 @@ return {
 
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
-        
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
-        targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
 
@@ -967,17 +1040,16 @@ return {
         activeIndex = 0;
         renderMenu();
       } else if (pickerLevel === 2) {
-        // FIX: IF SORT LEVEL 2 ROOT IS ACTIVE, RUN ACTION WITHOUT DESTROYING MENUS PREMATURELY
         const selectedAction = activeItems[activeIndex].action;
         if (selectedAction) {
           selectedAction();
           
-          // Re-scaffold schema bounds to instantly render modified 🟢/🟡/🔴 icons states
           const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
           if (currentCategoryText === '📶 Sort') {
-            const masterSchema = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); // Re-render updates immediately
+            renderMenu(); 
             return;
           }
         }
@@ -991,30 +1063,21 @@ return {
 return {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
-    let lastTrackedRowElement = null;
-
-    const clearRowHighlights = () => {
-      rowsArray.forEach(row => {
-        if (row.element && row.element.classList) {
-          row.element.classList.remove('projectgrid-row-focused');
-        }
-      });
-    };
 
     const applyFilter = () => {
       const val = filterInput.value.toLowerCase().trim();
       clearButton.style.visibility = val ? 'visible' : 'hidden';
-      clearRowHighlights();
       
-      const globalCounts = {};
-      const visibleCounts = {};
-
       rowsArray.forEach(row => {
         const passText = row.searchText.includes(val);
         const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
-        if (passText && passDropdowns) row.element.style.display = '';
-        else row.element.style.display = 'none';
+        if (row.element) {
+          row.element.style.display = (passText && passDropdowns) ? '' : 'none';
+        }
       });
+
+      const globalCounts = {};
+      const visibleCounts = {};
 
       rowsArray.forEach(row => {
         const metadata = row.yamlMetadataValues || {};
@@ -1022,7 +1085,7 @@ return {
         const dates = row.folderDatesValues || {};
         
         const allFields = { ...metadata, ...launchers, ...dates };
-        const isRowVisible = row.element.style.display !== 'none';
+        const isRowVisible = row.element && row.element.style.display !== 'none';
 
         Object.keys(allFields).forEach(key => {
           if (!globalCounts[key]) globalCounts[key] = { nonNullTotal: 0 };
@@ -1035,29 +1098,7 @@ return {
         });
       });
 
-      rowsArray.forEach(row => {
-        if (!row.element) return;
-        const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn:not(.projectgrid-tasks-trigger-btn):not(.projectgrid-tags-cell-btn)');
-        selects.forEach(btn => {
-          const fIdx = btn.getAttribute('data-field-index');
-          const fieldsConfigKeys = ['stars', 'value', 'size', 'depth', 'priority', 'status', 'lang', 'target'];
-          const key = fieldsConfigKeys[fIdx];
-          if (!key) return;
-
-          const currentVal = row.yamlMetadataValues ? String(row.yamlMetadataValues[key]) : '⬛';
-          let valueSpecificVisible = 0; let valueSpecificTotal = 0;
-
-          rowsArray.forEach(r => {
-            const rVal = r.yamlMetadataValues ? String(r.yamlMetadataValues[key]) : '⬛';
-            if (rVal === currentVal) {
-              valueSpecificTotal++;
-              if (r.element.style.display !== 'none') valueSpecificVisible++;
-            }
-          });
-          btn.textContent = `${currentVal} ${valueSpecificVisible}/${valueSpecificTotal}`;
-        });
-      });
-
+      // FIX: Static, bulletproof backup map eliminates runtime object lookup race conditions entirely
       const headerIconsMap = {
         tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
         value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
@@ -1081,7 +1122,7 @@ return {
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
         if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
-          nonNullVis = rowsArray.filter(r => r.element.style.display !== 'none').length;
+          nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }
 
@@ -1092,28 +1133,24 @@ return {
       if (visibleRows.length > 0) {
         if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
         const finalTargetRow = visibleRows[currentFocusedIndex].element;
-        finalTargetRow.classList.add('projectgrid-row-focused');
-        lastTrackedRowElement = finalTargetRow;
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
-      } else {
-        currentFocusedIndex = -1; lastTrackedRowElement = null;
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
+        if (finalTargetRow) {
+          finalTargetRow.classList.add('projectgrid-row-focused');
+          if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
+        }
       }
-
-      if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc();
     };
 
     filterInput.addEventListener('input', applyFilter);
 
+    // RESTORED: Localized keyboard events binding track fires perfectly now that initialization is safe
     MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-      clearRowHighlights();
-      if (visibleRows[index]) {
+      rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
+      if (visibleRows[index] && visibleRows[index].element) {
         visibleRows[index].element.classList.add('projectgrid-row-focused');
-        lastTrackedRowElement = visibleRows[index].element;
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
       }
     });
@@ -1131,6 +1168,7 @@ const UiBuilder = (function() {
 const UiRow = (function() {
 const fs = require('fs');
 const path = require('path');
+
 const UiColor = (function() {
 return {
     getColorForFirstCharacter(filename) {
@@ -1163,73 +1201,75 @@ return {
     return `${yyyy}.${mm}.${dd} ${hh}`;
   },
 
-  appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference) {
+  // FIX: Added single cell execution handle to support dynamic configuration loop injection passes
+  appendSingleTimestampCell(tableRow, folder, absoluteVaultRoot, columnKey, rowTrackingReference) {
     const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
-    let createdDateStr = '0000.00.00 00';
-    let updatedDateStr = '0000.00.00 00';
+    let targetedDateStr = '0000.00.00 00';
 
     try {
       if (fs.existsSync(absoluteFolderDiskPath)) {
         const directoryStats = fs.statSync(absoluteFolderDiskPath);
-        createdDateStr = this.formatDateString(directoryStats.birthtime);
-        updatedDateStr = this.formatDateString(directoryStats.mtime);
+        
+        // Dynamically select the exact filesystem handle based on configuration requirements
+        if (columnKey === 'created') {
+          targetedDateStr = this.formatDateString(directoryStats.birthtime);
+        } else if (columnKey === 'updated') {
+          targetedDateStr = this.formatDateString(directoryStats.mtime);
+        }
       }
     } catch (err) {
-      console.error(`[ProjectGrid] Timestamp fetch error:`, err.message);
+      console.error(`[ProjectGrid] Dynamic timestamp tracking error:`, err.message);
     }
 
-    rowTrackingReference.folderDatesValues = { created: createdDateStr, updated: updatedDateStr };
+    // Cache metrics locally inside the state checker tracking registry register object records
+    rowTrackingReference.folderDatesValues = rowTrackingReference.folderDatesValues || {};
+    rowTrackingReference.folderDatesValues[columnKey] = targetedDateStr;
 
-    const createdCell = document.createElement('td');
-    createdCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    createdCell.textContent = createdDateStr;
-    tableRow.appendChild(createdCell);
-
-    const updatedCell = document.createElement('td');
-    updatedCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    updatedCell.textContent = updatedDateStr;
-    tableRow.appendChild(updatedCell);
+    const cell = document.createElement('td');
+    cell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
+    cell.textContent = targetedDateStr;
+    tableRow.appendChild(cell);
   }
 };
 })();
 const UiRowActions = (function() {
-// FIX: Pull in Node's native File System module to perform direct physical disk lookups
 const fs = require('fs');
 const path = require('path');
 
 return {
-  appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app) {
-    const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
+  // FIX: Added singular execution handle to cleanly align launcher button injection with your dynamic configuration matrix loop
+  appendSingleLauncherButtonCell(tableRow, folder, absoluteVaultRoot, columnConfig, app) {
+    const absoluteLocalPath = path.join(absoluteVaultRoot, folder.path).replace(/[/\\]+/g, '\\');
     
-    // --- FIX: USE RAW UNMASKED DISK QUERIES TO IDENTIFY MOUNTED DIRECTORY JUNCTIONS ---
     const dotObsidianPhysicalPath = path.join(absoluteVaultRoot, folder.path, '.obsidian');
     const hasObsidianVault = fs.existsSync(dotObsidianPhysicalPath);
-    // ----------------------------------------------------------------------------------
 
-    const actions = [
-      { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus', isMissing: false },
-      { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor', isMissing: false },
-      { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault', isMissing: !hasObsidianVault }
-    ];
+    // Determine path missing states depending on the current iteration target protocol
+    let isVaultLinkMissing = false;
+    if (columnConfig.protocol === 'obsidian') {
+      isVaultLinkMissing = !hasObsidianVault;
+    }
 
-    actions.forEach(act => {
-      const cell = document.createElement('td');
-      cell.className = 'projectgrid-matrix-cell action-icon-cell';
-      
-      const fileAnchor = document.createElement('a');
-      fileAnchor.href = `aip://${act.protocol}/${absoluteLocalPath}`;
-      fileAnchor.className = 'projectgrid-aip-icon-btn';
-      fileAnchor.textContent = act.icon;
-      fileAnchor.title = act.title;
+    const cell = document.createElement('td');
+    cell.className = 'projectgrid-matrix-cell action-icon-cell';
+    
+    const fileAnchor = document.createElement('a');
+    fileAnchor.href = `aip://${columnConfig.protocol}/${absoluteLocalPath}`;
+    fileAnchor.className = 'projectgrid-aip-icon-btn';
+    fileAnchor.textContent = columnConfig.icon;
+    fileAnchor.title = `Open workspace path branch in ${columnConfig.label}`;
 
-      // Apply ghost transparency overlay strictly if the path is genuinely missing from your drive
-      if (act.isMissing) {
-        fileAnchor.classList.add('is-vault-missing');
-      }
+    if (isVaultLinkMissing) {
+      fileAnchor.classList.add('is-vault-missing');
+    }
 
-      cell.appendChild(fileAnchor);
-      tableRow.appendChild(cell);
-    });
+    // Write parameters to tracker structures safely
+    tableRow.rowTrackingReference = tableRow.rowTrackingReference || {};
+    tableRow.rowTrackingReference.launcherValues = tableRow.rowTrackingReference.launcherValues || {};
+    tableRow.rowTrackingReference.launcherValues[columnConfig.key] = columnConfig.icon;
+
+    cell.appendChild(fileAnchor);
+    tableRow.appendChild(cell);
   }
 };
 })();
@@ -1477,215 +1517,6 @@ return {
   }
 };
 })();
-const UiRowTasks = (function() {
-return {
-    buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference) {
-      const cell = document.createElement('td');
-      cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
-      
-      const btn = document.createElement('div');
-      btn.className = 'projectgrid-custom-select-btn projectgrid-tasks-trigger-btn';
-      btn.tabIndex = 0;
-      btn.textContent = '0/0';
-  
-      let activePanel = null;
-  
-      const updateCountersText = async () => {
-        const file = app.vault.getAbstractFileByPath(expectedNotePath);
-        if (!file) return;
-        const content = await app.vault.read(file);
-        const parsed = parseTasksSection(content);
-        
-        btn.textContent = `${parsed.uncheckedCount}/${parsed.totalCount}`;
-        rowTrackingReference.launcherValues = rowTrackingReference.launcherValues || {};
-        rowTrackingReference.launcherValues['tasks'] = `${parsed.uncheckedCount}/${parsed.totalCount}`;
-      };
-  
-      const parseTasksSection = (text) => {
-        const lines = text.split('\n');
-        let insideTasks = false;
-        const tasksList = [];
-        let unchecked = 0;
-  
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          if (line.trim().startsWith('## Incoming Tasks')) { insideTasks = true; continue; }
-          if (insideTasks && line.trim().startsWith('##')) { break; }
-          
-          if (insideTasks) {
-            const match = line.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
-            if (match) {
-              const isChecked = match[1].toLowerCase() === 'x';
-              if (!isChecked) unchecked++;
-              tasksList.push({ lineIndex: i, text: match[2].trim(), checked: isChecked, rawLine: line });
-            }
-          }
-        }
-        return { tasks: tasksList, uncheckedCount: unchecked, totalCount: tasksList.length, lines };
-      };
-  
-      const openWideTasksPanel = async () => {
-        if (activePanel) activePanel.remove();
-        activePanel = document.createElement('div');
-        activePanel.className = 'projectgrid-wide-tasks-portal';
-  
-        const rect = btn.getBoundingClientRect();
-        Object.assign(activePanel.style, {
-          position: 'fixed', top: `${rect.bottom + window.scrollY + 4}px`,
-          left: `${Math.max(10, rect.left - 200)}px`, width: '380px'
-        });
-  
-        const file = app.vault.getAbstractFileByPath(expectedNotePath);
-        if (!file) return;
-        const content = await app.vault.read(file);
-        const data = parseTasksSection(content);
-  
-        const title = document.createElement('div');
-        title.className = 'projectgrid-dropup-header-title';
-        title.textContent = `🔧 Incoming Tasks List (${data.uncheckedCount} Pending)`;
-        activePanel.appendChild(title);
-  
-        const itemsBox = document.createElement('div');
-        itemsBox.style.maxHeight = '220px';
-        itemsBox.style.overflowY = 'auto';
-  
-        data.tasks.forEach(task => {
-          const row = document.createElement('div');
-          row.className = 'projectgrid-dropup-option';
-          row.style.justifyContent = 'space-between';
-  
-          const left = document.createElement('label');
-          left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.gap = '6px';
-          
-          const cb = document.createElement('input');
-          cb.type = 'checkbox'; cb.checked = task.checked;
-          cb.tabIndex = -1;
-          cb.addEventListener('change', async () => {
-            await writeTaskStateChange(task.lineIndex, cb.checked ? '- [x] ' + task.text : '- [ ] ' + task.text);
-            openWideTasksPanel();
-          });
-  
-          left.appendChild(cb);
-          left.appendChild(document.createTextNode(task.text));
-          row.appendChild(left);
-  
-          const del = document.createElement('span');
-          del.innerHTML = '✕'; del.style.cursor = 'pointer'; del.style.color = 'var(--text-error, #ff4757)';
-          del.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await writeTaskStateChange(task.lineIndex, null);
-            openWideTasksPanel();
-          });
-          row.appendChild(del);
-          itemsBox.appendChild(row);
-        });
-        activePanel.appendChild(itemsBox);
-  
-        const inputWrap = document.createElement('div');
-        inputWrap.className = 'projectgrid-tags-input-container';
-        
-        const textIn = document.createElement('input');
-        textIn.type = 'text'; textIn.className = 'projectgrid-tags-custom-entry-field';
-        textIn.placeholder = '➕ Create New Checklist Item...';
-        
-        textIn.addEventListener('keydown', async (e) => {
-          if (e.key === 'Enter' && textIn.value.trim()) {
-            e.preventDefault();
-            await appendNewTaskLine('- [ ] ' + textIn.value.trim(), data.lines);
-            openWideTasksPanel();
-          }
-        });
-        inputWrap.appendChild(textIn);
-        activePanel.appendChild(inputWrap);
-  
-        // --- FIX: ABSOLUTE PORTAL ESCAPE INTERCEPTOR CLOSES PANEL AND FOCUSES BUTTON ---
-        activePanel.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault();
-            e.stopPropagation();
-            closeWideTasksPanel();
-          }
-        });
-        // ------------------------------------------------------------------------------
-  
-        document.body.appendChild(activePanel);
-        
-        // Update our topmost global overlay framework tracker immediately
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(activePanel);
-      };
-  
-      const closeWideTasksPanel = () => {
-        if (activePanel) {
-          activePanel.remove();
-          activePanel = null;
-        }
-        btn.focus(); // Returns active cursor selection cleanly back to the task grid column
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-      };
-  
-      const writeTaskStateChange = async (lineIdx, newlineValue) => {
-        const file = app.vault.getAbstractFileByPath(expectedNotePath);
-        if (!file) return;
-        const content = await app.vault.read(file);
-        const lines = content.split('\n');
-  
-        if (newlineValue === null) lines.splice(lineIdx, 1);
-        else lines[lineIdx] = newlineValue;
-  
-        await app.vault.modify(file, lines.join('\n'));
-        await updateCountersText();
-      };
-  
-      const appendNewTaskLine = async (rawLineText, existingLines) => {
-        const file = app.vault.getAbstractFileByPath(expectedNotePath);
-        if (!file) return;
-        
-        let headingIndex = existingLines.findIndex(l => l.trim().startsWith('## Incoming Tasks'));
-        if (headingIndex === -1) {
-          existingLines.push('\n## Incoming Tasks');
-          existingLines.push(rawLineText);
-        } else {
-          existingLines.splice(headingIndex + 1, 0, rawLineText);
-        }
-  
-        await app.vault.modify(file, existingLines.join('\n'));
-        await updateCountersText();
-      };
-  
-      btn.addEventListener('focus', () => {
-        openWideTasksPanel();
-        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-      });
-  
-      btn.addEventListener('blur', () => {
-        // Buffer delay prevents premature destruction when focusing interior inputs
-        setTimeout(() => {
-          if (activePanel && !activePanel.contains(document.activeElement) && document.activeElement !== btn) {
-            activePanel.remove();
-            activePanel = null;
-            if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-          }
-        }, 150);
-        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
-      });
-  
-      btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); });
-      
-      btn.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          closeWideTasksPanel();
-        }
-      });
-  
-      setTimeout(updateCountersText, 20);
-      cell.appendChild(btn);
-      tableRow.appendChild(cell);
-    }
-  };
-})();
 const UiRowSelect = (function() {
 return {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -1914,78 +1745,65 @@ return {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
-    const noteCell = document.createElement('td');
-    noteCell.className = 'projectgrid-matrix-cell note-title-cell';
-    const fileAnchor = document.createElement('a');
-    fileAnchor.className = 'internal-link projectgrid-matrix-link';
-    fileAnchor.setAttribute('data-href', expectedNotePath);
-    fileAnchor.textContent = `+${folder.name}.md`;
-    fileAnchor.style.color = UiColor.getColorForFirstCharacter(folder.name);
-    
-    fileAnchor.addEventListener('click', (evt) => {
-      evt.preventDefault();
-      app.workspace.openLinkText(expectedNotePath, '', false);
-    });
-    noteCell.appendChild(fileAnchor);
-    tableRow.appendChild(noteCell);
+    rowTrackingReference.yamlMetadataValues = {};
+    rowTrackingReference.launcherValues = {};
+    rowTrackingReference.folderDatesValues = {};
 
-    UiRowTasks.buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference);
-    UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
-    UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
-    UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
-
-    const fieldsConfig = [
-      { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
-      { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
-      { key: 'size', defaults: ['0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'], isExtendable: false },
-      { key: 'depth', defaults: ['0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'], isExtendable: false },
-      { key: 'priority', defaults: ['0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'], isExtendable: false },
-      { key: 'status', defaults: ['hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], isExtendable: false },
-      { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], isExtendable: true },
-      { key: 'target', defaults: ['ce', 'op', 'app', 'link'], isExtendable: true }
-    ];
-
-    fieldsConfig.forEach((cfg, fieldIdx) => {
+    // CONSOLIDATED INJECTION PARSING LOOP: Evaluates and appends exact horizontal coordinates fields matching core array order
+    GridConfig.columns.forEach((col, idx) => {
       const cell = document.createElement('td');
-      cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
-      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
-      tableRow.appendChild(cell);
+      cell.className = 'projectgrid-matrix-cell';
+
+      if (col.key === 'title') {
+        cell.className += ' note-title-cell';
+        const fileAnchor = document.createElement('a');
+        fileAnchor.className = 'internal-link projectgrid-matrix-link';
+        fileAnchor.setAttribute('data-href', expectedNotePath);
+        fileAnchor.textContent = `+${folder.name}.md`;
+        fileAnchor.style.color = UiColor.getColorForFirstCharacter(folder.name);
+        fileAnchor.addEventListener('click', (e) => { e.preventDefault(); app.workspace.openLinkText(expectedNotePath, '', false); });
+        cell.appendChild(fileAnchor);
+        tableRow.appendChild(cell);
+      } 
+      else if (col.type === 'timestamp') {
+        // Appends the specific timestamp row cell targets (created vs updated)
+        UiRowDates.appendSingleTimestampCell(tableRow, folder, absoluteVaultRoot, col.key, rowTrackingReference);
+      } 
+      else if (col.type === 'launcher') {
+        UiRowActions.appendSingleLauncherButtonCell(tableRow, folder, absoluteVaultRoot, col, app);
+      } 
+      else if (col.type === 'tags-cell') {
+        UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+      } 
+      else if (col.type === 'yaml-select') {
+        cell.className += ' select-cell projectgrid-uniform-yaml-td';
+        UiRowSelect.buildSelectButton(cell, tableRow, idx, col, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+        tableRow.appendChild(cell);
+      } 
+      else if (col.type === 'scanner-check') {
+        const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
+        const checkPath = path.join(absoluteFolderDiskPath, col.targetFile);
+        const hasFile = fs.existsSync(checkPath);
+        const marker = hasFile ? '✅' : '❌';
+        
+        rowTrackingReference.yamlMetadataValues[col.key] = marker;
+        cell.className += ' projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
+        cell.textContent = marker;
+        tableRow.appendChild(cell);
+      }
     });
-
-    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
-    rowTrackingReference.yamlMetadataValues = rowTrackingReference.yamlMetadataValues || {};
-    
-    // Check 1: .git directory detection
-    const gitPath = path.join(absoluteFolderDiskPath, '.git');
-    const hasGit = fs.existsSync(gitPath);
-    const gitStatusMarker = hasGit ? '✅' : '❌';
-    rowTrackingReference.yamlMetadataValues['git'] = gitStatusMarker;
-
-    const gitCell = document.createElement('td');
-    gitCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
-    gitCell.textContent = gitStatusMarker;
-    gitCell.title = hasGit ? '.git directory identified' : 'No local deployment branch found';
-    tableRow.appendChild(gitCell);
-
-    // Check 2: AGENTS.md configuration detection
-    const agentsPath = path.join(absoluteFolderDiskPath, 'AGENTS.md');
-    const hasAgents = fs.existsSync(agentsPath);
-    const agentsStatusMarker = hasAgents ? '✅' : '❌';
-    rowTrackingReference.yamlMetadataValues['agents'] = agentsStatusMarker;
-
-    const agentsCell = document.createElement('td');
-    agentsCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
-    agentsCell.textContent = agentsStatusMarker;
-    agentsCell.title = hasAgents ? 'AGENTS.md configuration discovered' : 'No structural bot routines mapped';
-    tableRow.appendChild(agentsCell);
 
     return tableRow;
   }
 };
 })();
 
+
 return {
-  activeInputTarget: null, activeRowTarget: null, activeFocusTarget: null, observerRef: null,
+  activeInputTarget: null, 
+  activeRowTarget: null, 
+  activeFocusTarget: null, 
+  observerRef: null,
 
   generateHeaderCell() {
     this.ensureThreePortalsExist();
@@ -2047,17 +1865,23 @@ return {
     }
 
     const tutorShortcutsMap = {
-      'search-input': { title: '⌨️ Search Field Focus', keys: '• Type: Filter project titles<br>• ScrollLock: Toggle Command Picker Menu<br>• ArrowDown: Navigate matrix grid notes' },
-      'filter-header': { title: '🎛️ Column Filter Header', keys: '• Enter / Space: Open multi-choice list<br>• Alt+Down: Toggle menu open<br>• Tab / Shift+Tab: Move horizontal focus' },
-      'filter-panel': { title: '📋 Active Filter List Menu', keys: '• ArrowUp / Down: Highlight choice row<br>• Enter / Space: Toggle visible selection<br>• Escape: Close dropdown menu panel' },
-      'cell-btn': { title: '📊 Frontmatter Cell Controller', keys: '• Enter / Space: Open options dropdown<br>• ArrowUp / Down: Move focus vertically to next row<br>• Tab / Shift+Tab: Jump cells horizontally' },
-      'tags-cell': { title: '🏷️ Extensible Tags Panel', keys: '• Type: Filter / Add a custom string value<br>• ArrowUp / Down: Move choice frame<br>• Enter: Toggle check / Add tag item' },
-      'tasks-cell': { title: '🔧 Tasks Checklist Manager', keys: '• Click checkbox: Toggle task state change<br>• Type: Create new item bullet<br>• Escape: Collapse menu, return focus' }
+      'search-input': { title: '⌨️ Search Field Focus', keys: '• Type: Filter project titles<br>• ScrollLock: Toggle Command Picker Menu<br>• ArrowDown: Navigate matrix grid notes' }
     };
+
+    // FIX: Fall back to global scope reference check to bridge hidden closure walls
+    const activeConfig = globalThis.GridConfig || GridConfig;
+
+    if (activeConfig && activeConfig.columns) {
+      activeConfig.columns.forEach(col => {
+        if (col.tutorKeys) {
+          tutorShortcutsMap[col.key] = { title: `${col.icon} ${col.label} View Box`, keys: col.tutorKeys };
+        }
+      });
+    }
 
     window.ProjectGridTriggerTutorHelpBoxRedraw = (targetElement, contextKey) => {
       if (!window.ProjectGridTutorModeActive || !targetElement || !contextKey || !tutorShortcutsMap[contextKey]) {
-        hud.style.display = 'none'; return;
+        if (hud) hud.style.display = 'none'; return;
       }
       const data = tutorShortcutsMap[contextKey];
       hud.innerHTML = `<div class="projectgrid-tutor-heading">${data.title}</div><div class="projectgrid-tutor-shortcut">${data.keys}</div>`;
@@ -2077,7 +1901,7 @@ return {
           Object.assign(el.style, { top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px` });
         }
       });
-      if (window.ProjectGridTutorModeActive && hud.style.display === 'block') {
+      if (window.ProjectGridTutorModeActive && hud && hud.style.display === 'block') {
         const activeNode = self.activeFocusTarget || self.activeInputTarget;
         if (activeNode) { const r = activeNode.getBoundingClientRect(); hud.style.left = `${r.left}px`; hud.style.top = `${r.bottom + window.scrollY + 6}px`; }
       }
@@ -2097,14 +1921,108 @@ return {
     if (tableParent) this.observerRef.observe(tableParent);
   },
 
-  // FIX: Access the globally attached tracker pointer variable to cleanly avoid IIFE isolation blocks restriction bounds
   buildHeaderDropup(titleIcon, key, defaults, rowsArray) { 
     const targetInstance = globalThis.UiDropdown || UiDropdown;
     return targetInstance.buildHeaderDropup(titleIcon, key, defaults, rowsArray); 
   },
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) { return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); }
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) { 
+    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); 
+  }
 };
 })();
+const MainToolbar = (function() {
+return {
+    createToolbarLayout(containerElement, onGearClick) {
+      const toolbar = document.createElement('div');
+      toolbar.className = 'projectgrid-toolbar';
+      
+      const toolbarBtn = document.createElement('button');
+      toolbarBtn.className = 'projectgrid-toolbar-btn';
+      toolbarBtn.innerHTML = '⚙️';
+      toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
+      toolbar.appendChild(toolbarBtn);
+  
+      const tutorToggleBtn = document.createElement('button');
+      tutorToggleBtn.className = 'projectgrid-toolbar-btn projectgrid-tutor-toggle-btn';
+      tutorToggleBtn.innerHTML = '❔';
+      tutorToggleBtn.title = 'Toggle Tutor HUD Context Help Box Overlay (Ctrl+Alt+T)';
+      toolbar.appendChild(tutorToggleBtn);
+  
+      const sortLabel = document.createElement('span');
+      sortLabel.id = 'projectgrid-sort-toolbar-label';
+      sortLabel.className = 'projectgrid-sort-indicator-label';
+      sortLabel.style.fontSize = '11px';
+      sortLabel.style.marginLeft = '8px';
+      sortLabel.style.color = 'var(--text-muted)';
+      sortLabel.textContent = '📶 Default Directory Sort Order';
+      toolbar.appendChild(sortLabel);
+      
+      containerElement.appendChild(toolbar);
+  
+      toolbarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onGearClick();
+      });
+  
+      const handleTutorToggle = () => {
+        window.ProjectGridTutorModeActive = !window.ProjectGridTutorModeActive;
+        if (window.ProjectGridTutorModeActive) {
+          tutorToggleBtn.classList.add('projectgrid-tutor-active');
+          tutorToggleBtn.style.backgroundColor = 'var(--text-accent, #70a1ff)';
+          tutorToggleBtn.style.color = '#000000';
+          if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
+            window.ProjectGridTriggerTutorHelpBoxRedraw(document.activeElement);
+          }
+        } else {
+          tutorToggleBtn.classList.remove('projectgrid-tutor-active');
+          tutorToggleBtn.style.backgroundColor = 'transparent';
+          tutorToggleBtn.style.color = 'var(--text-normal)';
+          const oldTip = document.getElementById('projectgrid-tutor-tooltip-portal');
+          if (oldTip) oldTip.style.display = 'none';
+        }
+      };
+  
+      tutorToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleTutorToggle();
+      });
+  
+      return { handleTutorToggle };
+    }
+  };
+})();
+const MainScanner = (function() {
+return {
+  scanVaultProjectsFolders(app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, filterInputElement) {
+    const universalTagsSet = new Set();
+    const targetFolders = app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
+
+    targetFolders.forEach(folder => {
+      const expectedNotePath = `${folder.path}/+${folder.name}.md`;
+      if (app.vault.getAbstractFileByPath(expectedNotePath)) {
+        const fileCache = app.metadataCache.getCache(expectedNotePath);
+        const frontmatter = fileCache ? fileCache.frontmatter : null;
+
+        if (frontmatter && frontmatter.tags) {
+          const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
+          rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
+        }
+
+        const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
+        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowRef, filterInputElement);
+        
+        tableBody.appendChild(rowRef.element);
+        rowsArray.push(rowRef);
+      }
+    });
+
+    return universalTagsSet;
+  }
+};
+})();
+
+
+
 
 module.exports = class ProjectGridPlugin extends Plugin {
   async onload() {
@@ -2112,6 +2030,93 @@ module.exports = class ProjectGridPlugin extends Plugin {
     StylesManager.injectStyles();
 
     window.ProjectGridTutorModeActive = false;
+    const pluginInstance = this;
+
+    this.app.workspace.on('layout-ready', () => {
+      if (!pluginInstance.scope) return;
+
+      // 1. UNIVERSAL PANEL ESCAPE OVERRIDE SHORTCUT
+      pluginInstance.scope.register([], 'Escape', (evt) => {
+        const widePanel = document.querySelector('.projectgrid-wide-tasks-portal');
+        if (widePanel) {
+          evt.preventDefault();
+          const activeTasksTrigger = document.querySelector('.projectgrid-tasks-trigger-btn:focus') || 
+                                     document.querySelector('.projectgrid-row-focused .projectgrid-tasks-trigger-btn') ||
+                                     document.querySelector('.projectgrid-tasks-trigger-btn');
+          widePanel.remove();
+          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          if (activeTasksTrigger) requestAnimationFrame(() => { activeTasksTrigger.focus(); });
+          return false;
+        }
+
+        const activeNode = document.activeElement;
+        if (activeNode && activeNode.closest('.projectgrid-matrix-table')) {
+          evt.preventDefault();
+          const container = activeNode.closest('.block-language-projectgrid') || document;
+          const filterInput = container.querySelector('.projectgrid-filter-input');
+          if (filterInput) { filterInput.focus(); filterInput.select(); }
+          return false;
+        }
+        return true; 
+      });
+
+      // 2. NEW BULLETPROOF SYSTEM COMMAND PICKER HOTKEY (Ctrl + Shift + Space)
+      // This official application scope hook guarantees execution priority over CodeMirror or Obsidian defaults
+      pluginInstance.scope.register(['Ctrl', 'Shift'], ' ', (evt) => {
+        evt.preventDefault();
+
+        // 📶 REAL-TIME TELEMETRY DIAGNOSTIC INDICATOR PASS
+        console.log(
+          '%c[ProjectGrid CAPTURE]%c Captured Ctrl+Shift+Space stroke. Active focus element:', 
+          'color: #00d2d3; font-weight: bold;', 
+          'color: default;', 
+          document.activeElement
+        );
+
+        // Dynamically discover the active block layout search query bar on screen
+        const filterInput = document.querySelector('.projectgrid-filter-input');
+        const containerElement = document.querySelector('.block-language-projectgrid') || document.body;
+
+        if (!filterInput) {
+          console.error('%c[ProjectGrid ERROR]%c Could not find .projectgrid-filter-input bar on screen!', 'color: #ee5253; font-weight: bold;');
+          return true;
+        }
+
+        // Force focus straight to the search field to maintain structural alignment tracks
+        filterInput.focus();
+        filterInput.select();
+
+        // Destroy any active pickers to refresh views cleanly
+        const existingPicker = document.querySelector('.projectgrid-command-picker');
+        if (existingPicker) {
+          existingPicker.remove();
+          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          return false;
+        }
+
+        const targetMenuStateInstance = globalThis.MenuState || MenuState;
+        
+        try {
+          // Look up active note lists rows registers
+          const rowsArray = window.ProjectGridActiveRowsTrackingArrayRegistryPool || [];
+          const activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, () => {
+            MenuDom.destroyActivePickers(containerElement);
+            filterInput.focus();
+          });
+
+          console.log('%c[ProjectGrid]%c Packaging dynamic picker layout data map items:', 'color: #10ac84; font-weight: bold;', 'color: default;', activeItems);
+
+          // Force programmatic invocation routing using MenuCore's internal dispatcher mechanics
+          if (window.ProjectGridTriggerMenuCorePickerSpawn) {
+            window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
+          }
+        } catch (err) {
+          console.error('%c[ProjectGrid EXCEPTION]%c Command Picker compilation crashed:', 'color: #ee5253; font-weight: bold;', 'color: default;', err.message);
+        }
+
+        return false; // Tells Obsidian to swallow this hotkey event completely
+      });
+    });
 
     this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
       this.renderProjectGridDashboard(sourceText, element);
@@ -2128,99 +2133,56 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const rootTarget = sourceText.trim() || "__";
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
 
-    const toolbar = document.createElement('div');
-    toolbar.className = 'projectgrid-toolbar';
-    
-    const toolbarBtn = document.createElement('button');
-    toolbarBtn.className = 'projectgrid-toolbar-btn';
-    toolbarBtn.innerHTML = '⚙️';
-    toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
-    toolbar.appendChild(toolbarBtn);
-
-    const tutorToggleBtn = document.createElement('button');
-    tutorToggleBtn.className = 'projectgrid-toolbar-btn projectgrid-tutor-toggle-btn';
-    tutorToggleBtn.innerHTML = '❔';
-    tutorToggleBtn.title = 'Toggle Tutor HUD Context Help Box Overlay (Ctrl+Alt+T)';
-    toolbar.appendChild(tutorToggleBtn);
-
-    const sortLabel = document.createElement('span');
-    sortLabel.id = 'projectgrid-sort-toolbar-label';
-    sortLabel.className = 'projectgrid-sort-indicator-label';
-    sortLabel.style.fontSize = '11px';
-    sortLabel.style.marginLeft = '8px';
-    sortLabel.style.color = 'var(--text-muted)';
-    sortLabel.textContent = '📶 Default Directory Sort Order';
-    toolbar.appendChild(sortLabel);
-    
-    containerElement.appendChild(toolbar);
-
     const headerSetup = UiBuilder.generateHeaderCell();
+    
+    // Wire up the top toolbar gear button to execute the exact same command trigger sequence
+    const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
+      const targetMenuStateInstance = globalThis.MenuState || MenuState;
+      const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
+        MenuDom.destroyActivePickers(containerElement);
+        headerSetup.input.focus();
+      });
+      if (window.ProjectGridTriggerMenuCorePickerSpawn) {
+        headerSetup.input.focus();
+        window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
+      }
+    });
 
     const tableElement = document.createElement('table');
     tableElement.className = 'projectgrid-matrix-table';
 
     const tableHeader = document.createElement('thead');
     const headerRow = document.createElement('tr');
-
     headerRow.appendChild(headerSetup.cell);
     
-    headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 7% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="tasks" title="Tasks Todo">🔧</div></th>
-      <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="created" title="Folder Created Date">🆕</div></th>
-      <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="updated" title="Folder Updated Date">🆙</div></th>
-      <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
-      <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
-      <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
-    `);
+    const activeConfig = globalThis.GridConfig || GridConfig;
 
-    const columnDropdowns = [
-      { icon: '🏷️', key: 'tags', options: ['⬛'] },
-      { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
-      { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
-      { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
-      { icon: '🎱', key: 'depth', options: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'] },
-      { icon: '🏅', key: 'priority', options: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'] },
-      { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
-      { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
-      { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] },
-      { icon: '💿', key: 'git', options: ['⬛', '✅', '❌'] },
-      { icon: '🤖', key: 'agents', options: ['⬛', '✅', '❌'] }
-    ];
+    if (activeConfig && activeConfig.columns) {
+      activeConfig.columns.forEach(col => {
+        if (col.key === 'title') return;
+        
+        if (col.type === 'timestamp' || col.type === 'launcher') {
+          headerRow.insertAdjacentHTML('beforeend', `
+            <th style="width: ${col.width} !important; text-align: center;" title="${col.label}">${col.icon}</th>
+          `);
+        } else {
+          const innerRowsArray = [];
+          const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.defaults || ['⬛'], innerRowsArray);
+          dropupTh.style.width = col.width;
+          headerRow.appendChild(dropupTh);
+        }
+      });
+    }
 
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
-    const universalTagsSet = new Set();
+    
+    // Globally register rows so our shortcut interceptor can pull data parameters on demand
+    window.ProjectGridActiveRowsTrackingArrayRegistryPool = rowsArray;
 
-    const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
-
-    targetFolders.forEach(folder => {
-      const expectedNotePath = `${folder.path}/+${folder.name}.md`;
-      if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
-        const fileCache = this.app.metadataCache.getCache(expectedNotePath);
-        const frontmatter = fileCache ? fileCache.frontmatter : null;
-
-        if (frontmatter && frontmatter.tags) {
-          const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
-          rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
-        }
-
-        const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
-        rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
-        
-        tableBody.appendChild(rowRef.element);
-        rowsArray.push(rowRef);
-      }
-    });
-
-    const tagsConfig = columnDropdowns.find(c => c.key === 'tags');
-    if (tagsConfig) {
-      Array.from(universalTagsSet).sort().forEach(t => tagsConfig.options.push(t));
-    }
-
-    columnDropdowns.forEach(col => {
-      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
-      headerRow.appendChild(dropupTh);
-    });
+    const universalTagsSet = MainScanner.scanVaultProjectsFolders(
+      this.app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, headerSetup.input
+    );
 
     tableHeader.appendChild(headerRow);
     tableElement.appendChild(tableHeader);
@@ -2228,40 +2190,10 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    toolbarBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      headerSetup.input.focus();
-      const scrollLockEvt = new KeyboardEvent('keydown', { key: 'ScrollLock', bubbles: true });
-      window.dispatchEvent(scrollLockEvt);
-    });
-
-    const handleTutorToggle = () => {
-      window.ProjectGridTutorModeActive = !window.ProjectGridTutorModeActive;
-      if (window.ProjectGridTutorModeActive) {
-        tutorToggleBtn.classList.add('projectgrid-tutor-active');
-        tutorToggleBtn.style.backgroundColor = 'var(--text-accent, #70a1ff)';
-        tutorToggleBtn.style.color = '#000000';
-        if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
-          window.ProjectGridTriggerTutorHelpBoxRedraw(document.activeElement);
-        }
-      } else {
-        tutorToggleBtn.classList.remove('projectgrid-tutor-active');
-        tutorToggleBtn.style.backgroundColor = 'transparent';
-        tutorToggleBtn.style.color = 'var(--text-normal)';
-        const oldTip = document.getElementById('projectgrid-tutor-tooltip-portal');
-        if (oldTip) oldTip.style.display = 'none';
-      }
-    };
-
-    tutorToggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handleTutorToggle();
-    });
-
     const hotkeyListener = (evt) => {
       if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
         evt.preventDefault();
-        handleTutorToggle();
+        toolbarSetup.handleTutorToggle();
       }
     };
     window.removeEventListener('keydown', hotkeyListener);
@@ -2269,8 +2201,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
 
     if (rowsArray.length > 0) {
       containerElement.appendChild(tableElement);
-    } else {
-      containerElement.insertAdjacentHTML('beforeend', `<p class="projectgrid-empty-warning-message">ℹ️ *No folders matching \`${rootTarget}/Folder/+Folder.md\` were discovered.*</p>`);
     }
   }
 };

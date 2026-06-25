@@ -27,15 +27,14 @@ function bundle() {
     const processedModules = new Set();
 
     function resolveDependencies(fileContent) {
-        // Match require statements: const Module = require('./file');
         const requireRegex = /(?:const|let|var)\s+([\w{},\s]+)\s*=\s*require\s*\(\s*['"]\.\/([^'"]+)['"]\s*\);?/g;
         let match;
         let updatedContent = fileContent;
 
-        // Reset regex cursor tracking positions safely
         requireRegex.lastIndex = 0;
 
         while ((match = requireRegex.exec(fileContent)) !== null) {
+            // FIX: Map code-block search strings safely to their index arrays to avoid undefined evaluation crashes
             const fullStatement = match[0];
             const variableName = match[1].trim();
             const moduleName = match[2].trim();
@@ -45,7 +44,6 @@ function bundle() {
 
             if (fs.existsSync(modulePath)) {
                 if (processedModules.has(moduleFileName)) {
-                    // Strip duplicates if already compiled into global registry tracks
                     updatedContent = updatedContent.replace(fullStatement, '');
                     continue;
                 }
@@ -54,17 +52,10 @@ function bundle() {
                 processedModules.add(moduleFileName);
 
                 let moduleContent = fs.readFileSync(modulePath, 'utf8');
-
-                // Strip localized file headers/footers
                 moduleContent = moduleContent.replace(/\/\/ ==========================================[\s\S]*?\/\/ ==========================================/g, '');
-                
-                // Recursively parse inner requirements first
                 moduleContent = resolveDependencies(moduleContent);
 
-                // Isolate code block parsing parameters safely by transforming module.exports assignments
                 let clearContent = moduleContent.replace(/module\.exports\s*=\s*/g, 'return ');
-
-                // FIX: Wrap everything into an isolated function expression wrapper block context
                 const isolatedBlock = `const ${variableName} = (function() {\n${clearContent.trim()}\n})();`;
                 updatedContent = updatedContent.replace(fullStatement, isolatedBlock);
             } else {
@@ -90,7 +81,8 @@ function deployToObsidian() {
             console.log(`📁 Created deployment directory: ${destDir}`);
         }
 
-        const blacklistedFiles = ['_main.js', 'build.js', 'styles.js', 'filter.js', 'ui.js', 'menu-core.js', 'menu-state.js', 'menu-dom.js', 'ui-color.js', 'ui-dropdown.js', 'ui-row.js', 'ui-row-actions.js', 'ui-row-keys.js', 'ui-row-select.js', 'styles-core.js', 'styles-animation.js', 'styles-components.js', 'ui-row-dates.js', 'ui-row-tags.js', 'ui-row-tasks.js', 'menu-state-sort.js', 'menu-state-utils.js'];
+        // CONSOLIDATION FIX: Added grid-config.js to the duplication protection tracking blacklist
+        const blacklistedFiles = ['_main.js', 'build.js', 'styles.js', 'filter.js', 'ui.js', 'menu-core.js', 'menu-state.js', 'menu-dom.js', 'ui-color.js', 'ui-dropdown.js', 'ui-row.js', 'ui-row-actions.js', 'ui-row-keys.js', 'ui-row-select.js', 'styles-core.js', 'styles-animation.js', 'styles-components.js', 'ui-row-dates.js', 'ui-row-tags.js', 'ui-row-tasks.js', 'menu-state-sort.js', 'menu-state-utils.js', 'tasks-parser.js', 'tasks-dom.js', 'main-toolbar.js', 'main-scanner.js', 'grid-config.js'];
         const allowedExtensions = ['.js', '.json', '.css', '.html'];
         const allItems = fs.readdirSync(SOURCE_DIR);
         let copyCount = 0;

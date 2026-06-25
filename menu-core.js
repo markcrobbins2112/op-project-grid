@@ -21,16 +21,20 @@ module.exports = {
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
+    // RESTORED: Standard ScrollLock event capture sequence behaves exactly like your proven historical baseline
     window.addEventListener('keydown', (evt) => {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
+        
         if (document.activeElement !== filterInput) {
           filterInput.focus();
           filterInput.select();
         } else {
           pickerLevel = 1;
           activeIndex = 0;
-          activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+          
+          const targetMenuStateInstance = globalThis.MenuState || MenuState;
+          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
           renderMenu();
         }
       }
@@ -62,7 +66,8 @@ module.exports = {
           evt.preventDefault();
           if (pickerLevel === 2) {
             pickerLevel = 1;
-            activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeIndex = storedCategoryIndex;
             renderMenu();
           } else {
@@ -76,7 +81,7 @@ module.exports = {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
         
-        let idx = rowsArray.findIndex(r => r.element.classList.contains('projectgrid-row-focused'));
+        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
         let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
 
         if (evt.key === 'ArrowDown') {
@@ -87,9 +92,8 @@ module.exports = {
 
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
-        
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
-        targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
 
@@ -115,17 +119,16 @@ module.exports = {
         activeIndex = 0;
         renderMenu();
       } else if (pickerLevel === 2) {
-        // FIX: IF SORT LEVEL 2 ROOT IS ACTIVE, RUN ACTION WITHOUT DESTROYING MENUS PREMATURELY
         const selectedAction = activeItems[activeIndex].action;
         if (selectedAction) {
           selectedAction();
           
-          // Re-scaffold schema bounds to instantly render modified 🟢/🟡/🔴 icons states
           const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
           if (currentCategoryText === '📶 Sort') {
-            const masterSchema = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); // Re-render updates immediately
+            renderMenu(); 
             return;
           }
         }

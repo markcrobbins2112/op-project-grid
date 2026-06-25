@@ -4,9 +4,13 @@
 
 const UiDropdown = require('./ui-dropdown');
 const UiRow = require('./ui-row');
+const GridConfig = require('./grid-config');
 
 module.exports = {
-  activeInputTarget: null, activeRowTarget: null, activeFocusTarget: null, observerRef: null,
+  activeInputTarget: null, 
+  activeRowTarget: null, 
+  activeFocusTarget: null, 
+  observerRef: null,
 
   generateHeaderCell() {
     this.ensureThreePortalsExist();
@@ -68,17 +72,23 @@ module.exports = {
     }
 
     const tutorShortcutsMap = {
-      'search-input': { title: '⌨️ Search Field Focus', keys: '• Type: Filter project titles<br>• ScrollLock: Toggle Command Picker Menu<br>• ArrowDown: Navigate matrix grid notes' },
-      'filter-header': { title: '🎛️ Column Filter Header', keys: '• Enter / Space: Open multi-choice list<br>• Alt+Down: Toggle menu open<br>• Tab / Shift+Tab: Move horizontal focus' },
-      'filter-panel': { title: '📋 Active Filter List Menu', keys: '• ArrowUp / Down: Highlight choice row<br>• Enter / Space: Toggle visible selection<br>• Escape: Close dropdown menu panel' },
-      'cell-btn': { title: '📊 Frontmatter Cell Controller', keys: '• Enter / Space: Open options dropdown<br>• ArrowUp / Down: Move focus vertically to next row<br>• Tab / Shift+Tab: Jump cells horizontally' },
-      'tags-cell': { title: '🏷️ Extensible Tags Panel', keys: '• Type: Filter / Add a custom string value<br>• ArrowUp / Down: Move choice frame<br>• Enter: Toggle check / Add tag item' },
-      'tasks-cell': { title: '🔧 Tasks Checklist Manager', keys: '• Click checkbox: Toggle task state change<br>• Type: Create new item bullet<br>• Escape: Collapse menu, return focus' }
+      'search-input': { title: '⌨️ Search Field Focus', keys: '• Type: Filter project titles<br>• ScrollLock: Toggle Command Picker Menu<br>• ArrowDown: Navigate matrix grid notes' }
     };
+
+    // FIX: Fall back to global scope reference check to bridge hidden closure walls
+    const activeConfig = globalThis.GridConfig || GridConfig;
+
+    if (activeConfig && activeConfig.columns) {
+      activeConfig.columns.forEach(col => {
+        if (col.tutorKeys) {
+          tutorShortcutsMap[col.key] = { title: `${col.icon} ${col.label} View Box`, keys: col.tutorKeys };
+        }
+      });
+    }
 
     window.ProjectGridTriggerTutorHelpBoxRedraw = (targetElement, contextKey) => {
       if (!window.ProjectGridTutorModeActive || !targetElement || !contextKey || !tutorShortcutsMap[contextKey]) {
-        hud.style.display = 'none'; return;
+        if (hud) hud.style.display = 'none'; return;
       }
       const data = tutorShortcutsMap[contextKey];
       hud.innerHTML = `<div class="projectgrid-tutor-heading">${data.title}</div><div class="projectgrid-tutor-shortcut">${data.keys}</div>`;
@@ -98,7 +108,7 @@ module.exports = {
           Object.assign(el.style, { top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px` });
         }
       });
-      if (window.ProjectGridTutorModeActive && hud.style.display === 'block') {
+      if (window.ProjectGridTutorModeActive && hud && hud.style.display === 'block') {
         const activeNode = self.activeFocusTarget || self.activeInputTarget;
         if (activeNode) { const r = activeNode.getBoundingClientRect(); hud.style.left = `${r.left}px`; hud.style.top = `${r.bottom + window.scrollY + 6}px`; }
       }
@@ -118,12 +128,13 @@ module.exports = {
     if (tableParent) this.observerRef.observe(tableParent);
   },
 
-  // FIX: Access the globally attached tracker pointer variable to cleanly avoid IIFE isolation blocks restriction bounds
   buildHeaderDropup(titleIcon, key, defaults, rowsArray) { 
     const targetInstance = globalThis.UiDropdown || UiDropdown;
     return targetInstance.buildHeaderDropup(titleIcon, key, defaults, rowsArray); 
   },
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) { return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); }
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) { 
+    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); 
+  }
 };
 
 // ==========================================
