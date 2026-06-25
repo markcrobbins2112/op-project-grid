@@ -20,6 +20,10 @@ module.exports = class ProjectGridPlugin extends Plugin {
   onunload() {
     const styleEl = document.getElementById('obsidian-projectgrid-styles');
     if (styleEl) styleEl.remove();
+    const overlay = document.getElementById('projectgrid-global-focus-overlay');
+    if (overlay) overlay.remove();
+    const rOverlay = document.getElementById('projectgrid-global-row-overlay');
+    if (rOverlay) rOverlay.remove();
   }
 
   renderProjectGridDashboard(sourceText, containerElement) {
@@ -27,31 +31,40 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
+    // --- NEW: GENERATE THE DYNAMIC DASHBOARD TOOLBAR ELEMENT ---
+    const toolbar = document.createElement('div');
+    toolbar.className = 'projectgrid-toolbar';
+    
+    const toolbarBtn = document.createElement('button');
+    toolbarBtn.className = 'projectgrid-toolbar-btn';
+    toolbarBtn.innerHTML = '⚙️';
+    toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
+    toolbar.appendChild(toolbarBtn);
+    containerElement.appendChild(toolbar);
+
     const tableElement = document.createElement('table');
     tableElement.className = 'projectgrid-matrix-table';
 
     const tableHeader = document.createElement('thead');
     const headerRow = document.createElement('tr');
 
-    // Column 1: Core dynamic search input filter field container (25% width)
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Columns 2, 3, 4: Generates the 3 unique static table header icons
+    // Static columns geometry bindings
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Define the launcher configurations for header filters mapping
+    // Dynamic Filter Headers configuration rules mapping
     const launcherColumns = [
       { icon: '📁', key: 'dopus', options: ['Active'] },
       { icon: '💻', key: 'cursor', options: ['Active'] },
       { icon: '💜', key: 'obsidian', options: ['Active'] }
     ];
 
-    // Define the 8 exact YAML frontmatter metadata columns (Columns 5 through 12)
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -66,7 +79,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
-    // Pre-assemble row model references mapping metadata values instantly
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -81,13 +93,11 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Build and append the 3 launcher filter dropups
     launcherColumns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
     });
 
-    // Build and append the 8 interactive YAML metadata dropup filter headers directly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
@@ -98,6 +108,14 @@ module.exports = class ProjectGridPlugin extends Plugin {
     tableElement.appendChild(tableBody);
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
+
+    // Wire up toolbar click event helper to route directly to master ScrollLock handler commands
+    toolbarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      headerSetup.input.focus();
+      const scrollLockEvt = new KeyboardEvent('keydown', { key: 'ScrollLock', bubbles: true });
+      window.dispatchEvent(scrollLockEvt);
+    });
 
     if (rowsArray.length > 0) {
       containerElement.appendChild(tableElement);

@@ -10,7 +10,7 @@ module.exports = {
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
       trigger.setAttribute('data-key', key);
-      trigger.tabIndex = 0; // FIX: ENABLES TITLES FILTER BUTTONS TO BE SEPARATELY FOCUSABLE VIA KEYBOARD
+      trigger.tabIndex = 0; 
       trigger.textContent = titleIcon;
   
       let activePanel = null;
@@ -20,23 +20,12 @@ module.exports = {
   
       const closePanel = () => {
         if (activePanel) { activePanel.remove(); activePanel = null; }
-        trigger.classList.remove('projectgrid-header-focused-indicator');
+        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
       };
-  
-      // FIX: ATTACH INDICATOR HIGHLIGHT WHEN CELL TRIGGER CAPTURES ACTIVE FOCUS
-      trigger.addEventListener('focus', () => {
-        trigger.classList.add('projectgrid-header-focused-indicator');
-      });
-      trigger.addEventListener('blur', () => {
-        setTimeout(() => {
-          if (!activePanel) trigger.classList.remove('projectgrid-header-focused-indicator');
-        }, 150);
-      });
   
       const openPanel = () => {
         closePanel();
         selectionIdx = 0;
-        trigger.classList.add('projectgrid-header-focused-indicator');
         activePanel = document.createElement('div');
         activePanel.className = 'projectgrid-dropup-panel';
   
@@ -49,40 +38,22 @@ module.exports = {
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
-          if (oIdx === selectionIdx) wrapper.classList.add('projectgrid-row-focused');
           
+          if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
+            setTimeout(() => window.ProjectGridUpdateFocusOverlay(wrapper), 10);
+          }
+  
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
-          checkbox.tabIndex = -1;
+          checkbox.tabIndex = -1; 
           
-          let visibleCount = 0;
-          let totalCount = 0;
-  
-          // FIX: CALCULATE DYNAMIC VISIBLE/TOTAL VALUE METRICS FOR EACH DROPDOWN ITEM SELECTOR
-          if (opt === '[ALL]') {
-            checkbox.checked = (activeFilters.size === defaults.length);
-            totalCount = rowsArray.length;
-            visibleCount = rowsArray.filter(r => r.element.style.display !== 'none').length;
-          } else {
-            checkbox.checked = activeFilters.has(opt);
-            rowsArray.forEach(r => {
-              const currentVal = r.yamlMetadataValues && r.yamlMetadataValues[key] ? String(r.yamlMetadataValues[key]) : '⬛';
-              const normOpt = opt === '⬛' ? '' : opt;
-              const normCurrent = currentVal === '⬛' ? '' : currentVal;
-              if (normCurrent === normOpt) {
-                totalCount++;
-                if (r.element.style.display !== 'none') visibleCount++;
-              }
-            });
-          }
+          if (opt === '[ALL]') checkbox.checked = (activeFilters.size === defaults.length);
+          else checkbox.checked = activeFilters.has(opt);
   
           checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
           wrapper.appendChild(checkbox);
-          
-          // Format layout string to display counts inside trailing tags: Icon {visible/total}
-          const textLabel = document.createTextNode(` ${opt} {${visibleCount}/${totalCount}}`);
-          wrapper.appendChild(textLabel);
+          wrapper.appendChild(document.createTextNode(opt));
           activePanel.appendChild(wrapper);
         });
   
@@ -102,7 +73,7 @@ module.exports = {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          boxes[0].checked = (activeFilters.size === defaults.length);
+          boxes.checked = (activeFilters.size === defaults.length);
           defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
@@ -115,14 +86,20 @@ module.exports = {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
+      // FIX: SUPPORTS COMPREHENSIVE DOWNSTREAM PANELS KEYBOARD LOOPS FOR NAVIGATION CHECKS
       function handlePanelKeys(evt) {
         if (!activePanel) return;
+  
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-          evt.preventDefault(); evt.stopPropagation();
+          evt.preventDefault();
+          evt.stopPropagation();
+          
           selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
-          activePanel.querySelectorAll('.projectgrid-dropup-option').forEach((lbl, lIdx) => {
-            lbl.className = lIdx === selectionIdx ? 'projectgrid-dropup-option projectgrid-row-focused' : 'projectgrid-dropup-option';
-          });
+  
+          const labels = activePanel.querySelectorAll('.projectgrid-dropup-option');
+          if (labels[selectionIdx] && window.ProjectGridUpdateFocusOverlay) {
+            window.ProjectGridUpdateFocusOverlay(labels[selectionIdx]);
+          }
         } else if (evt.key === ' ' || evt.key === 'Spacebar') {
           evt.preventDefault();
           const cb = activePanel.querySelectorAll('input[type="checkbox"]')[selectionIdx];
@@ -131,17 +108,23 @@ module.exports = {
         } else if (evt.key === 'Enter' || evt.key === 'Escape') {
           evt.preventDefault();
           trigger.removeEventListener('keydown', handlePanelKeys);
-          closePanel();
-          trigger.focus();
+          closePanel(); trigger.focus();
         }
       }
   
-      trigger.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
-        if (activePanel) closePanel(); else openPanel();
+      // FIX: ADDED ADVANCED TRIGGER MACROS FOR OPENING THE FILTER MENU WITHOUT PREVIOUS CELL SELECTIONS
+      trigger.addEventListener('keydown', (evt) => {
+        if (!activePanel) {
+          if ((evt.key === 'ArrowDown' && evt.altKey) || evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 'Enter') {
+            evt.preventDefault();
+            openPanel();
+          }
+        }
       });
   
+      trigger.addEventListener('focus', () => {
+        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(trigger);
+      });
       trigger.addEventListener('blur', () => {
         setTimeout(() => {
           if (activePanel && !activePanel.contains(document.activeElement)) {
@@ -149,6 +132,12 @@ module.exports = {
             closePanel();
           }
         }, 150);
+      });
+  
+      trigger.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
+        if (activePanel) closePanel(); else openPanel();
       });
   
       document.addEventListener('mousedown', function closeHeaderMenu(e) {

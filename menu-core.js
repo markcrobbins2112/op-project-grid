@@ -7,7 +7,7 @@ const MenuDom = require('./menu-dom');
 
 module.exports = {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
+    let pickerLevel = 0; 
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -16,6 +16,7 @@ module.exports = {
       pickerLevel = 0;
       MenuDom.destroyActivePickers(containerElement);
       filterInput.focus();
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
     window.addEventListener('keydown', (evt) => {
@@ -36,22 +37,10 @@ module.exports = {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
-      // FIX: INTERCEPT ENGINE DROPS SEARCH CURSOR ACTIONS COMPLETELY IF A TITLE PANEL GAINS KEYBOARD FOCUS
-      const openHeaderPanel = document.querySelector('.projectgrid-dropup-panel');
-      if (openHeaderPanel) {
-        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp' || evt.key === 'Escape' || evt.key === 'Enter') {
-          return; 
-        }
-      }
-
       if (pickerLevel > 0) {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
-          if (evt.key === 'ArrowDown') {
-            activeIndex = (activeIndex + 1) >= activeItems.length ? 0 : activeIndex + 1;
-          } else {
-            activeIndex = (activeIndex - 1) < 0 ? activeItems.length - 1 : activeIndex - 1;
-          }
+          activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
           render();
         } else if (evt.key === 'Enter') {
           evt.preventDefault();
@@ -70,7 +59,6 @@ module.exports = {
         return;
       }
 
-      // --- STANDARD DOWNSTREAM ROW SELECTION ENGINE ---
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
@@ -86,16 +74,24 @@ module.exports = {
 
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx];
-        targetRow.element.classList.add('projectgrid-row-focused');
-        targetRow.element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        targetRow.classList.add('projectgrid-row-focused');
+        
+        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetRow);
+        targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
 
     const render = () => {
-      MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+      const pickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
         activeIndex = idx;
         executeSelection();
       }, closeAllPickers);
+
+      // Snap the global focus portal cleanly over the highlighted category item row
+      setTimeout(() => {
+        const targetItem = pickerEl.querySelectorAll('.projectgrid-picker-item')[activeIndex];
+        if (targetItem && window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetItem);
+      }, 10);
     };
 
     const executeSelection = () => {

@@ -90,7 +90,7 @@ function deployToObsidian() {
             console.log(`📁 Created deployment directory: ${destDir}`);
         }
 
-        const blacklistedFiles = ['_main.js', 'build.js', 'styles.js', 'filter.js', 'ui.js', 'menu-core.js', 'menu-state.js', 'menu-dom.js', 'ui-color.js', 'ui-dropdown.js', 'ui-row.js', 'ui-row-actions.js', 'ui-row-keys.js', 'ui-row-select.js'];
+        const blacklistedFiles = ['_main.js', 'build.js', 'styles.js', 'filter.js', 'ui.js', 'menu-core.js', 'menu-state.js', 'menu-dom.js', 'ui-color.js', 'ui-dropdown.js', 'ui-row.js', 'ui-row-actions.js', 'ui-row-keys.js', 'ui-row-select.js', 'styles-core.js', 'styles-animation.js', 'styles-components.js'];
         const allowedExtensions = ['.js', '.json', '.css', '.html'];
         const allItems = fs.readdirSync(SOURCE_DIR);
         let copyCount = 0;

@@ -3,40 +3,37 @@
 // ==========================================
 
 module.exports = {
-    appendLauncherButtons(tableRow, folder, absoluteVaultRoot, appInstance) {
+    appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app) {
       const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
       
-      const cellDopus = document.createElement('td');
-      cellDopus.className = 'projectgrid-matrix-cell action-icon-cell';
-      cellDopus.innerHTML = `<a href="aip://dopus/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="Open folder in Directory Opus">📁</a>`;
-      tableRow.appendChild(cellDopus);
+      // Check if the directory target features a hidden configuration folder path track
+      const dotObsidianPath = `${folder.path}/.obsidian`;
+      const hasObsidianVault = app.vault.getAbstractFileByPath(dotObsidianPath) !== null;
   
-      const cellCursor = document.createElement('td');
-      cellCursor.className = 'projectgrid-matrix-cell action-icon-cell';
-      cellCursor.innerHTML = `<a href="aip://cursor/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="Open workspace in Cursor">💻</a>`;
-      tableRow.appendChild(cellCursor);
+      const actions = [
+        { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus', isMissing: false },
+        { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor', isMissing: false },
+        { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault', isMissing: !hasObsidianVault }
+      ];
   
-      const cellObsidian = document.createElement('td');
-      cellObsidian.className = 'projectgrid-matrix-cell action-icon-cell';
-      
-      const obsidianAnchor = document.createElement('a');
-      obsidianAnchor.href = `aip://obsidian/${absoluteLocalPath}`;
-      obsidianAnchor.className = 'projectgrid-aip-icon-btn';
-      obsidianAnchor.title = 'Open directory as Obsidian Vault';
-      obsidianAnchor.textContent = '💜';
+      actions.forEach(act => {
+        const cell = document.createElement('td');
+        cell.className = 'projectgrid-matrix-cell action-icon-cell';
+        
+        const fileAnchor = document.createElement('a');
+        fileAnchor.href = `aip://${act.protocol}/${absoluteLocalPath}`;
+        fileAnchor.className = 'projectgrid-aip-icon-btn';
+        fileAnchor.textContent = act.icon;
+        fileAnchor.title = act.title;
   
-      // FIX: ASYNCHRONOUSLY EVALUATE VAULT EXISTENCE TO ENFORCE TRANSPARENCY WITHOUT FREEZING THE INTERFACE
-      const checkPath = `${folder.path}/.obsidian`;
-      appInstance.vault.adapter.exists(checkPath).then((vaultConfigFolderExists) => {
-        if (!vaultConfigFolderExists) {
-          // Apply 35% opacity rendering to handle the required visual transparency state layout parameters
-          obsidianAnchor.style.opacity = '0.25';
-          obsidianAnchor.style.filter = 'grayscale(100%)';
+        // FIX: ATTACH GHOST TRANSPARENCY SHADOW STATE IF DOT OBSIDIAN FILE ATTRIBUTES MISSING
+        if (act.isMissing) {
+          fileAnchor.classList.add('is-vault-missing');
         }
-      });
   
-      cellObsidian.appendChild(obsidianAnchor);
-      tableRow.appendChild(cellObsidian);
+        cell.appendChild(fileAnchor);
+        tableRow.appendChild(cell);
+      });
     }
   };
   

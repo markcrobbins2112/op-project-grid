@@ -9,15 +9,15 @@ module.exports = {
       const picker = document.createElement('div');
       picker.className = 'projectgrid-command-picker';
       
-      // Align beneath search input
-      picker.style.top = `${filterInput.offsetTop + filterInput.offsetHeight + 4}px`;
-      picker.style.left = `${filterInput.offsetLeft}px`;
+      // FIX: Map coordinates dynamically relative to the window viewport to bypass card layer restraints
+      const rect = filterInput.getBoundingClientRect();
+      picker.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      picker.style.left = `${rect.left + window.scrollX}px`;
   
       itemsList.forEach((item, idx) => {
         const el = document.createElement('div');
         el.className = 'projectgrid-picker-item';
         
-        // Apply hue rotating focus border if this picker item is selected
         if (idx === selectedIndex) {
           el.classList.add('projectgrid-picker-highlight');
           el.classList.add('projectgrid-row-focused');
@@ -33,7 +33,7 @@ module.exports = {
         picker.appendChild(el);
       });
   
-      containerElement.appendChild(picker);
+      document.body.appendChild(picker); // Attached straight to highest body tracking scope
   
       const outsideClickListener = (e) => {
         if (!picker.contains(e.target) && e.target !== filterInput) {
@@ -47,7 +47,7 @@ module.exports = {
     },
   
     destroyActivePickers(containerElement) {
-      const existing = containerElement.querySelectorAll('.projectgrid-command-picker');
+      const existing = document.querySelectorAll('.projectgrid-command-picker');
       existing.forEach(p => p.remove());
     }
   };

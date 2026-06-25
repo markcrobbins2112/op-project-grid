@@ -5,7 +5,7 @@
 const UiRowKeys = require('./ui-row-keys');
 
 module.exports = {
-  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
+  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const btn = document.createElement('div');
     btn.className = 'projectgrid-custom-select-btn';
     btn.tabIndex = 0;
@@ -37,23 +37,13 @@ module.exports = {
 
       optionsList.forEach((opt, oIdx) => {
         const li = document.createElement('li');
+        li.className = 'projectgrid-custom-dropdown-item';
+        li.textContent = opt;
         
-        let visibleCount = 0;
-        let totalCount = 0;
+        if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
+          setTimeout(() => window.ProjectGridUpdateFocusOverlay(li), 10);
+        }
 
-        // FIX: COMPUTE METADATA FIELD COUNTERS FOR SUB-ROW PICKER LIST SELECTION OPTIONS
-        rowsArray.forEach(r => {
-          const checkVal = r.yamlMetadataValues && r.yamlMetadataValues[cfg.key] ? String(r.yamlMetadataValues[cfg.key]) : '⬛';
-          if (checkVal === opt) {
-            totalCount++;
-            if (r.element.style.display !== 'none') visibleCount++;
-          }
-        });
-
-        // Format label parameter value layout sequence: Option {visible/total}
-        li.textContent = `${opt} {${visibleCount}/${totalCount}}`;
-        li.className = oIdx === selectionIdx ? 'projectgrid-custom-dropdown-item projectgrid-row-focused' : 'projectgrid-custom-dropdown-item';
-        
         li.addEventListener('mousedown', (e) => { e.preventDefault(); commitSelection(opt); });
         activeDropdown.appendChild(li);
       });
@@ -76,7 +66,17 @@ module.exports = {
       }
     };
 
-    btn.addEventListener('blur', () => setTimeout(closeDropdown, 120));
+    btn.addEventListener('focus', () => {
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(btn);
+      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
+    });
+    
+    btn.addEventListener('blur', () => {
+      setTimeout(closeDropdown, 120);
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
+    });
+    
     btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); if (activeDropdown) closeDropdown(); else openDropdown(); });
 
     btn.addEventListener('keydown', (evt) => {
@@ -84,9 +84,11 @@ module.exports = {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
           selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-          activeDropdown.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((li, lIdx) => {
-            li.className = lIdx === selectionIdx ? 'projectgrid-custom-dropdown-item projectgrid-row-focused' : 'projectgrid-custom-dropdown-item';
-          });
+          
+          const items = activeDropdown.querySelectorAll('.projectgrid-custom-dropdown-item');
+          if (items[selectionIdx] && window.ProjectGridUpdateFocusOverlay) {
+            window.ProjectGridUpdateFocusOverlay(items[selectionIdx]);
+          }
           return;
         } else if (evt.key === 'Enter') { evt.preventDefault(); commitSelection(optionsList[selectionIdx]); return; }
         else if (evt.key === 'Escape') { evt.preventDefault(); closeDropdown(); btn.focus(); return; }
