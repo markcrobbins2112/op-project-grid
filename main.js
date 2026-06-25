@@ -983,22 +983,46 @@ const menuStateModule = {
 
     const activeSortEngine = globalThis.MenuStateSort || MenuStateSort;
     const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
+    const rawDirPath = (activeRow && activeRow.folder && activeRow.folder.path) ? String(activeRow.folder.path) : 'No folder selected';
 
     return [
       {
-        name: '📁 Filters',
-        items: selectableColumns.map(f => ({ name: `${f.icon} ${f.label} Filter`, action: () => MenuStateUtils.openHeaderDropup(f.key) }))
+        name: 'Filters', // FIX: Plain-text key protects background string verification lookups
+        displayName: '<u>F</u>ilters',
+        acceleratorKey: 'f',
+        items: selectableColumns.map(f => ({ 
+          name: `${f.icon} ${f.label} Filter`, 
+          action: () => MenuStateUtils.openHeaderDropup(f.key) 
+        }))
       },
       {
-        name: '📊 Columns',
-        items: interactiveFocusColumns.map(item => ({ name: `${item.col.icon} ${item.col.label} Column`, action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) }))
+        name: 'Columns',
+        displayName: '<u>C</u>olumns',
+        acceleratorKey: 'c',
+        items: [
+          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          ...interactiveFocusColumns.map(item => ({ 
+            name: `${item.col.icon} ${item.col.label} Column`, 
+            action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) 
+          }))
+        ]
       },
       {
-        name: '🚀 Launcher',
-        items: launcherColumns.map(l => ({ name: `${l.icon} Open in ${l.label}`, action: () => MenuStateUtils.fireProtocol(activeRow, l.key) }))
+        name: 'Launcher',
+        displayName: '<u>L</u>auncher',
+        acceleratorKey: 'l',
+        items: [
+          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          ...launcherColumns.map(l => ({ 
+            name: `${l.icon} Open in ${l.label}`, 
+            action: () => MenuStateUtils.fireProtocol(activeRow, l.key) 
+          }))
+        ]
       },
       {
-        name: '📶 Sort',
+        name: 'Sort',
+        displayName: '<u>S</u>ort',
+        acceleratorKey: 's',
         items: [
           {
             name: '❌ Clear Sort Chain Parameters',
@@ -1011,7 +1035,7 @@ const menuStateModule = {
           },
           ...sortableColumns.map(s => {
             const chainIdx = currentChain.indexOf(s.key);
-            let statusIcon = '⚫'; // Default: Unsorted slot
+            let statusIcon = '⚫';
             if (chainIdx === 0) statusIcon = '🟢';
             if (chainIdx === 1) statusIcon = '🟡';
             if (chainIdx === 2) statusIcon = '🔴';
@@ -1024,20 +1048,15 @@ const menuStateModule = {
                   const existingIdx = chain.indexOf(s.key);
 
                   if (existingIdx > -1) {
-                    // Item in chain: Remove it, remaining items move up automatically
                     chain.splice(existingIdx, 1);
                   } else {
-                    // Item not in chain
                     if (chain.length < 3) {
-                      // Apply to next available vacant slot
                       chain.push(s.key);
                     } else {
-                      // Chain full: Push to the BEGINNING, slide items down, discard oldest
                       chain.unshift(s.key);
                       if (chain.length > 3) chain.pop();
                     }
                   }
-
                   activeSortEngine.activeSortChain = chain;
                   activeSortEngine.executeDynamicSortChain(rowsArray);
                 }
@@ -1061,64 +1080,178 @@ globalThis.MenuState = MenuState;
 
 const MenuDom = (function() {
 // ==========================================
-// START OF FILE: menu-dom.js
+// START OF FILE: menu-core.js
 // ==========================================
 
+
+
+
 return {
-    renderPickerBox(filterInput, itemsList, selectedIndex, containerElement, onItemClick, onClose) {
-      this.destroyActivePickers(containerElement);
-  
-      const picker = document.createElement('div');
-      picker.className = 'projectgrid-command-picker';
-      
-      // Position parameters tracking viewports boundary targets cleanly
-      const rect = filterInput.getBoundingClientRect();
-      picker.style.top = `${rect.bottom + window.scrollY + 4}px`;
-      picker.style.left = `${rect.left + window.scrollX}px`;
-  
-      itemsList.forEach((item, idx) => {
-        const el = document.createElement('div');
-        el.className = 'projectgrid-picker-item';
-        
-        // FIX: ENSURE BOTH CONTEXT CLASSES ARE LAYERED ON GENERATION AHEAD OF KEYBOARD SCAN EVENTS
-        if (idx === selectedIndex) {
-          el.classList.add('projectgrid-picker-highlight');
-          el.classList.add('projectgrid-row-focused');
-        }
-        
-        el.textContent = item.name;
-  
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onItemClick(idx);
-        });
-  
-        picker.appendChild(el);
-      });
-  
-      document.body.appendChild(picker); 
-  
-      const outsideClickListener = (e) => {
-        if (!picker.contains(e.target) && e.target !== filterInput) {
-          onClose();
-          document.removeEventListener('click', outsideClickListener);
-        }
-      };
-      setTimeout(() => document.addEventListener('click', outsideClickListener), 10);
-  
-      return picker;
-    },
-  
-    destroyActivePickers(containerElement) {
-      const existing = document.querySelectorAll('.projectgrid-command-picker');
-      existing.forEach(p => p.remove());
+  bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
+    let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
+    let activeItems = [];
+    let activeIndex = 0;
+    let storedCategoryIndex = 0;
+    let activePickerEl = null;
+
+    const closeAllPickers = () => {
+      pickerLevel = 0;
+      MenuDom.destroyActivePickers(containerElement);
+      activePickerEl = null;
+      filterInput.focus();
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-    }
-  };
-  
-  // ==========================================
-  // END OF FILE: menu-dom.js
-  // ==========================================
+    };
+
+    const renderMenu = () => {
+      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+        activeIndex = idx;
+        executeSelection();
+      }, closeAllPickers);
+
+      setTimeout(() => {
+        const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
+        if (items.length > 0 && activeItems[activeIndex]?.isHeaderTitle) {
+          activeIndex = (activeIndex + 1) % activeItems.length;
+          renderMenu();
+          return;
+        }
+
+        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
+        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
+          window.ProjectGridUpdateFocusOverlay(activeItem);
+        }
+      }, 10);
+    };
+
+    const executeSelection = () => {
+      if (pickerLevel === 1) {
+        storedCategoryIndex = activeIndex;
+        // FIX: Extract plain-text string names context safely before swapping module array pointers
+        const targetCategoryName = activeItems[activeIndex].name;
+        activeItems = activeItems[activeIndex].items;
+        pickerLevel = 2;
+        activeIndex = (activeItems && activeItems[0]?.isHeaderTitle) ? 1 : 0;
+        renderMenu();
+      } else if (pickerLevel === 2) {
+        const selectedAction = activeItems[activeIndex].action;
+        if (selectedAction) {
+          selectedAction();
+          
+          // FIX: Use plain-text name parameters comparison tracking to match sort redraw actions
+          const currentCategoryText = (storedCategoryIndex === 3) ? 'Sort' : '';
+          if (currentCategoryText === 'Sort') {
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeItems = masterSchema[storedCategoryIndex].items;
+            renderMenu(); 
+            return;
+          }
+        }
+        closeAllPickers();
+      }
+    };
+
+    window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
+      pickerLevel = 1;
+      activeIndex = 0;
+      activeItems = customActiveItems;
+      renderMenu();
+    };
+
+    window.addEventListener('keydown', (evt) => {
+      if (evt.key === 'ScrollLock') {
+        evt.preventDefault();
+        if (document.activeElement !== filterInput) {
+          filterInput.focus();
+          filterInput.select();
+        } else {
+          pickerLevel = 1;
+          activeIndex = 0;
+          const targetMenuStateInstance = globalThis.MenuState || MenuState;
+          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+          renderMenu();
+        }
+      }
+    });
+
+    filterInput.addEventListener('keydown', (evt) => {
+      const visibleRows = getVisibleRows();
+
+      if (pickerLevel > 0 && activePickerEl) {
+        if (pickerLevel === 1) {
+          const typedChar = evt.key.toLowerCase();
+          const matchedCategoryIdx = activeItems.findIndex(cat => cat.acceleratorKey === typedChar);
+          
+          if (matchedCategoryIdx > -1) {
+            evt.preventDefault(); evt.stopPropagation();
+            activeIndex = matchedCategoryIdx;
+            executeSelection();
+            return;
+          }
+        }
+
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+          evt.preventDefault();
+          let attempts = 0;
+          do {
+            activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
+            attempts++;
+          } while (activeItems[activeIndex]?.isHeaderTitle && attempts < activeItems.length);
+          
+          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item, .projectgrid-dropup-header-title');
+          items.forEach((item, idx) => {
+            if (idx === activeIndex && !activeItems[idx].isHeaderTitle) {
+              item.classList.add('projectgrid-picker-highlight');
+              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
+            } else {
+              item.classList.remove('projectgrid-picker-highlight');
+            }
+          });
+          return;
+        } else if (evt.key === 'Enter') {
+          evt.preventDefault();
+          executeSelection();
+          return;
+        } else if (evt.key === 'Escape') {
+          evt.preventDefault();
+          if (pickerLevel === 2) {
+            pickerLevel = 1;
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeIndex = storedCategoryIndex;
+            renderMenu();
+          } else {
+            closeAllPickers();
+          }
+          return;
+        }
+      }
+
+      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+        if (visibleRows.length === 0) return;
+        evt.preventDefault();
+        
+        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
+        let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
+
+        if (evt.key === 'ArrowDown') {
+          visibleIdx = (visibleIdx + 1) >= visibleRows.length ? 0 : visibleIdx + 1;
+        } else {
+          visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
+        }
+
+        updateFocusIndex(visibleIdx);
+        const targetRow = visibleRows[visibleIdx].element;
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
+        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  }
+};
+
+// ==========================================
+// END OF FILE: menu-core.js
+// ==========================================
 })();
 globalThis.MenuDom = MenuDom;
 
@@ -2756,6 +2889,13 @@ return {
       }, closeAllPickers);
 
       setTimeout(() => {
+        const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
+        if (items.length > 0 && activeItems[activeIndex]?.isHeaderTitle) {
+          activeIndex = (activeIndex + 1) % activeItems.length;
+          renderMenu();
+          return;
+        }
+
         const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
         if (activeItem && window.ProjectGridUpdateFocusOverlay) {
           window.ProjectGridUpdateFocusOverlay(activeItem);
@@ -2766,17 +2906,20 @@ return {
     const executeSelection = () => {
       if (pickerLevel === 1) {
         storedCategoryIndex = activeIndex;
+        // FIX: Extract plain-text string names context safely before swapping module array pointers
+        const targetCategoryName = activeItems[activeIndex].name;
         activeItems = activeItems[activeIndex].items;
         pickerLevel = 2;
-        activeIndex = 0;
+        activeIndex = (activeItems && activeItems[0]?.isHeaderTitle) ? 1 : 0;
         renderMenu();
       } else if (pickerLevel === 2) {
         const selectedAction = activeItems[activeIndex].action;
         if (selectedAction) {
           selectedAction();
           
-          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
-          if (currentCategoryText === '📶 Sort') {
+          // FIX: Use plain-text name parameters comparison tracking to match sort redraw actions
+          const currentCategoryText = (storedCategoryIndex === 3) ? 'Sort' : '';
+          if (currentCategoryText === 'Sort') {
             const targetMenuStateInstance = globalThis.MenuState || MenuState;
             const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeItems = masterSchema[storedCategoryIndex].items;
@@ -2788,29 +2931,22 @@ return {
       }
     };
 
-    // =========================================================================
-    // FIXED GLOBAL PORTAL MAPPER
-    // =========================================================================
-    // Explicitly connects the hamburger toolbar click to your rendering channel
     window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
-      pickerLevel = 1; // Explicitly toggle category mode selection
+      pickerLevel = 1;
       activeIndex = 0;
       activeItems = customActiveItems;
       renderMenu();
     };
-    // =========================================================================
 
     window.addEventListener('keydown', (evt) => {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
-        
         if (document.activeElement !== filterInput) {
           filterInput.focus();
           filterInput.select();
         } else {
           pickerLevel = 1;
           activeIndex = 0;
-          
           const targetMenuStateInstance = globalThis.MenuState || MenuState;
           activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
           renderMenu();
@@ -2822,13 +2958,29 @@ return {
       const visibleRows = getVisibleRows();
 
       if (pickerLevel > 0 && activePickerEl) {
+        if (pickerLevel === 1) {
+          const typedChar = evt.key.toLowerCase();
+          const matchedCategoryIdx = activeItems.findIndex(cat => cat.acceleratorKey === typedChar);
+          
+          if (matchedCategoryIdx > -1) {
+            evt.preventDefault(); evt.stopPropagation();
+            activeIndex = matchedCategoryIdx;
+            executeSelection();
+            return;
+          }
+        }
+
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
-          activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
+          let attempts = 0;
+          do {
+            activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
+            attempts++;
+          } while (activeItems[activeIndex]?.isHeaderTitle && attempts < activeItems.length);
           
-          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
+          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item, .projectgrid-dropup-header-title');
           items.forEach((item, idx) => {
-            if (idx === activeIndex) {
+            if (idx === activeIndex && !activeItems[idx].isHeaderTitle) {
               item.classList.add('projectgrid-picker-highlight');
               if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
             } else {
