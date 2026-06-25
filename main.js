@@ -376,139 +376,30 @@ return {
 const FilterManager = (function() {
 const MenuCore = (function() {
 const MenuState = (function() {
+const MenuStateSort = (function() {
 return {
-    activeSortChain: [], 
-  
-    getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
-      const activeRow = rowsArray.find(row => row.element.classList.contains('projectgrid-row-focused'));
-  
-      const sortingFields = [
-        { key: 'tasks', label: 'Tasks Todo', icon: '🔧' },
-        { key: 'created', label: 'Created Date', icon: '🆕' },
-        { key: 'updated', label: 'Updated Date', icon: '🆙' },
-        { key: 'tagcount', label: 'Tag Count', icon: '🏷️' },
-        { key: 'stars', label: 'Stars', icon: '⭐' },
-        { key: 'value', label: 'Value', icon: '💲' },
-        { key: 'size', label: 'Size', icon: '🐘' },
-        { key: 'depth', label: 'Depth', icon: '🎱' },
-        { key: 'priority', label: 'Priority', icon: '🏅' },
-        { key: 'status', label: 'Status', icon: '🚦' },
-        { key: 'lang', label: 'Lang', icon: '🔤' },
-        { key: 'target', label: 'Target', icon: '🎯' }
-      ];
-  
-      const sortMenuItems = [
-        { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
-      ];
-  
-      sortingFields.forEach(field => {
-        const chainIndex = this.activeSortChain.indexOf(field.key);
-        let prefix = '⚫ ';
-        if (chainIndex === 0) prefix = '🟢 ';
-        else if (chainIndex === 1) prefix = '🟡 ';
-        else if (chainIndex === 2) prefix = '🔴 ';
-  
-        sortMenuItems.push({
-          name: `${prefix}${field.icon} ${field.label}`,
-          action: () => this.handleSortChainClick(field.key, rowsArray)
-        });
-      });
-  
-      return [
-        {
-          name: '📁 Filters',
-          items: [
-            { name: '🏷️ Tags Filter', action: () => this.openHeaderDropup('tags') },
-            { name: '⭐ Stars Filter', action: () => this.openHeaderDropup('stars') },
-            { name: '💲 Value Filter', action: () => this.openHeaderDropup('value') },
-            { name: '🐘 Size Filter', action: () => this.openHeaderDropup('size') },
-            { name: '🎱 Depth Filter', action: () => this.openHeaderDropup('depth') },
-            { name: '🏅 Priority Filter', action: () => this.openHeaderDropup('priority') },
-            { name: '🚦 Status Filter', action: () => this.openHeaderDropup('status') },
-            { name: '🔤 Lang Filter', action: () => this.openHeaderDropup('lang') },
-            { name: '🎯 Target Filter', action: () => this.openHeaderDropup('target') }
-          ]
-        },
-        {
-          name: '📊 Columns',
-          items: [
-            { name: '🔧 Tasks Column', action: () => this.focusRowCell(activeRow, 1) },
-            { name: '🏷️ Tags Column', action: () => this.focusRowCell(activeRow, 6) },
-            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 7) },
-            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 8) },
-            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 9) },
-            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 10) },
-            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 11) },
-            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 12) },
-            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 13) },
-            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 14) }
-          ]
-        },
-        {
-          name: '🚀 Launch',
-          items: [
-            { name: '📁 Directory Opus', action: () => this.fireProtocol(activeRow, 'dopus') },
-            { name: '💻 Cursor Editor', action: () => this.fireProtocol(activeRow, 'cursor') },
-            { name: '💜 Obsidian Vault', action: () => this.fireProtocol(activeRow, 'obsidian') }
-          ]
-        },
-        { name: '📶 Sort', items: sortMenuItems },
-        {
-          name: '⚙️ System',
-          items: [
-            { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
-            { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
-          ]
-        }
-      ];
-    },
-  
-    // FIX: ROUTER FORCES ACTIVE KEYBOARD FOCUS TO SHIFT DIRECTLY INTO THE NEWLY DEPLOYED PORTAL CONTAINER PANEL
-    openHeaderDropup(key) {
-      const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
-      if (trigger) {
-        // Dispatch mousedown to trigger panel build operations natively
-        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-        trigger.dispatchEvent(mousedownEvent);
-        
-        // Delay focus shift slightly to allow the DOM node to finish mounting
-        setTimeout(() => {
-          const activePanel = document.querySelector('.projectgrid-dropup-panel');
-          if (activePanel) {
-            activePanel.tabIndex = 0; // Enforce explicit keyboard target capability
-            activePanel.focus();      // Instantly trap arrow key inputs inside list
-          }
-        }, 50);
-      }
-    },
-  
-    handleSortChainClick(key, rowsArray) {
-      const existingIdx = this.activeSortChain.indexOf(key);
-      if (existingIdx > -1) this.activeSortChain.splice(existingIdx, 1);
-      else {
-        if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
-        else { this.activeSortChain.unshift(key); if (this.activeSortChain.length > 3) this.activeSortChain.pop(); }
-      }
-      this.executeDynamicSortChain(rowsArray);
-    },
-  
-    clearSortPipeline(rowsArray) {
-      this.activeSortChain = []; this.executeDynamicSortChain(rowsArray);
-    },
+    activeSortChain: [],
   
     executeDynamicSortChain(rowsArray) {
       this.updateToolbarLabel();
-      const parentTableBody = rowsArray?.element?.parentElement;
-      if (!parentTableBody) return;
+      window.ProjectGridActiveSortChainList = this.activeSortChain;
+  
+      const liveTableBody = document.querySelector('.projectgrid-matrix-table tbody');
+      if (!liveTableBody || !rowsArray || rowsArray.length === 0) {
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        return;
+      }
   
       if (this.activeSortChain.length === 0) {
-        rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
+        rowsArray.sort((a, b) => String(a.searchText || '').localeCompare(String(b.searchText || '')));
       } else {
         rowsArray.sort((rowA, rowB) => {
           const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
           const datesA = rowA.folderDatesValues || {}; const datesB = rowB.folderDatesValues || {};
           const launchersA = rowA.launcherValues || {}; const launchersB = rowB.launcherValues || {};
-          const mergedA = { ...valsA, ...datesA, ...launchersA }; const mergedB = { ...valsB, ...datesB, ...launchersB };
+          
+          const mergedA = { ...valsA, ...datesA, ...launchersA }; 
+          const mergedB = { ...valsB, ...datesB, ...launchersB };
   
           for (let i = 0; i < this.activeSortChain.length; i++) {
             const currentKey = this.activeSortChain[i];
@@ -519,22 +410,27 @@ return {
             } else if (currentKey === 'tasks') {
               const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
               const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
-              valA = String(taskStrA || '0').padStart(5, '0'); valB = String(taskStrB || '0').padStart(5, '0');
+              valA = String(taskStrA[0] || '0').padStart(5, '0');
+              valB = String(taskStrB[0] || '0').padStart(5, '0');
             } else if (currentKey === 'tagcount') {
               const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
               const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
               const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
               valA = String(countA).padStart(5, '0'); valB = String(countB).padStart(5, '0');
             } else {
-              valA = String(valsA[currentKey] || '').replace(/[^\w]/g, ''); valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '');
+              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '');
             }
-            if (valA !== valB) return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+  
+            if (valA !== valB) {
+              return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+            }
           }
           return 0;
         });
       }
-      rowsArray.forEach(row => parentTableBody.appendChild(row.element));
-      window.ProjectGridActiveSortChainList = this.activeSortChain;
+  
+      rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
       window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
@@ -545,17 +441,39 @@ return {
         indicator.textContent = '📶 Default Directory Sort Order'; indicator.style.color = 'var(--text-muted)';
       } else {
         const formattedChain = this.activeSortChain.map((k, idx) => {
-          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; return `${symbol}${k.toUpperCase()}`;
+          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; 
+          return `${symbol}${k.toUpperCase()}`;
         }).join(' ➔ ');
         indicator.textContent = `📶 Sort Chain: ${formattedChain}`; indicator.style.color = 'var(--text-accent)';
+      }
+    }
+  };
+})();
+const MenuStateUtils = (function() {
+return {
+    openHeaderDropup(key) {
+      const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
+      if (trigger) {
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        trigger.dispatchEvent(mousedownEvent);
+        setTimeout(() => {
+          const activePanel = document.querySelector('.projectgrid-dropup-panel');
+          if (activePanel) { activePanel.tabIndex = 0; activePanel.focus(); }
+        }, 50);
       }
     },
   
     focusRowCell(rowObj, cellIndex) {
-      if (!rowObj) return alert('Highlight a row project using arrow keys first.');
+      if (!rowObj || !rowObj.element) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
       const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
       if (interactive) interactive.focus();
+    },
+  
+    fireProtocol(rowObj, protocol) {
+      if (!rowObj || !rowObj.element) return alert('Highlight a row project using arrow keys first.');
+      const linkEl = rowObj.element.querySelector(`a[href^="aip://${protocol}"]`);
+      if (linkEl) window.location.href = linkEl.getAttribute('href');
     },
   
     clearAllSystemFilters(filterInput) {
@@ -570,6 +488,93 @@ return {
       if (activeLeaf) activeLeaf.previewMode?.rerender(true);
     }
   };
+})();
+
+return {
+  get activeSortChain() { return MenuStateSort.activeSortChain; },
+  set activeSortChain(val) { MenuStateSort.activeSortChain = val; },
+
+  getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
+    const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
+
+    const sortingFields = [
+      { key: 'tasks', label: 'Tasks Todo', icon: '🔧' },
+      { key: 'created', label: 'Created Date', icon: '🆕' },
+      { key: 'updated', label: 'Updated Date', icon: '🆙' },
+      { key: 'tagcount', label: 'Tag Count', icon: '🏷️' },
+      { key: 'stars', label: 'Stars', icon: '⭐' },
+      { key: 'value', label: 'Value', icon: '💲' },
+      { key: 'size', label: 'Size', icon: '🐘' },
+      { key: 'depth', label: 'Depth', icon: '🎱' },
+      { key: 'priority', label: 'Priority', icon: '🏅' },
+      { key: 'status', label: 'Status', icon: '🚦' },
+      { key: 'lang', label: 'Lang', icon: '🔤' },
+      { key: 'target', label: 'Target', icon: '🎯' }
+    ];
+
+    const sortMenuItems = [
+      { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
+    ];
+
+    sortingFields.forEach(field => {
+      const chainIndex = this.activeSortChain.indexOf(field.key);
+      let prefix = '⚫ ';
+      if (chainIndex === 0) prefix = '🟢 ';
+      else if (chainIndex === 1) prefix = '🟡 ';
+      else if (chainIndex === 2) prefix = '🔴 ';
+
+      sortMenuItems.push({
+        name: `${prefix}${field.icon} ${field.label}`,
+        action: () => this.handleSortChainClick(field.key, rowsArray)
+      });
+    });
+
+    return [
+      {
+        name: '📁 Filters',
+        items: sortingFields.slice(4).map(f => ({ name: `${f.icon} ${f.label} Filter`, action: () => MenuStateUtils.openHeaderDropup(f.key) }))
+      },
+      {
+        name: '📊 Columns',
+        items: [
+          { name: '🔧 Tasks Column', action: () => MenuStateUtils.focusRowCell(activeRow, 1) },
+          { name: '🏷️ Tags Column', action: () => MenuStateUtils.focusRowCell(activeRow, 6) },
+          ...sortingFields.slice(4).map((f, i) => ({ name: `${f.icon} ${f.label} Column`, action: () => MenuStateUtils.focusRowCell(activeRow, 7 + i) }))
+        ]
+      },
+      {
+        name: '🚀 Launch',
+        items: [
+          { name: '📁 Directory Opus', action: () => MenuStateUtils.fireProtocol(activeRow, 'dopus') },
+          { name: '💻 Cursor Editor', action: () => MenuStateUtils.fireProtocol(activeRow, 'cursor') },
+          { name: '💜 Obsidian Vault', action: () => MenuStateUtils.fireProtocol(activeRow, 'obsidian') }
+        ]
+      },
+      { name: '📶 Sort', items: sortMenuItems },
+      {
+        name: '⚙️ System',
+        items: [
+          { name: '✕ Clear All Filters', action: () => MenuStateUtils.clearAllSystemFilters(filterInput) },
+          { name: '🔄 Reload Component', action: () => MenuStateUtils.reloadActiveAppWorkspace() }
+        ]
+      }
+    ];
+  },
+
+  handleSortChainClick(key, rowsArray) {
+    const existingIdx = this.activeSortChain.indexOf(key);
+    if (existingIdx > -1) this.activeSortChain.splice(existingIdx, 1);
+    else {
+      if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
+      else { this.activeSortChain.unshift(key); if (this.activeSortChain.length > 3) this.activeSortChain.pop(); }
+    }
+    MenuStateSort.executeDynamicSortChain(rowsArray);
+  },
+
+  clearSortPipeline(rowsArray) {
+    this.activeSortChain = []; MenuStateSort.executeDynamicSortChain(rowsArray);
+  }
+};
 })();
 const MenuDom = (function() {
 return {
