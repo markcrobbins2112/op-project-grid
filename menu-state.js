@@ -3,7 +3,6 @@
 // ==========================================
 
 module.exports = {
-    // Initialize dynamic global memory storage to track the active 3-column sort order
     activeSortChain: [],
   
     getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
@@ -24,16 +23,17 @@ module.exports = {
           ]
         },
         {
+          // FIX: CELLS FOCUS SELECTION MARGINS UPDATED TO ACCOUNT FOR THE 2 NEW INTERMEDIATE FIELDS (+2 OFFSETS)
           name: '📊 Columns',
           items: [
-            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 4) },
-            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 5) },
-            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 6) },
-            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 7) },
-            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 8) },
-            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 9) },
-            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 10) },
-            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 11) }
+            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 6) },
+            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 7) },
+            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 8) },
+            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 9) },
+            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 10) },
+            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 11) },
+            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 12) },
+            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 13) }
           ]
         },
         {
@@ -45,7 +45,6 @@ module.exports = {
           ]
         },
         {
-          // FIX: ALL SORT OPERATIONS CONSOLIDATED UNDER THEIR OWN TRUE 'SORT' CATEGORY LAYER
           name: '📶 Sort',
           items: [
             { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
@@ -71,7 +70,6 @@ module.exports = {
   
     toggleSortChainKey(key, rowsArray) {
       const existingIdx = this.activeSortChain.indexOf(key);
-      
       if (existingIdx > -1) {
         this.activeSortChain.splice(existingIdx, 1);
       } else {
@@ -81,15 +79,13 @@ module.exports = {
         }
         this.activeSortChain.push(key);
       }
-  
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
       this.activeSortChain = [];
       this.updateToolbarLabel();
-      
-      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      const parentTableBody = rowsArray?.element?.parentElement;
       if (parentTableBody) {
         rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
         rowsArray.forEach(row => parentTableBody.appendChild(row.element));
@@ -101,7 +97,7 @@ module.exports = {
       this.updateToolbarLabel();
       if (this.activeSortChain.length === 0) return;
   
-      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      const parentTableBody = rowsArray?.element?.parentElement;
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
@@ -110,10 +106,8 @@ module.exports = {
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          
           const valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
           const valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
-          
           if (valA !== valB) {
             return valA.localeCompare(valB, undefined, { numeric: true });
           }

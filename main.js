@@ -327,7 +327,6 @@ const FilterManager = (function() {
 const MenuCore = (function() {
 const MenuState = (function() {
 return {
-    // Initialize dynamic global memory storage to track the active 3-column sort order
     activeSortChain: [],
   
     getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
@@ -348,16 +347,17 @@ return {
           ]
         },
         {
+          // FIX: CELLS FOCUS SELECTION MARGINS UPDATED TO ACCOUNT FOR THE 2 NEW INTERMEDIATE FIELDS (+2 OFFSETS)
           name: '📊 Columns',
           items: [
-            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 4) },
-            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 5) },
-            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 6) },
-            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 7) },
-            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 8) },
-            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 9) },
-            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 10) },
-            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 11) }
+            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 6) },
+            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 7) },
+            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 8) },
+            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 9) },
+            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 10) },
+            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 11) },
+            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 12) },
+            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 13) }
           ]
         },
         {
@@ -369,7 +369,6 @@ return {
           ]
         },
         {
-          // FIX: ALL SORT OPERATIONS CONSOLIDATED UNDER THEIR OWN TRUE 'SORT' CATEGORY LAYER
           name: '📶 Sort',
           items: [
             { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
@@ -395,7 +394,6 @@ return {
   
     toggleSortChainKey(key, rowsArray) {
       const existingIdx = this.activeSortChain.indexOf(key);
-      
       if (existingIdx > -1) {
         this.activeSortChain.splice(existingIdx, 1);
       } else {
@@ -405,15 +403,13 @@ return {
         }
         this.activeSortChain.push(key);
       }
-  
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
       this.activeSortChain = [];
       this.updateToolbarLabel();
-      
-      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      const parentTableBody = rowsArray?.element?.parentElement;
       if (parentTableBody) {
         rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
         rowsArray.forEach(row => parentTableBody.appendChild(row.element));
@@ -425,7 +421,7 @@ return {
       this.updateToolbarLabel();
       if (this.activeSortChain.length === 0) return;
   
-      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      const parentTableBody = rowsArray?.element?.parentElement;
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
@@ -434,10 +430,8 @@ return {
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          
           const valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
           const valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
-          
           if (valA !== valB) {
             return valA.localeCompare(valB, undefined, { numeric: true });
           }
@@ -981,6 +975,8 @@ return {
   };
 })();
 const UiRow = (function() {
+const fs = require('fs');
+const path = require('path');
 const UiColor = (function() {
 return {
     getColorForFirstCharacter(filename) {
@@ -1198,10 +1194,21 @@ return {
 })();
 
 return {
+  // Pure JavaScript Date formatting tool matching: yyyy.mm.dd hh (24-hour format)
+  formatDateString(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return '0000.00.00 00';
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const hh = String(dateObj.getHours()).padStart(2, '0'); // Explicit 24-hour hour string extraction
+    return `${yyyy}.${mm}.${dd} ${hh}`;
+  },
+
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
+    // Column 1: Core dynamic Note hyperlink cell
     const noteCell = document.createElement('td');
     noteCell.className = 'projectgrid-matrix-cell note-title-cell';
     const fileAnchor = document.createElement('a');
@@ -1217,9 +1224,42 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Call native disk checking loops (Injected from ui-row-actions.js)
+    // --- FIX: READ DIRECT DISK METADATA STATS OUT OF CONTAINING FOLDER DIRECTORY ---
+    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
+    let createdDateStr = '0000.00.00 00';
+    let updatedDateStr = '0000.00.00 00';
+
+    try {
+      if (fs.existsSync(absoluteFolderDiskPath)) {
+        const directoryStats = fs.statSync(absoluteFolderDiskPath);
+        createdDateStr = this.formatDateString(directoryStats.birthtime); // Folder created timestamp
+        updatedDateStr = this.formatDateString(directoryStats.mtime);     // Folder modified timestamp
+      }
+    } catch (err) {
+      console.error(`[ProjectGrid] Timestamp fetch error on drive target ${absoluteFolderDiskPath}:`, err.message);
+    }
+
+    // Column 2: Created Date Cell
+    const createdCell = document.createElement('td');
+    createdCell.className = 'projectgrid-matrix-cell timestamp-td-cell';
+    createdCell.style.textAlign = 'center';
+    createdCell.style.color = 'var(--text-muted)';
+    createdCell.textContent = createdDateStr;
+    tableRow.appendChild(createdCell);
+
+    // Column 3: Updated Date Cell
+    const updatedCell = document.createElement('td');
+    updatedCell.className = 'projectgrid-matrix-cell timestamp-td-cell';
+    updatedCell.style.textAlign = 'center';
+    updatedCell.style.color = 'var(--text-muted)';
+    updatedCell.textContent = updatedDateStr;
+    tableRow.appendChild(updatedCell);
+    // -------------------------------------------------------------------------------
+
+    // Columns 4, 5, 6: Launcher Button Links (Appended modularly)
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
+    // Columns 7 through 14: Define the 8 interactive field dropdown tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -1346,7 +1386,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
-    // Create the master toolbar wrapper directly above the matrix table
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -1356,7 +1395,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
     toolbar.appendChild(toolbarBtn);
 
-    // Dynamic label slot tracking the multi-choice sort cascade pipeline in real-time
     const sortLabel = document.createElement('span');
     sortLabel.id = 'projectgrid-sort-toolbar-label';
     sortLabel.className = 'projectgrid-sort-indicator-label';
@@ -1377,14 +1415,15 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Explicit static layout tracks mapping launcher anchors
+    // FIX: INSERT THE TWO NEW DATE COLUMN HEADER CELL DESCRIPTIONS IMMEDIATELY AFTER FILE COLUMN (COL 1)
     headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 10%; text-align: center;" title="Folder Created Date">🆕</th>
+      <th style="width: 10%; text-align: center;" title="Folder Updated Date">🆙</th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Define core metadata filter choices columns tracking positions (Columns 5 through 12)
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -1399,7 +1438,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
-    // Assemble database array maps before instantiating columns header dropups
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -1414,7 +1452,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Generate the 8 interactive multi-select choice dropups cleanly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
@@ -1426,7 +1463,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    // Forward toolbar gear mouse clicks directly into the core ScrollLock routing pipeline loop
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();

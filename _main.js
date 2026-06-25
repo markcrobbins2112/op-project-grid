@@ -33,7 +33,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
-    // Create the master toolbar wrapper directly above the matrix table
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -43,7 +42,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
     toolbar.appendChild(toolbarBtn);
 
-    // Dynamic label slot tracking the multi-choice sort cascade pipeline in real-time
     const sortLabel = document.createElement('span');
     sortLabel.id = 'projectgrid-sort-toolbar-label';
     sortLabel.className = 'projectgrid-sort-indicator-label';
@@ -64,14 +62,15 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Explicit static layout tracks mapping launcher anchors
+    // FIX: INSERT THE TWO NEW DATE COLUMN HEADER CELL DESCRIPTIONS IMMEDIATELY AFTER FILE COLUMN (COL 1)
     headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 10%; text-align: center;" title="Folder Created Date">🆕</th>
+      <th style="width: 10%; text-align: center;" title="Folder Updated Date">🆙</th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Define core metadata filter choices columns tracking positions (Columns 5 through 12)
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -86,7 +85,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
-    // Assemble database array maps before instantiating columns header dropups
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -101,7 +99,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Generate the 8 interactive multi-select choice dropups cleanly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
@@ -113,7 +110,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    // Forward toolbar gear mouse clicks directly into the core ScrollLock routing pipeline loop
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();
