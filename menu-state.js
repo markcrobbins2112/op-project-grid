@@ -3,6 +3,9 @@
 // ==========================================
 
 module.exports = {
+    // Initialize dynamic global memory storage to track the active 3-column sort order
+    activeSortChain: [],
+  
     getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
       const activeRow = rowsArray.find(row => row.element.classList.contains('projectgrid-row-focused'));
   
@@ -21,7 +24,6 @@ module.exports = {
           ]
         },
         {
-          // FIX: Removed "Focus on" verbiage and mapped exactly to the same 8 columns as the filters
           name: '📊 Columns',
           items: [
             { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 4) },
@@ -43,11 +45,23 @@ module.exports = {
           ]
         },
         {
+          // FIX: ALL SORT OPERATIONS CONSOLIDATED UNDER THEIR OWN TRUE 'SORT' CATEGORY LAYER
+          name: '📶 Sort',
+          items: [
+            { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
+            { name: '💲 Value to Sort Chain', action: () => this.toggleSortChainKey('value', rowsArray) },
+            { name: '🐘 Size to Sort Chain', action: () => this.toggleSortChainKey('size', rowsArray) },
+            { name: '🎱 Depth to Sort Chain', action: () => this.toggleSortChainKey('depth', rowsArray) },
+            { name: '🏅 Priority to Sort Chain', action: () => this.toggleSortChainKey('priority', rowsArray) },
+            { name: '🚦 Status to Sort Chain', action: () => this.toggleSortChainKey('status', rowsArray) },
+            { name: '🔤 Lang to Sort Chain', action: () => this.toggleSortChainKey('lang', rowsArray) },
+            { name: '🎯 Target to Sort Chain', action: () => this.toggleSortChainKey('target', rowsArray) },
+            { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
+          ]
+        },
+        {
           name: '⚙️ System',
           items: [
-            { name: '📶 Sort: Status ➔ Stars ➔ Priority', action: () => this.executeThreeColumnSortChain(rowsArray, ['status', 'stars', 'priority']) },
-            { name: '📶 Sort: Priority ➔ Value ➔ Size', action: () => this.executeThreeColumnSortChain(rowsArray, ['priority', 'value', 'size']) },
-            { name: '📶 Sort: Lang ➔ Target ➔ Stars', action: () => this.executeThreeColumnSortChain(rowsArray, ['lang', 'target', 'stars']) },
             { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
             { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
           ]
@@ -55,7 +69,38 @@ module.exports = {
       ];
     },
   
-    executeThreeColumnSortChain(rowsArray, keysArray) {
+    toggleSortChainKey(key, rowsArray) {
+      const existingIdx = this.activeSortChain.indexOf(key);
+      
+      if (existingIdx > -1) {
+        this.activeSortChain.splice(existingIdx, 1);
+      } else {
+        if (this.activeSortChain.length >= 3) {
+          alert("Maximum sort chain hierarchy length reached! Please clear sorts or drop a column first.");
+          return;
+        }
+        this.activeSortChain.push(key);
+      }
+  
+      this.executeDynamicSortChain(rowsArray);
+    },
+  
+    clearSortPipeline(rowsArray) {
+      this.activeSortChain = [];
+      this.updateToolbarLabel();
+      
+      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      if (parentTableBody) {
+        rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
+        rowsArray.forEach(row => parentTableBody.appendChild(row.element));
+      }
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    },
+  
+    executeDynamicSortChain(rowsArray) {
+      this.updateToolbarLabel();
+      if (this.activeSortChain.length === 0) return;
+  
       const parentTableBody = rowsArray[0]?.element?.parentElement;
       if (!parentTableBody) return;
   
@@ -63,21 +108,35 @@ module.exports = {
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
   
-        const valA1 = String(valsA[keysArray[0]] || '').replace(/[^\w]/g, '');
-        const valB1 = String(valsB[keysArray[0]] || '').replace(/[^\w]/g, '');
-        if (valA1 !== valB1) return valA1.localeCompare(valB1, undefined, { numeric: true });
-  
-        const valA2 = String(valsA[keysArray[1]] || '').replace(/[^\w]/g, '');
-        const valB2 = String(valsB[keysArray[1]] || '').replace(/[^\w]/g, '');
-        if (valA2 !== valB2) return valA2.localeCompare(valB2, undefined, { numeric: true });
-  
-        const valA3 = String(valsA[keysArray[2]] || '').replace(/[^\w]/g, '');
-        const valB3 = String(valsB[keysArray[2]] || '').replace(/[^\w]/g, '');
-        return valA3.localeCompare(valB3, undefined, { numeric: true });
+        for (let i = 0; i < this.activeSortChain.length; i++) {
+          const currentKey = this.activeSortChain[i];
+          
+          const valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
+          const valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+          
+          if (valA !== valB) {
+            return valA.localeCompare(valB, undefined, { numeric: true });
+          }
+        }
+        return 0;
       });
   
       rowsArray.forEach(row => parentTableBody.appendChild(row.element));
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    },
+  
+    updateToolbarLabel() {
+      const indicator = document.getElementById('projectgrid-sort-toolbar-label');
+      if (!indicator) return;
+  
+      if (this.activeSortChain.length === 0) {
+        indicator.textContent = '📶 Default Directory Sort Order';
+        indicator.style.color = 'var(--text-muted)';
+      } else {
+        const formattedChain = this.activeSortChain.map(k => k.toUpperCase()).join(' ➔ ');
+        indicator.textContent = `📶 Sorted by: ${formattedChain}`;
+        indicator.style.color = 'var(--text-accent)';
+      }
     },
   
     openHeaderDropup(key) {
@@ -93,9 +152,7 @@ module.exports = {
       if (!rowObj) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
       const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, a, input') : null;
-      if (interactive) {
-        interactive.focus();
-      }
+      if (interactive) interactive.focus();
     },
   
     fireProtocol(rowObj, protocol) {
@@ -107,7 +164,6 @@ module.exports = {
     clearAllSystemFilters(filterInput) {
       filterInput.value = '';
       document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
-      document.querySelectorAll('.projectgrid-custom-select-btn').forEach(btn => btn.textContent = '⬛');
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       filterInput.focus();
     },

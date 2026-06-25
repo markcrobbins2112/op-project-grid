@@ -7,7 +7,7 @@ const UiRowActions = require('./ui-row-actions');
 const UiRowSelect = require('./ui-row-select');
 
 module.exports = {
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
@@ -26,7 +26,7 @@ module.exports = {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2, 3, 4: App Launcher shortcuts (Passes app context layer)
+    // Call native disk checking loops (Injected from ui-row-actions.js)
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
     const fieldsConfig = [
@@ -46,8 +46,7 @@ module.exports = {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
       
-      // RELAYS CURRENT WORKSPACE ROW MATRIX ARRAYS FOR DYNAMIC SELECTION OVERLAY PROCESSING
-      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray);
+      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       
       tableRow.appendChild(cell);
     });

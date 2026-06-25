@@ -34,7 +34,6 @@ module.exports = {
         activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
         activePanel.style.left = `${rect.left + window.scrollX}px`;
   
-        // FIX: Changed label prefix to match requested layout structure "Columns / Filters" cleanly
         const labelHeader = document.createElement('div');
         labelHeader.className = 'projectgrid-dropup-header-title';
         labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;

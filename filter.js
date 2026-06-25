@@ -7,6 +7,7 @@ const MenuCore = require('./menu-core');
 module.exports = {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
+    let lastTrackedRowElement = null; // Remembers what row was active before the data changed
 
     const clearRowHighlights = () => {
       rowsArray.forEach(row => {
@@ -52,7 +53,7 @@ module.exports = {
         }
       });
 
-      // Update counters text without curly braces
+      // Update cell counters text
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
@@ -70,34 +71,53 @@ module.exports = {
         });
       });
 
-      // Re-sync header counters text layouts
+      // Update header titles counters text
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key) return;
         const totalItems = globalCounts[key]?.total || 0;
         const visibleItems = Object.values(visibleCounts[key]?.valMap || {}).reduce((a, b) => a + b, 0);
-        const baseIcon = trigger.textContent.split(' ')[0];
+        const baseIcon = trigger.textContent.split(' ');
         trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
       });
 
-      // --- FIX: AUTOMATICALLY ENSURE A ROW INDICATOR IS ALWAYS ACTIVE ---
+      // --- FIX: CALC-SHIFT NEAREST VISIBLE NEIGHBOR COMPONENT ROW ---
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      
       if (visibleRows.length > 0) {
-        // If our pointer was cleared or went out of bounds, snap it cleanly to the first visible row
-        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) {
-          currentFocusedIndex = 0;
+        let targetMatchIdx = 0;
+
+        if (lastTrackedRowElement && !visibleRows.some(r => r.element === lastTrackedRowElement)) {
+          // Find closest horizontal index coordinate across structural array states
+          let absoluteOldIdx = rowsArray.findIndex(r => r.element === lastTrackedRowElement);
+          let minimumDistance = Infinity;
+
+          visibleRows.forEach((vRow, vIdx) => {
+            let absoluteNewIdx = rowsArray.findIndex(r => r.element === vRow.element);
+            let currentDist = Math.abs(absoluteOldIdx - absoluteNewIdx);
+            if (currentDist < minimumDistance) {
+              minimumDistance = currentDist;
+              targetMatchIdx = vIdx;
+            }
+          });
+        } else if (lastTrackedRowElement) {
+          // If the last tracked element is still on screen, keep its exact index track
+          targetMatchIdx = visibleRows.findIndex(r => r.element === lastTrackedRowElement);
         }
-        const targetRow = visibleRows[currentFocusedIndex].element;
-        targetRow.classList.add('projectgrid-row-focused');
+
+        currentFocusedIndex = targetMatchIdx >= 0 ? targetMatchIdx : 0;
+        const finalTargetRow = visibleRows[currentFocusedIndex].element;
+        
+        finalTargetRow.classList.add('projectgrid-row-focused');
+        lastTrackedRowElement = finalTargetRow;
         
         if (window.ProjectGridUpdateRowOverlay) {
-          window.ProjectGridUpdateRowOverlay(targetRow);
+          window.ProjectGridUpdateRowOverlay(finalTargetRow);
         }
       } else {
         currentFocusedIndex = -1;
-        if (window.ProjectGridUpdateRowOverlay) {
-          window.ProjectGridUpdateRowOverlay(null);
-        }
+        lastTrackedRowElement = null;
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
       }
     };
 
@@ -107,11 +127,11 @@ module.exports = {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
-      // Re-evaluate overlays using a safe structural tracking loop
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       clearRowHighlights();
       if (visibleRows[index]) {
         visibleRows[index].element.classList.add('projectgrid-row-focused');
+        lastTrackedRowElement = visibleRows[index].element;
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
       }
     });

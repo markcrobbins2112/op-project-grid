@@ -327,6 +327,9 @@ const FilterManager = (function() {
 const MenuCore = (function() {
 const MenuState = (function() {
 return {
+    // Initialize dynamic global memory storage to track the active 3-column sort order
+    activeSortChain: [],
+  
     getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
       const activeRow = rowsArray.find(row => row.element.classList.contains('projectgrid-row-focused'));
   
@@ -345,7 +348,6 @@ return {
           ]
         },
         {
-          // FIX: Removed "Focus on" verbiage and mapped exactly to the same 8 columns as the filters
           name: '📊 Columns',
           items: [
             { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 4) },
@@ -367,11 +369,23 @@ return {
           ]
         },
         {
+          // FIX: ALL SORT OPERATIONS CONSOLIDATED UNDER THEIR OWN TRUE 'SORT' CATEGORY LAYER
+          name: '📶 Sort',
+          items: [
+            { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
+            { name: '💲 Value to Sort Chain', action: () => this.toggleSortChainKey('value', rowsArray) },
+            { name: '🐘 Size to Sort Chain', action: () => this.toggleSortChainKey('size', rowsArray) },
+            { name: '🎱 Depth to Sort Chain', action: () => this.toggleSortChainKey('depth', rowsArray) },
+            { name: '🏅 Priority to Sort Chain', action: () => this.toggleSortChainKey('priority', rowsArray) },
+            { name: '🚦 Status to Sort Chain', action: () => this.toggleSortChainKey('status', rowsArray) },
+            { name: '🔤 Lang to Sort Chain', action: () => this.toggleSortChainKey('lang', rowsArray) },
+            { name: '🎯 Target to Sort Chain', action: () => this.toggleSortChainKey('target', rowsArray) },
+            { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
+          ]
+        },
+        {
           name: '⚙️ System',
           items: [
-            { name: '📶 Sort: Status ➔ Stars ➔ Priority', action: () => this.executeThreeColumnSortChain(rowsArray, ['status', 'stars', 'priority']) },
-            { name: '📶 Sort: Priority ➔ Value ➔ Size', action: () => this.executeThreeColumnSortChain(rowsArray, ['priority', 'value', 'size']) },
-            { name: '📶 Sort: Lang ➔ Target ➔ Stars', action: () => this.executeThreeColumnSortChain(rowsArray, ['lang', 'target', 'stars']) },
             { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
             { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
           ]
@@ -379,7 +393,38 @@ return {
       ];
     },
   
-    executeThreeColumnSortChain(rowsArray, keysArray) {
+    toggleSortChainKey(key, rowsArray) {
+      const existingIdx = this.activeSortChain.indexOf(key);
+      
+      if (existingIdx > -1) {
+        this.activeSortChain.splice(existingIdx, 1);
+      } else {
+        if (this.activeSortChain.length >= 3) {
+          alert("Maximum sort chain hierarchy length reached! Please clear sorts or drop a column first.");
+          return;
+        }
+        this.activeSortChain.push(key);
+      }
+  
+      this.executeDynamicSortChain(rowsArray);
+    },
+  
+    clearSortPipeline(rowsArray) {
+      this.activeSortChain = [];
+      this.updateToolbarLabel();
+      
+      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      if (parentTableBody) {
+        rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
+        rowsArray.forEach(row => parentTableBody.appendChild(row.element));
+      }
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    },
+  
+    executeDynamicSortChain(rowsArray) {
+      this.updateToolbarLabel();
+      if (this.activeSortChain.length === 0) return;
+  
       const parentTableBody = rowsArray[0]?.element?.parentElement;
       if (!parentTableBody) return;
   
@@ -387,21 +432,35 @@ return {
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
   
-        const valA1 = String(valsA[keysArray[0]] || '').replace(/[^\w]/g, '');
-        const valB1 = String(valsB[keysArray[0]] || '').replace(/[^\w]/g, '');
-        if (valA1 !== valB1) return valA1.localeCompare(valB1, undefined, { numeric: true });
-  
-        const valA2 = String(valsA[keysArray[1]] || '').replace(/[^\w]/g, '');
-        const valB2 = String(valsB[keysArray[1]] || '').replace(/[^\w]/g, '');
-        if (valA2 !== valB2) return valA2.localeCompare(valB2, undefined, { numeric: true });
-  
-        const valA3 = String(valsA[keysArray[2]] || '').replace(/[^\w]/g, '');
-        const valB3 = String(valsB[keysArray[2]] || '').replace(/[^\w]/g, '');
-        return valA3.localeCompare(valB3, undefined, { numeric: true });
+        for (let i = 0; i < this.activeSortChain.length; i++) {
+          const currentKey = this.activeSortChain[i];
+          
+          const valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
+          const valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+          
+          if (valA !== valB) {
+            return valA.localeCompare(valB, undefined, { numeric: true });
+          }
+        }
+        return 0;
       });
   
       rowsArray.forEach(row => parentTableBody.appendChild(row.element));
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    },
+  
+    updateToolbarLabel() {
+      const indicator = document.getElementById('projectgrid-sort-toolbar-label');
+      if (!indicator) return;
+  
+      if (this.activeSortChain.length === 0) {
+        indicator.textContent = '📶 Default Directory Sort Order';
+        indicator.style.color = 'var(--text-muted)';
+      } else {
+        const formattedChain = this.activeSortChain.map(k => k.toUpperCase()).join(' ➔ ');
+        indicator.textContent = `📶 Sorted by: ${formattedChain}`;
+        indicator.style.color = 'var(--text-accent)';
+      }
     },
   
     openHeaderDropup(key) {
@@ -417,9 +476,7 @@ return {
       if (!rowObj) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
       const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, a, input') : null;
-      if (interactive) {
-        interactive.focus();
-      }
+      if (interactive) interactive.focus();
     },
   
     fireProtocol(rowObj, protocol) {
@@ -431,7 +488,6 @@ return {
     clearAllSystemFilters(filterInput) {
       filterInput.value = '';
       document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
-      document.querySelectorAll('.projectgrid-custom-select-btn').forEach(btn => btn.textContent = '⬛');
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       filterInput.focus();
     },
@@ -620,6 +676,7 @@ return {
 return {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
+    let lastTrackedRowElement = null; // Remembers what row was active before the data changed
 
     const clearRowHighlights = () => {
       rowsArray.forEach(row => {
@@ -665,7 +722,7 @@ return {
         }
       });
 
-      // Update counters text without curly braces
+      // Update cell counters text
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
@@ -683,34 +740,53 @@ return {
         });
       });
 
-      // Re-sync header counters text layouts
+      // Update header titles counters text
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key) return;
         const totalItems = globalCounts[key]?.total || 0;
         const visibleItems = Object.values(visibleCounts[key]?.valMap || {}).reduce((a, b) => a + b, 0);
-        const baseIcon = trigger.textContent.split(' ')[0];
+        const baseIcon = trigger.textContent.split(' ');
         trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
       });
 
-      // --- FIX: AUTOMATICALLY ENSURE A ROW INDICATOR IS ALWAYS ACTIVE ---
+      // --- FIX: CALC-SHIFT NEAREST VISIBLE NEIGHBOR COMPONENT ROW ---
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      
       if (visibleRows.length > 0) {
-        // If our pointer was cleared or went out of bounds, snap it cleanly to the first visible row
-        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) {
-          currentFocusedIndex = 0;
+        let targetMatchIdx = 0;
+
+        if (lastTrackedRowElement && !visibleRows.some(r => r.element === lastTrackedRowElement)) {
+          // Find closest horizontal index coordinate across structural array states
+          let absoluteOldIdx = rowsArray.findIndex(r => r.element === lastTrackedRowElement);
+          let minimumDistance = Infinity;
+
+          visibleRows.forEach((vRow, vIdx) => {
+            let absoluteNewIdx = rowsArray.findIndex(r => r.element === vRow.element);
+            let currentDist = Math.abs(absoluteOldIdx - absoluteNewIdx);
+            if (currentDist < minimumDistance) {
+              minimumDistance = currentDist;
+              targetMatchIdx = vIdx;
+            }
+          });
+        } else if (lastTrackedRowElement) {
+          // If the last tracked element is still on screen, keep its exact index track
+          targetMatchIdx = visibleRows.findIndex(r => r.element === lastTrackedRowElement);
         }
-        const targetRow = visibleRows[currentFocusedIndex].element;
-        targetRow.classList.add('projectgrid-row-focused');
+
+        currentFocusedIndex = targetMatchIdx >= 0 ? targetMatchIdx : 0;
+        const finalTargetRow = visibleRows[currentFocusedIndex].element;
+        
+        finalTargetRow.classList.add('projectgrid-row-focused');
+        lastTrackedRowElement = finalTargetRow;
         
         if (window.ProjectGridUpdateRowOverlay) {
-          window.ProjectGridUpdateRowOverlay(targetRow);
+          window.ProjectGridUpdateRowOverlay(finalTargetRow);
         }
       } else {
         currentFocusedIndex = -1;
-        if (window.ProjectGridUpdateRowOverlay) {
-          window.ProjectGridUpdateRowOverlay(null);
-        }
+        lastTrackedRowElement = null;
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
       }
     };
 
@@ -720,11 +796,11 @@ return {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
-      // Re-evaluate overlays using a safe structural tracking loop
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       clearRowHighlights();
       if (visibleRows[index]) {
         visibleRows[index].element.classList.add('projectgrid-row-focused');
+        lastTrackedRowElement = visibleRows[index].element;
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
       }
     });
@@ -774,7 +850,6 @@ return {
         activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
         activePanel.style.left = `${rect.left + window.scrollX}px`;
   
-        // FIX: Changed label prefix to match requested layout structure "Columns / Filters" cleanly
         const labelHeader = document.createElement('div');
         labelHeader.className = 'projectgrid-dropup-header-title';
         labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;
@@ -1035,7 +1110,10 @@ return {
     let activeDropdown = null;
     let selectionIdx = optionsList.indexOf(rawVal || '⬛');
 
-    const closeDropdown = () => { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } };
+    const closeDropdown = () => { 
+      if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } 
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+    };
 
     const openDropdown = () => {
       closeDropdown();
@@ -1054,7 +1132,6 @@ return {
         li.className = 'projectgrid-custom-dropdown-item';
         li.textContent = opt;
         
-        // Items focus traces topmost overlay portal loop
         if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
           setTimeout(() => window.ProjectGridUpdateFocusOverlay(li), 10);
         }
@@ -1081,7 +1158,6 @@ return {
       }
     };
 
-    // FIX: BUTTON INTERFACE TRIGGERS MIDDLE INPUTS OVERLAY AND ASSIGNS BASE MATRICES OVERLAY TO THE ACTIVE ROW
     btn.addEventListener('focus', () => {
       openDropdown();
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
@@ -1092,7 +1168,6 @@ return {
       setTimeout(closeDropdown, 120);
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     });
     
     btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); });
@@ -1123,7 +1198,7 @@ return {
 })();
 
 return {
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
@@ -1142,7 +1217,7 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2, 3, 4: App Launcher shortcuts (Passes app context layer)
+    // Call native disk checking loops (Injected from ui-row-actions.js)
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
     const fieldsConfig = [
@@ -1162,8 +1237,7 @@ return {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
       
-      // RELAYS CURRENT WORKSPACE ROW MATRIX ARRAYS FOR DYNAMIC SELECTION OVERLAY PROCESSING
-      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray);
+      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       
       tableRow.appendChild(cell);
     });
@@ -1261,6 +1335,8 @@ module.exports = class ProjectGridPlugin extends Plugin {
     if (styleEl) styleEl.remove();
     const overlay = document.getElementById('projectgrid-global-focus-overlay');
     if (overlay) overlay.remove();
+    const iOverlay = document.getElementById('projectgrid-global-input-overlay');
+    if (iOverlay) iOverlay.remove();
     const rOverlay = document.getElementById('projectgrid-global-row-overlay');
     if (rOverlay) rOverlay.remove();
   }
@@ -1270,6 +1346,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
+    // Create the master toolbar wrapper directly above the matrix table
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -1278,6 +1355,17 @@ module.exports = class ProjectGridPlugin extends Plugin {
     toolbarBtn.innerHTML = '⚙️';
     toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
     toolbar.appendChild(toolbarBtn);
+
+    // Dynamic label slot tracking the multi-choice sort cascade pipeline in real-time
+    const sortLabel = document.createElement('span');
+    sortLabel.id = 'projectgrid-sort-toolbar-label';
+    sortLabel.className = 'projectgrid-sort-indicator-label';
+    sortLabel.style.fontSize = '11px';
+    sortLabel.style.marginLeft = '8px';
+    sortLabel.style.color = 'var(--text-muted)';
+    sortLabel.textContent = '📶 Default Directory Sort Order';
+    toolbar.appendChild(sortLabel);
+    
     containerElement.appendChild(toolbar);
 
     const tableElement = document.createElement('table');
@@ -1289,16 +1377,14 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Columns 2, 3, 4: Generates the 3 unique static table header icons
+    // Explicit static layout tracks mapping launcher anchors
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // FIX: COMPLETELY REMOVED THE LAUNCHERCOLUMNS INTERACTIVE HEADERS LOOP TO STOP COLUMN SHIFTING
-
-    // Define the 8 exact YAML frontmatter metadata columns matching your metadata fields (Columns 5 through 12)
+    // Define core metadata filter choices columns tracking positions (Columns 5 through 12)
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -1313,6 +1399,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
+    // Assemble database array maps before instantiating columns header dropups
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -1327,7 +1414,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Build and append the 8 interactive YAML metadata dropup filter headers directly over columns 5-12
+    // Generate the 8 interactive multi-select choice dropups cleanly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
@@ -1339,6 +1426,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
+    // Forward toolbar gear mouse clicks directly into the core ScrollLock routing pipeline loop
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();
