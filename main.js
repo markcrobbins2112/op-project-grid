@@ -1861,7 +1861,6 @@ return {
     const activeConfig = globalThis.GridConfig || GridConfig;
     const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
 
-    // CONSOLIDATED INJECTION PARSING LOOP: Evaluates and appends exact horizontal coordinates fields matching core array order
     columnsList.forEach((col, idx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell';
@@ -1886,10 +1885,21 @@ return {
       else if (col.type === 'tags-cell') {
         UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       } 
-      // PARITY INTEGRATION: Capture both regular metadata selects and the multi-select tasks configuration track uniformly
       else if (col.type === 'yaml-select' || col.key === 'tasks') {
         cell.className += ' select-cell projectgrid-uniform-yaml-td';
-        UiRowSelect.buildSelectButton(cell, tableRow, idx, col, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+        
+        // DATA REALIGNMENT PASSTHROUGH: Swap placeholder indexes with real data strings dynamically
+        let targetColumnSchema = col;
+        if (col.key === 'tasks') {
+          const liveDiscoveredTasks = window.ProjectGridDiscoveredActualTasksList || [];
+          targetColumnSchema = {
+            ...col,
+            // Re-map column option array records dynamically on the fly to match note content strings
+            defaults: liveDiscoveredTasks.length > 0 ? liveDiscoveredTasks : ['No tasks found']
+          };
+        }
+
+        UiRowSelect.buildSelectButton(cell, tableRow, idx, targetColumnSchema, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
         tableRow.appendChild(cell);
       } 
       else if (col.type === 'scanner-check') {
@@ -2136,8 +2146,44 @@ const path = require('path');
 return {
   scanVaultProjectsFolders(app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, filterInputElement) {
     const universalTagsSet = new Set();
+    // TRACKER STORAGE: Collects every unique markdown checkbox text description string found across the vault target files
+    const actualVaultTasksSet = new Set();
+    
     const targetFolders = app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
+    // Pass 1: Scan files to pre-aggregate all unique checkbox items to dynamically populate dropdown option pools
+    targetFolders.forEach(folder => {
+      const expectedNotePath = `${folder.path}/+${folder.name}.md`;
+      try {
+        const absolutePathOnDisk = path.join(absoluteVaultRoot, expectedNotePath);
+        if (fs.existsSync(absolutePathOnDisk)) {
+          const fileContentBuffer = fs.readFileSync(absolutePathOnDisk, 'utf8');
+          const linesArray = fileContentBuffer.split('\n');
+          let insideTasksHeaderZone = false;
+
+          for (let i = 0; i < linesArray.length; i++) {
+            const currentLineText = linesArray[i];
+            if (currentLineText.trim().startsWith('## Incoming Tasks')) { insideTasksHeaderZone = true; continue; }
+            if (insideTasksHeaderZone && currentLineText.trim().startsWith('##')) { break; }
+            
+            if (insideTasksHeaderZone) {
+              const checkboxMatchSignature = currentLineText.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+              if (checkboxMatchSignature) {
+                const taskTextString = checkboxMatchSignature[2].trim();
+                if (taskTextString) {
+                  actualVaultTasksSet.add(taskTextString);
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    });
+
+    // Globally cache the actual discovered text data strings array so other loops can match config targets
+    window.ProjectGridDiscoveredActualTasksList = Array.from(actualVaultTasksSet).sort();
+
+    // Pass 2: Map row cells and compile frontmatter indicators matching note properties
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -2149,7 +2195,7 @@ return {
           rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
         }
 
-        // TASK SCRAPER BLOCK START - Short comment prevents bundler stripping bugs
+        // TASK SCRAPER BLOCK START
         let checkedTasksList = [];
         try {
           const absolutePathOnDisk = path.join(absoluteVaultRoot, expectedNotePath);
@@ -2180,6 +2226,7 @@ return {
           console.error(`[ProjectGrid Scraper] Failed to load markdown checkboxes for ${folder.name}:`, fileErr.message);
         }
 
+        // Expose a text string of completed checkboxes to feed row validation states smoothly
         frontmatter['tasks'] = checkedTasksList.length > 0 ? checkedTasksList.join(', ') : '⬛';
         // TASK SCRAPER BLOCK END
 

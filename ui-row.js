@@ -23,7 +23,6 @@ module.exports = {
     const activeConfig = globalThis.GridConfig || GridConfig;
     const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
 
-    // CONSOLIDATED INJECTION PARSING LOOP: Evaluates and appends exact horizontal coordinates fields matching core array order
     columnsList.forEach((col, idx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell';
@@ -48,10 +47,21 @@ module.exports = {
       else if (col.type === 'tags-cell') {
         UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       } 
-      // PARITY INTEGRATION: Capture both regular metadata selects and the multi-select tasks configuration track uniformly
       else if (col.type === 'yaml-select' || col.key === 'tasks') {
         cell.className += ' select-cell projectgrid-uniform-yaml-td';
-        UiRowSelect.buildSelectButton(cell, tableRow, idx, col, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+        
+        // DATA REALIGNMENT PASSTHROUGH: Swap placeholder indexes with real data strings dynamically
+        let targetColumnSchema = col;
+        if (col.key === 'tasks') {
+          const liveDiscoveredTasks = window.ProjectGridDiscoveredActualTasksList || [];
+          targetColumnSchema = {
+            ...col,
+            // Re-map column option array records dynamically on the fly to match note content strings
+            defaults: liveDiscoveredTasks.length > 0 ? liveDiscoveredTasks : ['No tasks found']
+          };
+        }
+
+        UiRowSelect.buildSelectButton(cell, tableRow, idx, targetColumnSchema, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
         tableRow.appendChild(cell);
       } 
       else if (col.type === 'scanner-check') {
