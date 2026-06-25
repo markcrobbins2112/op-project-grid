@@ -56,7 +56,7 @@ module.exports = {
           ]
         },
         {
-          // FIX: COLUMNS SCHEMA EXPANDED TO INCLUDE TASKS (INDEX 1) AND TAGS (INDEX 6) ALIGNED WITH REAL OFFSETS
+          // FIX: INJECT BOTH TASKS AND TAGS JUMP LOCATIONS INTO SYSTEM COLUMNS SELECTION
           name: '📊 Columns',
           items: [
             { name: '🔧 Tasks Column', action: () => this.focusRowCell(activeRow, 1) },
@@ -92,21 +92,16 @@ module.exports = {
   
     handleSortChainClick(key, rowsArray) {
       const existingIdx = this.activeSortChain.indexOf(key);
-      if (existingIdx > -1) {
-        this.activeSortChain.splice(existingIdx, 1);
-      } else {
+      if (existingIdx > -1) this.activeSortChain.splice(existingIdx, 1);
+      else {
         if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
-        else {
-          this.activeSortChain.unshift(key);
-          if (this.activeSortChain.length > 3) this.activeSortChain.pop();
-        }
+        else { this.activeSortChain.unshift(key); if (this.activeSortChain.length > 3) this.activeSortChain.pop(); }
       }
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
-      this.activeSortChain = [];
-      this.executeDynamicSortChain(rowsArray); 
+      this.activeSortChain = []; this.executeDynamicSortChain(rowsArray);
     },
   
     executeDynamicSortChain(rowsArray) {
@@ -118,104 +113,57 @@ module.exports = {
         rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
       } else {
         rowsArray.sort((rowA, rowB) => {
-          const valsA = rowA.yamlMetadataValues || {};
-          const valsB = rowB.yamlMetadataValues || {};
-          const datesA = rowA.folderDatesValues || {};
-          const datesB = rowB.folderDatesValues || {};
-          const launchersA = rowA.launcherValues || {};
-          const launchersB = rowB.launcherValues || {};
-  
-          const mergedA = { ...valsA, ...datesA, ...launchersA };
-          const mergedB = { ...valsB, ...datesB, ...launchersB };
+          const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
+          const datesA = rowA.folderDatesValues || {}; const datesB = rowB.folderDatesValues || {};
+          const launchersA = rowA.launcherValues || {}; const launchersB = rowB.launcherValues || {};
+          const mergedA = { ...valsA, ...datesA, ...launchersA }; const mergedB = { ...valsB, ...datesB, ...launchersB };
   
           for (let i = 0; i < this.activeSortChain.length; i++) {
             const currentKey = this.activeSortChain[i];
             let valA = ''; let valB = '';
   
             if (currentKey === 'created' || currentKey === 'updated') {
-              valA = String(datesA[currentKey] || '');
-              valB = String(datesB[currentKey] || '');
+              valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
             } else if (currentKey === 'tasks') {
               const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
               const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
-              valA = String(taskStrA || '0').padStart(5, '0');
-              valB = String(taskStrB || '0').padStart(5, '0');
+              valA = String(taskStrA || '0').padStart(5, '0'); valB = String(taskStrB || '0').padStart(5, '0');
             } else if (currentKey === 'tagcount') {
-              const tagStrA = String(valsA['tags'] || '⬛');
-              const tagStrB = String(valsB['tags'] || '⬛');
+              const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
               const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
               const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
-              valA = String(countA).padStart(5, '0');
-              valB = String(countB).padStart(5, '0');
+              valA = String(countA).padStart(5, '0'); valB = String(countB).padStart(5, '0');
             } else {
-              valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
-              valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+              valA = String(valsA[currentKey] || '').replace(/[^\w]/g, ''); valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
             }
-  
-            if (valA !== valB) {
-              return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
-            }
+            if (valA !== valB) return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
           }
           return 0;
         });
       }
-  
       rowsArray.forEach(row => parentTableBody.appendChild(row.element));
-      
       window.ProjectGridActiveSortChainList = this.activeSortChain;
       window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   
     updateToolbarLabel() {
-      const indicator = document.getElementById('projectgrid-sort-toolbar-label');
-      if (!indicator) return;
-  
+      const indicator = document.getElementById('projectgrid-sort-toolbar-label'); if (!indicator) return;
       if (this.activeSortChain.length === 0) {
-        indicator.textContent = '📶 Default Directory Sort Order';
-        indicator.style.color = 'var(--text-muted)';
+        indicator.textContent = '📶 Default Directory Sort Order'; indicator.style.color = 'var(--text-muted)';
       } else {
         const formattedChain = this.activeSortChain.map((k, idx) => {
-          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴';
-          return `${symbol}${k.toUpperCase()}`;
+          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; return `${symbol}${k.toUpperCase()}`;
         }).join(' ➔ ');
-        indicator.textContent = `📶 Sort Chain: ${formattedChain}`;
-        indicator.style.color = 'var(--text-accent)';
-      }
-    },
-  
-    openHeaderDropup(key) {
-      const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
-      if (trigger) {
-        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-        trigger.dispatchEvent(mousedownEvent);
-        setTimeout(() => trigger.focus(), 50);
+        indicator.textContent = `📶 Sort Chain: ${formattedChain}`; indicator.style.color = 'var(--text-accent)';
       }
     },
   
     focusRowCell(rowObj, cellIndex) {
       if (!rowObj) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
-      const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, a, input') : null;
+      const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
       if (interactive) interactive.focus();
-    },
-  
-    fireProtocol(rowObj, protocol) {
-      if (!rowObj) return alert('Highlight a row project using arrow keys first.');
-      const linkEl = rowObj.element.querySelector(`a[href^="aip://${protocol}"]`);
-      if (linkEl) window.location.href = linkEl.getAttribute('href');
-    },
-  
-    clearAllSystemFilters(filterInput) {
-      filterInput.value = '';
-      document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
-      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-      filterInput.focus();
-    },
-  
-    reloadActiveAppWorkspace() {
-      const activeLeaf = window.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
-      if (activeLeaf) activeLeaf.previewMode?.rerender(true);
     }
   };
   

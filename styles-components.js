@@ -171,6 +171,35 @@ module.exports = {
             z-index: 700000 !important; /* Floats above standard filters choice panels layout context layers */
             box-sizing: border-box !important;
         }
+        /* HIGH CONTRAST NON-INTERACTIVE FLOATING TUTOR HUD OVERLAY PANEL */
+        .projectgrid-tutor-tooltip-portal {
+            position: fixed !important;
+            background-color: #1a1a2e !important;
+            border: 2px solid var(--text-accent, #70a1ff) !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75) !important;
+            z-index: 999999 !important; /* Floats above everything */
+            pointer-events: none !important; /* Click-through transparency */
+            max-width: 280px !important;
+            display: none;
+            box-sizing: border-box !important;
+        }
+        .projectgrid-tutor-heading {
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            color: #ff4757 !important;
+            margin-bottom: 4px !important;
+            border-bottom: 1px dashed rgba(255,255,255,0.15) !important;
+            padding-bottom: 2px !important;
+        }
+        .projectgrid-tutor-shortcut {
+            font-size: 10px !important;
+            color: #ffffff !important;
+            line-height: 1.4 !important;
+            font-family: var(--font-monospace) !important;
+        }
 
       `;
     }

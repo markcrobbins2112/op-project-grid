@@ -22,6 +22,7 @@ module.exports = {
       const closePanel = () => {
         if (activePanel) { activePanel.remove(); activePanel = null; }
         if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+        if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(null);
       };
   
       const openPanel = () => {
@@ -38,26 +39,12 @@ module.exports = {
           display: 'flex', flexDirection: 'column', width: '150px'
         });
   
-        // FIX 1: TITLE HEADER REDRAWN FIRST AT THE TOP LINE ROW
         const labelHeader = document.createElement('div');
         labelHeader.className = 'projectgrid-dropup-header-title';
-        labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;
+        labelHeader.textContent = `📋 Filters: ${key.toUpperCase()}`;
         activePanel.appendChild(labelHeader);
   
-        // FIX 2: SEARCH INPUT COMPONENT PLACED DIRECTLY BELOW TITLE BLOCK ROWS
-        const inputWrapper = document.createElement('div');
-        inputWrapper.className = 'projectgrid-tags-input-container';
-        inputWrapper.style.borderTop = 'none';
-        inputWrapper.style.borderBottom = '1px solid var(--background-modifier-border, #2e2e2e)';
-        inputWrapper.style.marginBottom = '4px';
-        
-        const customInput = document.createElement('input');
-        customInput.type = 'text';
-        customInput.className = 'projectgrid-tags-custom-entry-field';
-        customInput.placeholder = '➕ Filter options...';
-        inputWrapper.appendChild(customInput);
-        activePanel.appendChild(inputWrapper);
-  
+        // FIX: ALL FILTER HEADERS ENFORCE ZERO TEXT INPUT FIELDS NATIVELY
         const scrollingContainer = document.createElement('div');
         scrollingContainer.style.overflowY = 'auto';
         scrollingContainer.style.flex = '1';
@@ -82,50 +69,31 @@ module.exports = {
         activePanel.appendChild(scrollingContainer);
         document.body.appendChild(activePanel);
   
-        customInput.focus();
+        activePanel.tabIndex = 0;
+        activePanel.focus();
   
-        customInput.addEventListener('keydown', (e) => {
+        activePanel.addEventListener('keydown', (e) => {
           const options = scrollingContainer.querySelectorAll('.projectgrid-dropup-option');
-  
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault(); e.stopPropagation();
-            if (options.length === 0) return;
-  
             selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
-  
+            
             options.forEach((lbl, lIdx) => {
               if (lIdx === selectionIdx) {
                 lbl.classList.add('projectgrid-row-focused');
                 if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
                 lbl.scrollIntoView({ block: 'nearest' });
-              } else {
-                lbl.classList.remove('projectgrid-row-focused');
-              }
+              } else { lbl.classList.remove('projectgrid-row-focused'); }
             });
-          } else if (e.key === 'Enter') {
+          } else if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
             e.preventDefault(); e.stopPropagation();
-            const typedText = customInput.value.trim();
-  
-            // FIX 3: EMPTY TEXT FIELDS RUN ON ENTER KEY WILL TOGGLE THE HIGHLIGHTED CHOICE CHECKBOX
-            if (typedText === '') {
-              if (options[selectionIdx]) {
-                const cb = options[selectionIdx].querySelector('input[type="checkbox"]');
-                cb.checked = !cb.checked;
-                handleToggle(fullOptionsList[selectionIdx], cb.checked);
-              }
-            } else {
-              if (!fullOptionsList.includes(typedText)) {
-                defaults.push(typedText);
-                activeFilters.add(typedText);
-                handleToggle(typedText, true);
-              }
-              closePanel();
-              trigger.focus();
+            if (options[selectionIdx]) {
+              const cb = options[selectionIdx].querySelector('input[type="checkbox"]');
+              cb.checked = !cb.checked;
+              handleToggle(fullOptionsList[selectionIdx], cb.checked);
             }
-          } else if (e.key === 'Escape' || (e.key === 'Enter' && e.ctrlKey)) {
-            e.preventDefault(); e.stopPropagation();
-            closePanel();
-            trigger.focus();
+          } else if (e.key === 'Escape') {
+            e.preventDefault(); e.stopPropagation(); closePanel(); trigger.focus();
           }
         });
   
@@ -136,6 +104,7 @@ module.exports = {
             firstOpt.classList.add('projectgrid-row-focused');
             window.ProjectGridUpdateFocusOverlay(firstOpt);
           }
+          if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(activePanel, 'filter-panel');
         }, 20);
       };
   
@@ -147,61 +116,47 @@ module.exports = {
           if (isChecked) activeFilters.add(opt);
           else activeFilters.delete(opt);
         }
-  
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
           if (boxes && boxes.length > 0) {
-            boxes[0].checked = (activeFilters.size === defaults.length);
+            boxes.checked = (activeFilters.size === defaults.length);
             defaults.forEach((d, idx) => { if (boxes[idx + 1]) boxes[idx + 1].checked = activeFilters.has(d); });
           }
         }
-  
         rowsArray.forEach(row => {
           if (!row.dropdownFilters) row.dropdownFilters = {};
           const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
           const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
-  
           let isMatchFound = false;
           activeFilters.forEach(filterOpt => {
             const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
-            if (sanitizedRaw === sanitizedFilter || (sanitizedRaw === '⬛' && sanitizedFilter === '⬛')) {
-              isMatchFound = true;
-            }
+            if (sanitizedRaw === sanitizedFilter || (sanitizedRaw === '⬛' && sanitizedFilter === '⬛')) isMatchFound = true;
           });
           row.dropdownFilters[key] = isMatchFound;
         });
-  
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
       trigger.addEventListener('keydown', (evt) => {
         if (!activePanel) {
           if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
-            evt.preventDefault(); evt.stopPropagation();
-            openPanel();
+            evt.preventDefault(); evt.stopPropagation(); openPanel();
           }
         }
       });
   
       trigger.addEventListener('focus', () => {
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
+        if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(trigger, 'filter-header');
       });
       trigger.addEventListener('blur', () => {
-        setTimeout(() => {
-          if (activePanel && !activePanel.contains(document.activeElement)) { closePanel(); }
-        }, 180);
+        setTimeout(() => { if (activePanel && !activePanel.contains(document.activeElement)) { closePanel(); } }, 180);
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       });
-  
-      // FIX 4: COMBINED CLICKS DISPATCH LOCK TO ELIMINATE THE RAPID PROGRAMMATIC FOCUS JUMP COLLISION CLOSURES
       trigger.addEventListener('mousedown', (e) => {
         e.stopPropagation();
-        if (activePanel && !isOpeningPanel) {
-          closePanel();
-        } else {
-          trigger.focus();
-          openPanel();
-        }
+        if (activePanel && !isOpeningPanel) closePanel();
+        else { trigger.focus(); openPanel(); }
       });
   
       th.appendChild(trigger);

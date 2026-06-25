@@ -6,10 +6,7 @@ const UiDropdown = require('./ui-dropdown');
 const UiRow = require('./ui-row');
 
 module.exports = {
-  activeInputTarget: null,
-  activeRowTarget: null,
-  activeFocusTarget: null,
-  observerRef: null,
+  activeInputTarget: null, activeRowTarget: null, activeFocusTarget: null, observerRef: null,
 
   generateHeaderCell() {
     this.ensureThreePortalsExist();
@@ -21,30 +18,27 @@ module.exports = {
     filterContainer.className = 'projectgrid-filter-wrapper';
 
     const filterInput = document.createElement('input');
-    filterInput.type = 'text';
-    filterInput.placeholder = 'Filter notes...';
+    filterInput.type = 'text'; filterInput.placeholder = 'Filter notes...';
     filterInput.className = 'projectgrid-filter-input';
 
     const clearButton = document.createElement('span');
-    clearButton.className = 'projectgrid-clear-btn';
-    clearButton.innerHTML = '✕';
+    clearButton.className = 'projectgrid-clear-btn'; clearButton.innerHTML = '✕';
 
-    filterContainer.appendChild(filterInput);
-    filterContainer.appendChild(clearButton);
+    filterContainer.appendChild(filterInput); filterContainer.appendChild(clearButton);
     noteHeaderCell.appendChild(filterContainer);
 
     filterInput.addEventListener('focus', () => {
       this.activeInputTarget = filterInput;
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(filterInput);
+      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(filterInput, 'search-input');
     });
     filterInput.addEventListener('blur', () => {
       this.activeInputTarget = null;
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
+      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(null);
     });
 
-    // FIX: Dynamically wire up parent container scroller hooks right as the dashboard renders
     setTimeout(() => this.bindInteriorScrollListeners(filterInput), 50);
-
     return { cell: noteHeaderCell, input: filterInput, clearBtn: clearButton };
   },
 
@@ -58,71 +52,76 @@ module.exports = {
 
     portals.forEach(p => {
       let el = document.getElementById(p.id);
-      if (!el) {
-        el = document.createElement('div');
-        el.id = p.id;
-        el.className = p.class;
-        document.body.appendChild(el);
-      }
-
+      if (!el) { el = document.createElement('div'); el.id = p.id; el.className = p.class; document.body.appendChild(el); }
       window[p.winFunc] = (targetElement) => {
         self[p.targetRef] = targetElement;
         if (!targetElement) { el.style.display = 'none'; return; }
         const rect = targetElement.getBoundingClientRect();
-        Object.assign(el.style, {
-          display: 'block', top: `${rect.top}px`, left: `${rect.left}px`,
-          width: `${rect.width}px`, height: `${rect.height}px`
-        });
+        Object.assign(el.style, { display: 'block', top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px` });
       };
     });
 
+    // --- FIX: GLOBAL TUTOR INTERACTIVE HUD OVERLAY GENERATOR ---
+    let hud = document.getElementById('projectgrid-tutor-hud-overlay');
+    if (!hud) {
+      hud = document.createElement('div'); hud.id = 'projectgrid-tutor-hud-overlay';
+      hud.className = 'projectgrid-tutor-tooltip-portal'; document.body.appendChild(hud);
+    }
+
+    const tutorShortcutsMap = {
+      'search-input': { title: '⌨️ Search Field Focus', keys: '• Type: Filter project titles<br>• ScrollLock: Toggle Command Picker Menu<br>• ArrowDown: Navigate matrix grid notes' },
+      'filter-header': { title: '🎛️ Column Filter Header', keys: '• Enter / Space: Open multi-choice list<br>• Alt+Down: Toggle menu open<br>• Tab / Shift+Tab: Move horizontal focus' },
+      'filter-panel': { title: '📋 Active Filter List Menu', keys: '• ArrowUp / Down: Highlight choice row<br>• Enter / Space: Toggle visible selection<br>• Escape: Close dropdown menu panel' },
+      'cell-btn': { title: '📊 Frontmatter Cell Controller', keys: '• Enter / Space: Open options dropdown<br>• ArrowUp / Down: Move focus vertically to next row<br>• Tab / Shift+Tab: Jump cells horizontally' },
+      'tags-cell': { title: '🏷️ Extensible Tags Panel', keys: '• Type: Filter / Add a custom string value<br>• ArrowUp / Down: Move choice frame<br>• Enter: Toggle check / Add tag item' },
+      'tasks-cell': { title: '🔧 Tasks Checklist Manager', keys: '• Click checkbox: Toggle task state change<br>• Type: Create new item bullet<br>• Escape: Collapse menu, return focus' }
+    };
+
+    window.ProjectGridTriggerTutorHelpBoxRedraw = (targetElement, contextKey) => {
+      if (!window.ProjectGridTutorModeActive || !targetElement || !contextKey || !tutorShortcutsMap[contextKey]) {
+        hud.style.display = 'none'; return;
+      }
+      const data = tutorShortcutsMap[contextKey];
+      hud.innerHTML = `<div class="projectgrid-tutor-heading">${data.title}</div><div class="projectgrid-tutor-shortcut">${data.keys}</div>`;
+      
+      const rect = targetElement.getBoundingClientRect();
+      Object.assign(hud.style, {
+        display: 'block', left: `${rect.left}px`,
+        top: `${rect.bottom + window.scrollY + 6}px`
+      });
+    };
+
     window.ProjectGridForceOverlayRecalc = () => {
       portals.forEach(p => {
-        const liveTarget = self[p.targetRef];
-        let el = document.getElementById(p.id);
+        const liveTarget = self[p.targetRef]; let el = document.getElementById(p.id);
         if (liveTarget && el && el.style.display === 'block') {
           const rect = liveTarget.getBoundingClientRect();
-          el.style.top = `${rect.top}px`;
-          el.style.left = `${rect.left}px`;
-          el.style.width = `${rect.width}px`;
-          el.style.height = `${rect.height}px`;
+          Object.assign(el.style, { top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px` });
         }
       });
+      // Realignment positioning parameters for the HUD tooltip if active
+      if (window.ProjectGridTutorModeActive && hud.style.display === 'block') {
+        const activeNode = self.activeFocusTarget || self.activeInputTarget;
+        if (activeNode) { const r = activeNode.getBoundingClientRect(); hud.style.left = `${r.left}px`; hud.style.top = `${r.bottom + window.scrollY + 6}px`; }
+      }
     };
   },
 
-  // FIX: TRACK OBSIDIAN INTERNAL SCROLL CONTAINERS DIRECTLY VIA DOM HEURISTICS
   bindInteriorScrollListeners(elementContext) {
     if (!elementContext) return;
-    
-    // Climb up the DOM tree to find Obsidian note preview scroll parents (.cm-scroller or markdown view panels)
-    const obsidianScroller = elementContext.closest('.cm-scroller') || 
-                             elementContext.closest('.markdown-preview-view') || 
-                             elementContext.closest('.markdown-rendered');
-
-    if (obsidianScroller) {
-      // Bind live reposition rules to the exact panel handling your scroll wheels
-      obsidianScroller.removeEventListener('scroll', window.ProjectGridForceOverlayRecalc);
-      obsidianScroller.addEventListener('scroll', window.ProjectGridForceOverlayRecalc, { passive: true });
+    const scroller = elementContext.closest('.cm-scroller') || elementContext.closest('.markdown-preview-view') || elementContext.closest('.markdown-rendered');
+    if (scroller) {
+      scroller.removeEventListener('scroll', window.ProjectGridForceOverlayRecalc);
+      scroller.addEventListener('scroll', window.ProjectGridForceOverlayRecalc, { passive: true });
     }
-
-    // Attach a backup ResizeObserver to handle pane splitting, dragging, or structural folding jumps safely
     if (this.observerRef) this.observerRef.disconnect();
-    this.observerRef = new ResizeObserver(() => {
-      if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc();
-    });
-    
+    this.observerRef = new ResizeObserver(() => { if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc(); });
     const tableParent = elementContext.closest('table') || elementContext.parentElement;
     if (tableParent) this.observerRef.observe(tableParent);
   },
 
-  buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
-    return UiDropdown.buildHeaderDropup(titleIcon, key, defaults, rowsArray);
-  },
-
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
-    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
-  }
+  buildHeaderDropup(titleIcon, key, defaults, rowsArray) { return UiDropdown.buildHeaderDropup(titleIcon, key, defaults, rowsArray); },
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) { return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); }
 };
 
 // ==========================================
