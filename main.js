@@ -26,7 +26,8 @@ return {
         .projectgrid-matrix-table th {
           font-weight: 600 !important;
           color: var(--text-muted, #888888) !important;
-          border-bottom: 2px solid var(--background-modifier-border, #3a3a3a) !important;
+          border-bottom: 2px solid rgba(255, 255, 255, 0.4) !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
           padding: 4px 2px !important;
           vertical-align: middle;
           position: relative !important;
@@ -36,7 +37,6 @@ return {
           text-align: left !important;
         }
   
-        /* FIX: Date fields scaled up to match column select button formatting exactly */
         .projectgrid-timestamp-scaled-td {
           font-size: 11px !important; 
           text-align: center !important;
@@ -46,7 +46,6 @@ return {
           color: var(--text-muted) !important;
         }
   
-        /* COMPRESSION: Flatten widths down to enforce an absolute narrow grid footprint */
         .projectgrid-uniform-yaml-th,
         .projectgrid-uniform-yaml-td {
           width: 50px !important;
@@ -87,7 +86,12 @@ return {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        .projectgrid-matrix-cell { padding: 4px 2px !important; vertical-align: middle !important; }
+        /* BRIGHTNESS: Boosted structural borders clarity by 15% across all mesh coordinates */
+        .projectgrid-matrix-cell { 
+          padding: 4px 2px !important; 
+          vertical-align: middle !important; 
+          border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
+        }
         .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; max-width: 140px !important; overflow: hidden; text-overflow: ellipsis; }
         .projectgrid-matrix-link { text-decoration: none !important; }
         .action-icon-cell { text-align: center !important; width: 24px !important; }
@@ -95,13 +99,19 @@ return {
         .projectgrid-aip-icon-btn.is-vault-missing { opacity: 0.15 !important; }
         .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
         
-        /* READ-ONLY SCANNER COLUMNS */
         .projectgrid-readonly-scanner-td {
           font-size: 11px !important;
           text-align: center !important;
           width: 32px !important;
           padding: 4px 2px !important;
-          user-select: none !important;
+          user-select: none;
+        }
+
+        /* BRIGHTNESS: Boosted bottom line structural dividers opacity metrics */
+        .projectgrid-matrix-row {
+          border-bottom: 1px solid rgba(255, 255, 255, 0.28) !important;
+          position: relative !important;
+          box-sizing: border-box !important;
         }
       `;
     }
@@ -1050,7 +1060,8 @@ return {
 
       const headerIconsMap = {
         tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
-        value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯'
+        value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
+        git: '💿', agents: '🤖'
       };
 
       const activeSortChain = window.ProjectGridActiveSortChainList || [];
@@ -1059,7 +1070,6 @@ return {
         const key = trigger.getAttribute('data-key');
         if (!key || !headerIconsMap[key]) return;
 
-        // FIX 3: THE STRIP-AND-REWRITE ENGINE REMOVES ACCIDENTALLY RETAINED MARKERS ON COLUMNS DE-SELECTION
         let baseIcon = headerIconsMap[key];
         const chainIdx = activeSortChain.indexOf(key);
         
@@ -1070,7 +1080,7 @@ return {
         let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
-        if (key === 'tasks' || key === 'created' || key === 'updated') {
+        if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
           nonNullVis = rowsArray.filter(r => r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }
@@ -1229,20 +1239,18 @@ return {
     handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput) {
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         evt.preventDefault(); evt.stopPropagation();
-        this.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-custom-select-btn', fieldIdx);
+        this.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn', fieldIdx);
         return true;
       }
   
-      if (evt.key === 'Escape') {
-        evt.preventDefault(); 
-        evt.stopPropagation();
-        
-        // FIX: Query the live document DOM tree globally if the parameter reference is missing
-        let targetInput = filterInput || document.querySelector('.projectgrid-filter-input');
-        
-        if (targetInput) {
-          targetInput.focus();
-          targetInput.select();
+      if (evt.key === 'ArrowLeft' || evt.key === 'ArrowRight') {
+        evt.preventDefault(); evt.stopPropagation();
+        const siblings = Array.from(tableRow.querySelectorAll('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn'));
+        let currentPosition = siblings.indexOf(btn);
+        let targetPosition = currentPosition + (evt.key === 'ArrowRight' ? 1 : -1);
+  
+        if (targetPosition >= 0 && targetPosition < siblings.length) {
+          siblings[targetPosition].focus();
         }
         return true;
       }
@@ -1262,7 +1270,7 @@ return {
       return false;
     },
   
-    jumpToVerticalRowCell(evt, currentTableRow, elementSelector, fieldIndex = 0) {
+    jumpToVerticalRowCell(evt, currentTableRow, elementSelector, currentCellIndex = 0) {
       const parentTableBody = currentTableRow.parentElement;
       if (!parentTableBody) return;
   
@@ -1282,7 +1290,7 @@ return {
         targetRow.classList.add('projectgrid-row-focused');
   
         const interactiveTargets = Array.from(targetRow.querySelectorAll(elementSelector));
-        const targetElement = interactiveTargets[fieldIndex];
+        const targetElement = interactiveTargets[currentCellIndex] || interactiveTargets;
         
         if (targetElement) {
           targetElement.focus();
@@ -1694,7 +1702,6 @@ return {
     if (rawVal && !optionsList.includes(rawVal)) optionsList.push(rawVal);
 
     let activeDropdown = null;
-    let selectionIdx = optionsList.indexOf(rawVal || '⬛');
     let isOpening = false;
 
     const closeDropdown = () => { 
@@ -1708,8 +1715,8 @@ return {
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
 
-      const cleanBtnText = btn.textContent.trim().split(' ')[0];
-      selectionIdx = optionsList.indexOf(cleanBtnText);
+      const cleanBtnText = btn.textContent.trim().split(' ');
+      let selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
       activeDropdown = document.createElement('div');
@@ -1782,8 +1789,7 @@ return {
             if (val === '') commitSelection(optionsList[selectionIdx]);
             else commitSelection(val);
           } else if (e.key === 'Escape') { 
-            // STAGE 1: Escape inside dynamic list inputs closes the list and highlights the cell button
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
             closeDropdown(); 
             btn.focus(); 
           }
@@ -1803,8 +1809,7 @@ return {
             e.preventDefault(); e.stopPropagation();
             commitSelection(optionsList[selectionIdx]);
           } else if (e.key === 'Escape') { 
-            // STAGE 1: Escape inside standard list choices closes the list and highlights the cell button
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
             closeDropdown(); 
             btn.focus(); 
           }
@@ -1841,7 +1846,7 @@ return {
     btn.addEventListener('focus', () => {
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(btn);
+      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(btn, 'cell-btn');
     });
     
     btn.addEventListener('blur', () => {
@@ -1864,18 +1869,41 @@ return {
       } 
     });
     
+    // NATIVE INTERCEPT: Intercepts keyboard events locally to break Obsidian's document canvas focus retention loops
     btn.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Escape') {
+        // Stop Obsidian or CodeMirror from ever seeing this keydown stroke
+        evt.preventDefault();
+        evt.stopPropagation();
+        evt.stopImmediatePropagation();
+
+        // Hard reset the button focus boundary to prevent cursor retention loops
+        btn.blur();
+
+        // Immediately find and focus the search bar directly via the DOM
+        const rootContainer = btn.closest('.block-language-projectgrid') || document;
+        const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+        
+        if (targetInput) {
+          requestAnimationFrame(() => {
+            targetInput.focus();
+            targetInput.select();
+          });
+        }
+        return;
+      }
+
       if (!activeDropdown) {
         if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar' || (evt.key === 'ArrowDown' && evt.altKey)) {
-          evt.preventDefault(); openDropdown(); return;
+          evt.preventDefault(); evt.stopPropagation(); openDropdown(); return;
         }
-        // STAGE 2: If list is closed, delegate escape interception directly to the row keys system mapper
-        UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
+        
+        const handled = UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
+        if (handled) { evt.preventDefault(); evt.stopPropagation(); }
       }
-    });
+    }, true); 
 
     btn.openDropdown = openDropdown;
-
     cell.appendChild(btn);
   }
 };
@@ -1901,19 +1929,11 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Column 2: Checkbox Tasks
     UiRowTasks.buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference);
-
-    // Columns 3 & 4: Directory timestamps
     UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
-
-    // Columns 5, 6, 7: Application launcher shortcuts
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
-
-    // Column 8: User extensible Tags collection field
     UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
 
-    // Columns 9 through 16: Frontmatter metadata columns tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -1932,24 +1952,30 @@ return {
       tableRow.appendChild(cell);
     });
 
-    // SCANNER ADDITIONS: Perform real-time physical disk queries over project directories
     const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
+    rowTrackingReference.yamlMetadataValues = rowTrackingReference.yamlMetadataValues || {};
     
-    // 💿 Check 1: .git detection
+    // Check 1: .git directory detection
     const gitPath = path.join(absoluteFolderDiskPath, '.git');
     const hasGit = fs.existsSync(gitPath);
+    const gitStatusMarker = hasGit ? '✅' : '❌';
+    rowTrackingReference.yamlMetadataValues['git'] = gitStatusMarker;
+
     const gitCell = document.createElement('td');
-    gitCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td';
-    gitCell.textContent = hasGit ? '✅' : '❌';
+    gitCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
+    gitCell.textContent = gitStatusMarker;
     gitCell.title = hasGit ? '.git directory identified' : 'No local deployment branch found';
     tableRow.appendChild(gitCell);
 
-    // 🤖 Check 2: AGENTS.md detection
+    // Check 2: AGENTS.md configuration detection
     const agentsPath = path.join(absoluteFolderDiskPath, 'AGENTS.md');
     const hasAgents = fs.existsSync(agentsPath);
+    const agentsStatusMarker = hasAgents ? '✅' : '❌';
+    rowTrackingReference.yamlMetadataValues['agents'] = agentsStatusMarker;
+
     const agentsCell = document.createElement('td');
-    agentsCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td';
-    agentsCell.textContent = hasAgents ? '✅' : '❌';
+    agentsCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
+    agentsCell.textContent = agentsStatusMarker;
     agentsCell.title = hasAgents ? 'AGENTS.md configuration discovered' : 'No structural bot routines mapped';
     tableRow.appendChild(agentsCell);
 
@@ -2156,7 +2182,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
       { icon: '🏅', key: 'priority', options: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'] },
       { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
       { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
-      { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] }
+      { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] },
+      { icon: '💿', key: 'git', options: ['⬛', '✅', '❌'] },
+      { icon: '🤖', key: 'agents', options: ['⬛', '✅', '❌'] }
     ];
 
     const tableBody = document.createElement('tbody');
@@ -2193,12 +2221,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
     });
-
-    // Add read-only columns headers mappings
-    headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 4% !important; text-align: center;" title="Git Repo Detected">💿 th</th>
-      <th style="width: 4% !important; text-align: center;" title="AGENTS.md File Discovered">🤖 th</th>
-    `);
 
     tableHeader.appendChild(headerRow);
     tableElement.appendChild(tableHeader);

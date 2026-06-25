@@ -83,7 +83,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
       { icon: '🏅', key: 'priority', options: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'] },
       { icon: '🚦', key: 'status', options: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'] },
       { icon: '🔤', key: 'lang', options: ['⬛','js', 'ts', 'au3', 'ahk'] },
-      { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] }
+      { icon: '🎯', key: 'target', options: ['⬛','ce', 'op', 'app', 'link'] },
+      { icon: '💿', key: 'git', options: ['⬛', '✅', '❌'] },
+      { icon: '🤖', key: 'agents', options: ['⬛', '✅', '❌'] }
     ];
 
     const tableBody = document.createElement('tbody');
@@ -120,12 +122,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
     });
-
-    // Add read-only columns headers mappings
-    headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 4% !important; text-align: center;" title="Git Repo Detected">💿 th</th>
-      <th style="width: 4% !important; text-align: center;" title="AGENTS.md File Discovered">🤖 th</th>
-    `);
 
     tableHeader.appendChild(headerRow);
     tableElement.appendChild(tableHeader);

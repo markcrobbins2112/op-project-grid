@@ -19,7 +19,6 @@ module.exports = {
     if (rawVal && !optionsList.includes(rawVal)) optionsList.push(rawVal);
 
     let activeDropdown = null;
-    let selectionIdx = optionsList.indexOf(rawVal || '⬛');
     let isOpening = false;
 
     const closeDropdown = () => { 
@@ -33,8 +32,8 @@ module.exports = {
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
 
-      const cleanBtnText = btn.textContent.trim().split(' ')[0];
-      selectionIdx = optionsList.indexOf(cleanBtnText);
+      const cleanBtnText = btn.textContent.trim().split(' ');
+      let selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
       activeDropdown = document.createElement('div');
@@ -107,8 +106,7 @@ module.exports = {
             if (val === '') commitSelection(optionsList[selectionIdx]);
             else commitSelection(val);
           } else if (e.key === 'Escape') { 
-            // STAGE 1: Escape inside dynamic list inputs closes the list and highlights the cell button
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
             closeDropdown(); 
             btn.focus(); 
           }
@@ -128,8 +126,7 @@ module.exports = {
             e.preventDefault(); e.stopPropagation();
             commitSelection(optionsList[selectionIdx]);
           } else if (e.key === 'Escape') { 
-            // STAGE 1: Escape inside standard list choices closes the list and highlights the cell button
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
             closeDropdown(); 
             btn.focus(); 
           }
@@ -166,7 +163,7 @@ module.exports = {
     btn.addEventListener('focus', () => {
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(btn);
+      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(btn, 'cell-btn');
     });
     
     btn.addEventListener('blur', () => {
@@ -189,18 +186,41 @@ module.exports = {
       } 
     });
     
+    // NATIVE INTERCEPT: Intercepts keyboard events locally to break Obsidian's document canvas focus retention loops
     btn.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Escape') {
+        // Stop Obsidian or CodeMirror from ever seeing this keydown stroke
+        evt.preventDefault();
+        evt.stopPropagation();
+        evt.stopImmediatePropagation();
+
+        // Hard reset the button focus boundary to prevent cursor retention loops
+        btn.blur();
+
+        // Immediately find and focus the search bar directly via the DOM
+        const rootContainer = btn.closest('.block-language-projectgrid') || document;
+        const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+        
+        if (targetInput) {
+          requestAnimationFrame(() => {
+            targetInput.focus();
+            targetInput.select();
+          });
+        }
+        return;
+      }
+
       if (!activeDropdown) {
         if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar' || (evt.key === 'ArrowDown' && evt.altKey)) {
-          evt.preventDefault(); openDropdown(); return;
+          evt.preventDefault(); evt.stopPropagation(); openDropdown(); return;
         }
-        // STAGE 2: If list is closed, delegate escape interception directly to the row keys system mapper
-        UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
+        
+        const handled = UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
+        if (handled) { evt.preventDefault(); evt.stopPropagation(); }
       }
-    });
+    }, true); 
 
     btn.openDropdown = openDropdown;
-
     cell.appendChild(btn);
   }
 };

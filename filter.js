@@ -76,7 +76,8 @@ module.exports = {
 
       const headerIconsMap = {
         tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
-        value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯'
+        value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
+        git: '💿', agents: '🤖'
       };
 
       const activeSortChain = window.ProjectGridActiveSortChainList || [];
@@ -85,7 +86,6 @@ module.exports = {
         const key = trigger.getAttribute('data-key');
         if (!key || !headerIconsMap[key]) return;
 
-        // FIX 3: THE STRIP-AND-REWRITE ENGINE REMOVES ACCIDENTALLY RETAINED MARKERS ON COLUMNS DE-SELECTION
         let baseIcon = headerIconsMap[key];
         const chainIdx = activeSortChain.indexOf(key);
         
@@ -96,7 +96,7 @@ module.exports = {
         let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
-        if (key === 'tasks' || key === 'created' || key === 'updated') {
+        if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
           nonNullVis = rowsArray.filter(r => r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }

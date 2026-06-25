@@ -6,20 +6,18 @@ module.exports = {
     handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput) {
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         evt.preventDefault(); evt.stopPropagation();
-        this.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-custom-select-btn', fieldIdx);
+        this.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn', fieldIdx);
         return true;
       }
   
-      if (evt.key === 'Escape') {
-        evt.preventDefault(); 
-        evt.stopPropagation();
-        
-        // FIX: Query the live document DOM tree globally if the parameter reference is missing
-        let targetInput = filterInput || document.querySelector('.projectgrid-filter-input');
-        
-        if (targetInput) {
-          targetInput.focus();
-          targetInput.select();
+      if (evt.key === 'ArrowLeft' || evt.key === 'ArrowRight') {
+        evt.preventDefault(); evt.stopPropagation();
+        const siblings = Array.from(tableRow.querySelectorAll('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn'));
+        let currentPosition = siblings.indexOf(btn);
+        let targetPosition = currentPosition + (evt.key === 'ArrowRight' ? 1 : -1);
+  
+        if (targetPosition >= 0 && targetPosition < siblings.length) {
+          siblings[targetPosition].focus();
         }
         return true;
       }
@@ -39,7 +37,7 @@ module.exports = {
       return false;
     },
   
-    jumpToVerticalRowCell(evt, currentTableRow, elementSelector, fieldIndex = 0) {
+    jumpToVerticalRowCell(evt, currentTableRow, elementSelector, currentCellIndex = 0) {
       const parentTableBody = currentTableRow.parentElement;
       if (!parentTableBody) return;
   
@@ -59,7 +57,7 @@ module.exports = {
         targetRow.classList.add('projectgrid-row-focused');
   
         const interactiveTargets = Array.from(targetRow.querySelectorAll(elementSelector));
-        const targetElement = interactiveTargets[fieldIndex];
+        const targetElement = interactiveTargets[currentCellIndex] || interactiveTargets;
         
         if (targetElement) {
           targetElement.focus();
