@@ -3,32 +3,35 @@
 // ==========================================
 
 module.exports = {
+    // FIX: RE-USABLE ROUTINE TO PERFORM EXPLICIT FOCUS ROWS CELL HOPS
+    jumpToVerticalRowCell(evt, tableRow, cellBtnSelector, elementMatchIndex) {
+      evt.preventDefault(); evt.stopPropagation();
+      const parentTable = tableRow.parentElement;
+      const visibleRows = Array.from(parentTable.querySelectorAll('.projectgrid-matrix-row')).filter(r => r.style.display !== 'none');
+      const currentRowIdx = visibleRows.indexOf(tableRow);
+      let nextRowIdx = currentRowIdx + (evt.key === 'ArrowDown' ? 1 : -1);
+  
+      if (nextRowIdx >= 0 && nextRowIdx < visibleRows.length) {
+        const targetRow = visibleRows[nextRowIdx];
+        parentTable.querySelectorAll('.projectgrid-matrix-row').forEach(r => r.classList.remove('projectgrid-row-focused'));
+        
+        targetRow.classList.add('projectgrid-row-focused');
+        const targetSelectBtn = targetRow.querySelectorAll(cellBtnSelector)[elementMatchIndex];
+        if (targetSelectBtn) {
+          targetSelectBtn.focus();
+          targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }
+    },
+  
     handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput) {
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-        evt.preventDefault();
-        const parentTable = tableRow.parentElement;
-        const visibleRows = Array.from(parentTable.querySelectorAll('.projectgrid-matrix-row')).filter(r => r.style.display !== 'none');
-        const currentRowIdx = visibleRows.indexOf(tableRow);
-        let nextRowIdx = currentRowIdx + (evt.key === 'ArrowDown' ? 1 : -1);
-  
-        if (nextRowIdx >= 0 && nextRowIdx < visibleRows.length) {
-          const targetRow = visibleRows[nextRowIdx];
-          parentTable.querySelectorAll('.projectgrid-matrix-row').forEach(r => r.classList.remove('projectgrid-row-focused'));
-          
-          targetRow.classList.add('projectgrid-row-focused');
-          const targetSelectBtn = targetRow.querySelectorAll('.projectgrid-custom-select-btn')[fieldIdx];
-          if (targetSelectBtn) {
-            targetSelectBtn.focus();
-            targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          }
-        }
+        this.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-custom-select-btn:not(.projectgrid-tags-cell-btn)', fieldIdx);
         return true;
       }
   
       if (evt.key === 'Escape') {
-        evt.preventDefault();
-        filterInput.focus();
-        return true;
+        evt.preventDefault(); filterInput.focus(); return true;
       }
   
       if (evt.key === 'Tab') {
@@ -42,12 +45,11 @@ module.exports = {
   
       if (!cfg.isExtendable && (evt.key === 'ArrowRight' || evt.key === 'ArrowLeft')) {
         evt.preventDefault();
-        const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
+        const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn:not(.projectgrid-tags-cell-btn)');
         let nextIdx = fieldIdx + (evt.key === 'ArrowRight' ? 1 : -1);
         if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
         return true;
       }
-      
       return false;
     }
   };

@@ -56,8 +56,11 @@ module.exports = {
           ]
         },
         {
+          // FIX: COLUMNS SCHEMA EXPANDED TO INCLUDE TASKS (INDEX 1) AND TAGS (INDEX 6) ALIGNED WITH REAL OFFSETS
           name: '📊 Columns',
           items: [
+            { name: '🔧 Tasks Column', action: () => this.focusRowCell(activeRow, 1) },
+            { name: '🏷️ Tags Column', action: () => this.focusRowCell(activeRow, 6) },
             { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 7) },
             { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 8) },
             { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 9) },
@@ -92,28 +95,25 @@ module.exports = {
       if (existingIdx > -1) {
         this.activeSortChain.splice(existingIdx, 1);
       } else {
-        if (this.activeSortChain.length < 3) {
-          this.activeSortChain.push(key);
-        } else {
+        if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
+        else {
           this.activeSortChain.unshift(key);
           if (this.activeSortChain.length > 3) this.activeSortChain.pop();
         }
       }
-      // FIX 1: IMMEDIATELY TRIGGER RE-SORT MECHANICS ON ALTERATIONS TO CHAIN ARRAYS
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
       this.activeSortChain = [];
-      this.executeDynamicSortChain(rowsArray); // Forces fallback logic automatically
+      this.executeDynamicSortChain(rowsArray); 
     },
   
     executeDynamicSortChain(rowsArray) {
       this.updateToolbarLabel();
-      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      const parentTableBody = rowsArray?.element?.parentElement;
       if (!parentTableBody) return;
   
-      // FIX 2: IF SORT CHAIN IS NULL OR EMPTY, FALL BACK NATIVELY TO ALPHABETICAL DIRECTORY PATH SORT ORDER
       if (this.activeSortChain.length === 0) {
         rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
       } else {
@@ -138,8 +138,8 @@ module.exports = {
             } else if (currentKey === 'tasks') {
               const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
               const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
-              valA = String(taskStrA[0] || '0').padStart(5, '0');
-              valB = String(taskStrB[0] || '0').padStart(5, '0');
+              valA = String(taskStrA || '0').padStart(5, '0');
+              valB = String(taskStrB || '0').padStart(5, '0');
             } else if (currentKey === 'tagcount') {
               const tagStrA = String(valsA['tags'] || '⬛');
               const tagStrB = String(valsB['tags'] || '⬛');
@@ -164,7 +164,6 @@ module.exports = {
       
       window.ProjectGridActiveSortChainList = this.activeSortChain;
       window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
-  
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   

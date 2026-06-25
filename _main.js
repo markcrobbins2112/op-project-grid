@@ -12,6 +12,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
     console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
     StylesManager.injectStyles();
 
+    // Initialize the global tutor state tracker defaults to false on first boot
+    window.ProjectGridTutorModeActive = false;
+
     this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
       this.renderProjectGridDashboard(sourceText, element);
     });
@@ -20,12 +23,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
   onunload() {
     const styleEl = document.getElementById('obsidian-projectgrid-styles');
     if (styleEl) styleEl.remove();
-    const overlay = document.getElementById('projectgrid-global-focus-overlay');
-    if (overlay) overlay.remove();
-    const iOverlay = document.getElementById('projectgrid-global-input-overlay');
-    if (iOverlay) iOverlay.remove();
-    const rOverlay = document.getElementById('projectgrid-global-row-overlay');
-    if (rOverlay) rOverlay.remove();
+    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal, .projectgrid-tutor-tooltip-portal').forEach(el => el.remove());
   }
 
   renderProjectGridDashboard(sourceText, containerElement) {
@@ -33,15 +31,25 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
+    // Create the master horizontal toolbar wrapper
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
+    // System command picker gear configuration btn button icon
     const toolbarBtn = document.createElement('button');
     toolbarBtn.className = 'projectgrid-toolbar-btn';
     toolbarBtn.innerHTML = '⚙️';
     toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
     toolbar.appendChild(toolbarBtn);
 
+    // FIX: ADD THE INTERACTIVE TUTOR TOGGLE BUTTON TRACK NEXT TO THE GEAR ICON Btn
+    const tutorToggleBtn = document.createElement('button');
+    tutorToggleBtn.className = 'projectgrid-toolbar-btn projectgrid-tutor-toggle-btn';
+    tutorToggleBtn.innerHTML = '❔';
+    tutorToggleBtn.title = 'Toggle Tutor HUD Context Help Box Overlay (Ctrl+Alt+T)';
+    toolbar.appendChild(tutorToggleBtn);
+
+    // Dynamic text span string block layout displaying multi-choice sort chain pipelines
     const sortLabel = document.createElement('span');
     sortLabel.id = 'projectgrid-sort-toolbar-label';
     sortLabel.className = 'projectgrid-sort-indicator-label';
@@ -50,6 +58,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     sortLabel.style.color = 'var(--text-muted)';
     sortLabel.textContent = '📶 Default Directory Sort Order';
     toolbar.appendChild(sortLabel);
+    
     containerElement.appendChild(toolbar);
 
     const tableElement = document.createElement('table');
@@ -61,7 +70,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: ADDED CLASS DEFINITIONS AND DATA-KEYS DIRECTLY INTO THE INTERMEDIATE HEADERS SKELETON
+    // Core structural intermediate layout headers mappings
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 7% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="tasks" title="Tasks Todo">🔧</div></th>
       <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="created" title="Folder Created Date">🆕</div></th>
@@ -71,6 +80,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
+    // Define multi-select dropdown column targets schema configurations
     const columnDropdowns = [
       { icon: '🏷️', key: 'tags', options: ['⬛'] },
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
@@ -122,12 +132,48 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
+    // System Picker Command Core execution dispatch trigger wire rules
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();
       const scrollLockEvt = new KeyboardEvent('keydown', { key: 'ScrollLock', bubbles: true });
       window.dispatchEvent(scrollLockEvt);
     });
+
+    // FIX: ATTACH CLICK HANDLER TO SWITCH ACCENT BACKGROUND AND MANAGE GLOBALS IN TUTOR HOOKS
+    const handleTutorToggle = () => {
+      window.ProjectGridTutorModeActive = !window.ProjectGridTutorModeActive;
+      if (window.ProjectGridTutorModeActive) {
+        tutorToggleBtn.classList.add('projectgrid-tutor-active');
+        tutorToggleBtn.style.backgroundColor = 'var(--text-accent, #70a1ff)';
+        tutorToggleBtn.style.color = '#000000';
+        // Immediately force recalculations to show help boxes right away over active nodes
+        if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
+          window.ProjectGridTriggerTutorHelpBoxRedraw(document.activeElement);
+        }
+      } else {
+        tutorToggleBtn.classList.remove('projectgrid-tutor-active');
+        tutorToggleBtn.style.backgroundColor = 'transparent';
+        tutorToggleBtn.style.color = 'var(--text-normal)';
+        const oldTip = document.getElementById('projectgrid-tutor-tooltip-portal');
+        if (oldTip) oldTip.style.display = 'none';
+      }
+    };
+
+    tutorToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleTutorToggle();
+    });
+
+    // Global background keyboard shortcuts listener trap (Ctrl+Alt+T handles fast accessibility toggles)
+    const hotkeyListener = (evt) => {
+      if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
+        evt.preventDefault();
+        handleTutorToggle();
+      }
+    };
+    window.removeEventListener('keydown', hotkeyListener);
+    window.addEventListener('keydown', hotkeyListener);
 
     if (rowsArray.length > 0) {
       containerElement.appendChild(tableElement);

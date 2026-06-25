@@ -17,6 +17,7 @@ module.exports = {
       let selectionIdx = 0;
       const activeFilters = new Set(defaults);
       const fullOptionsList = ['[ALL]', ...defaults];
+      let isOpeningPanel = false;
   
       const closePanel = () => {
         if (activePanel) { activePanel.remove(); activePanel = null; }
@@ -24,7 +25,8 @@ module.exports = {
       };
   
       const openPanel = () => {
-        closePanel();
+        if (activePanel) return;
+        isOpeningPanel = true;
         selectionIdx = 0;
         activePanel = document.createElement('div');
         activePanel.className = 'projectgrid-dropup-panel';
@@ -36,7 +38,13 @@ module.exports = {
           display: 'flex', flexDirection: 'column', width: '150px'
         });
   
-        // FEATURE 1: FILTER SEARCH BOX INJECTED STRAIGHT AT THE TOP HEADER REGION
+        // FIX 1: TITLE HEADER REDRAWN FIRST AT THE TOP LINE ROW
+        const labelHeader = document.createElement('div');
+        labelHeader.className = 'projectgrid-dropup-header-title';
+        labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;
+        activePanel.appendChild(labelHeader);
+  
+        // FIX 2: SEARCH INPUT COMPONENT PLACED DIRECTLY BELOW TITLE BLOCK ROWS
         const inputWrapper = document.createElement('div');
         inputWrapper.className = 'projectgrid-tags-input-container';
         inputWrapper.style.borderTop = 'none';
@@ -49,11 +57,6 @@ module.exports = {
         customInput.placeholder = '➕ Filter options...';
         inputWrapper.appendChild(customInput);
         activePanel.appendChild(inputWrapper);
-  
-        const labelHeader = document.createElement('div');
-        labelHeader.className = 'projectgrid-dropup-header-title';
-        labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;
-        activePanel.appendChild(labelHeader);
   
         const scrollingContainer = document.createElement('div');
         scrollingContainer.style.overflowY = 'auto';
@@ -79,10 +82,8 @@ module.exports = {
         activePanel.appendChild(scrollingContainer);
         document.body.appendChild(activePanel);
   
-        // FEATURE 2: AUTO-FOCUS TEXT FIELD INPUT INSTANTLY ON OPENING
         customInput.focus();
   
-        // INTERCEPT LOGIC DRIVES UP/DOWN MOVEMENT SELECTIONS ACROSS SUB-CHECKBOXES
         customInput.addEventListener('keydown', (e) => {
           const options = scrollingContainer.querySelectorAll('.projectgrid-dropup-option');
   
@@ -105,6 +106,7 @@ module.exports = {
             e.preventDefault(); e.stopPropagation();
             const typedText = customInput.value.trim();
   
+            // FIX 3: EMPTY TEXT FIELDS RUN ON ENTER KEY WILL TOGGLE THE HIGHLIGHTED CHOICE CHECKBOX
             if (typedText === '') {
               if (options[selectionIdx]) {
                 const cb = options[selectionIdx].querySelector('input[type="checkbox"]');
@@ -112,7 +114,6 @@ module.exports = {
                 handleToggle(fullOptionsList[selectionIdx], cb.checked);
               }
             } else {
-              // Extend choices array path dynamically if matching field options aren't registered yet
               if (!fullOptionsList.includes(typedText)) {
                 defaults.push(typedText);
                 activeFilters.add(typedText);
@@ -129,6 +130,7 @@ module.exports = {
         });
   
         setTimeout(() => {
+          isOpeningPanel = false;
           const firstOpt = scrollingContainer.querySelector('.projectgrid-dropup-option');
           if (firstOpt && window.ProjectGridUpdateFocusOverlay) {
             firstOpt.classList.add('projectgrid-row-focused');
@@ -148,8 +150,10 @@ module.exports = {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          if (boxes[0]) boxes[0].checked = (activeFilters.size === defaults.length);
-          defaults.forEach((d, idx) => { if (boxes[idx + 1]) boxes[idx + 1].checked = activeFilters.has(d); });
+          if (boxes && boxes.length > 0) {
+            boxes[0].checked = (activeFilters.size === defaults.length);
+            defaults.forEach((d, idx) => { if (boxes[idx + 1]) boxes[idx + 1].checked = activeFilters.has(d); });
+          }
         }
   
         rowsArray.forEach(row => {
@@ -170,7 +174,6 @@ module.exports = {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
-      // FEATURE 3: CELL TRIGGER GROUPS TRAP ENTER, SPACE, OR DOWNS TO EXPAND OVERLAYS
       trigger.addEventListener('keydown', (evt) => {
         if (!activePanel) {
           if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
@@ -190,7 +193,16 @@ module.exports = {
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       });
   
-      trigger.addEventListener('mousedown', (e) => { e.stopPropagation(); trigger.focus(); openPanel(); });
+      // FIX 4: COMBINED CLICKS DISPATCH LOCK TO ELIMINATE THE RAPID PROGRAMMATIC FOCUS JUMP COLLISION CLOSURES
+      trigger.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        if (activePanel && !isOpeningPanel) {
+          closePanel();
+        } else {
+          trigger.focus();
+          openPanel();
+        }
+      });
   
       th.appendChild(trigger);
       return th;
