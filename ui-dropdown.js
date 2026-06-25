@@ -2,7 +2,9 @@
 // START OF FILE: ui-dropdown.js
 // ==========================================
 
-module.exports = {
+const uiDropdownModule = {
+    activeDropdownInstances: {},
+  
     buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
       const th = document.createElement('th');
       th.className = 'projectgrid-uniform-yaml-th';
@@ -31,10 +33,13 @@ module.exports = {
           closePanel();
         }
       };
-  
+
       const openPanel = () => {
         if (activePanel) return;
         isOpeningPanel = true;
+        
+        document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
+  
         selectionIdx = 0;
         activePanel = document.createElement('div');
         activePanel.className = 'projectgrid-dropup-panel';
@@ -84,19 +89,14 @@ module.exports = {
   
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault(); e.stopPropagation();
-            
-            selectionIdx = e.key === 'ArrowDown' ? 
-              ((selectionIdx + 1) % options.length) : 
-              ((selectionIdx - 1 + options.length) % options.length);
+            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % options.length) : ((selectionIdx - 1 + options.length) % options.length);
             
             options.forEach((lbl, lIdx) => {
               if (lIdx === selectionIdx) {
                 lbl.classList.add('projectgrid-row-focused');
                 if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
                 lbl.scrollIntoView({ block: 'nearest' });
-              } else { 
-                lbl.classList.remove('projectgrid-row-focused'); 
-              }
+              } else { lbl.classList.remove('projectgrid-row-focused'); }
             });
           } else if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
             e.preventDefault(); e.stopPropagation();
@@ -110,7 +110,6 @@ module.exports = {
           }
         });
   
-        // FIX 1: DELAY GLOBAL MOUSE LISTENER TRACKS VIA ANIMATION FRAMES TO BYPASS BUBBLING COLLISIONS
         requestAnimationFrame(() => {
           document.addEventListener('mousedown', handleOutsideClickGlobalClosure);
           isOpeningPanel = false;
@@ -124,7 +123,7 @@ module.exports = {
           if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(activePanel, 'filter-panel');
         });
       };
-  
+
       const handleToggle = (opt, isChecked) => {
         if (opt === '[ALL]') {
           if (isChecked) defaults.forEach(d => activeFilters.add(d));
@@ -168,23 +167,23 @@ module.exports = {
       });
   
       trigger.addEventListener('mousedown', (e) => {
-        // FIX 2: PREVENT BUBBLING STOP AT CELL BASELINE TO BLOCK ACCIDENTAL IMMEDIATE CLOSURES
         e.preventDefault();
         e.stopPropagation();
-        if (activePanel && !isOpeningPanel) {
-          closePanel();
-        } else {
-          trigger.focus();
-          openPanel();
-        }
+        if (activePanel && !isOpeningPanel) closePanel();
+        else { trigger.focus(); openPanel(); }
       });
+  
+      this.activeDropdownInstances[key] = { open: openPanel, triggerElement: trigger };
   
       th.appendChild(trigger);
       return th;
     }
-  };
-  
-  // ==========================================
-  // END OF FILE: ui-dropdown.js
-  // ==========================================
-  
+};
+
+// FIX: Anchor directly to the global context window tracker to pass through custom IIFE script compiler constraints safely
+globalThis.UiDropdown = uiDropdownModule;
+module.exports = uiDropdownModule;
+
+// ==========================================
+// END OF FILE: ui-dropdown.js
+// ==========================================

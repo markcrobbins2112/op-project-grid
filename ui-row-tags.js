@@ -147,10 +147,11 @@ module.exports = {
       }
     };
 
-    // FIX: CLOSED TAG ARROW KEY INTERCEPTOR TRIGGERS VERTICAL FOCUS ROW HOPS JUMPS
+    // FIX: Safely route closed cell navigation tracking to the new row utility tracking sequence
     tagsBtn.addEventListener('keydown', (evt) => {
       if (activeTagsDropdown) return;
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+        evt.preventDefault(); evt.stopPropagation();
         UiRowKeys.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-tags-cell-btn', 0);
       } else if (evt.key === 'Enter' || evt.key === ' ') {
         evt.preventDefault(); evt.stopPropagation(); openTagsDropdown();

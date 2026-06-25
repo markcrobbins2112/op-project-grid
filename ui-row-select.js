@@ -20,6 +20,7 @@ module.exports = {
 
     let activeDropdown = null;
     let selectionIdx = optionsList.indexOf(rawVal || '⬛');
+    let isOpening = false;
 
     const closeDropdown = () => { 
       if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } 
@@ -27,8 +28,14 @@ module.exports = {
     };
 
     const openDropdown = () => {
-      closeDropdown();
-      selectionIdx = optionsList.indexOf(btn.textContent.split(' ')[0]);
+      if (activeDropdown) return;
+      isOpening = true;
+      
+      document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
+
+      // FIX: Extract string component [0] to match exact value tags in options list array tracks
+      const cleanBtnText = btn.textContent.split(' ')[0].trim();
+      selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
       activeDropdown = document.createElement('div');
@@ -46,7 +53,6 @@ module.exports = {
       label.textContent = `📋 ${cfg.key.toUpperCase()}`;
       activeDropdown.appendChild(label);
 
-      // FIX: DISABALES THE INPUT BOX FOR ALL STATIC FIELDS EXCEPT LANGUAGES AND TARGETS
       let customInput = null;
       if (cfg.isExtendable) {
         const inputWrapper = document.createElement('div');
@@ -77,11 +83,16 @@ module.exports = {
       
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
+          // FIX: Layer standard keyboard highlight class markers onto items to drive responsive stylesheet rule sets
           if (lIdx === selectionIdx) {
+            li.classList.add('projectgrid-picker-highlight');
             li.classList.add('projectgrid-row-focused');
             if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(li);
             li.scrollIntoView({ block: 'nearest' });
-          } else { li.classList.remove('projectgrid-row-focused'); }
+          } else { 
+            li.classList.remove('projectgrid-picker-highlight');
+            li.classList.remove('projectgrid-row-focused');
+          }
         });
       };
 
@@ -116,6 +127,7 @@ module.exports = {
 
       setTimeout(() => {
         updateVisualSelection();
+        isOpening = false;
         if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
           window.ProjectGridTriggerTutorHelpBoxRedraw(customInput || activeDropdown);
         }
@@ -147,12 +159,24 @@ module.exports = {
     });
     
     btn.addEventListener('blur', () => {
-      setTimeout(() => { if (activeDropdown && !activeDropdown.contains(document.activeElement)) closeDropdown(); }, 180);
+      setTimeout(() => { 
+        if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) {
+          closeDropdown(); 
+        }
+      }, 180);
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
     });
     
-    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); if (activeDropdown) closeDropdown(); else openDropdown(); });
+    btn.addEventListener('mousedown', (e) => { 
+      e.stopPropagation(); 
+      if (activeDropdown && !isOpening) {
+        closeDropdown(); 
+      } else { 
+        btn.focus(); 
+        openDropdown(); 
+      } 
+    });
     
     btn.addEventListener('keydown', (evt) => {
       if (!activeDropdown) {

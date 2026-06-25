@@ -61,7 +61,6 @@ module.exports = {
       };
     });
 
-    // --- FIX: GLOBAL TUTOR INTERACTIVE HUD OVERLAY GENERATOR ---
     let hud = document.getElementById('projectgrid-tutor-hud-overlay');
     if (!hud) {
       hud = document.createElement('div'); hud.id = 'projectgrid-tutor-hud-overlay';
@@ -99,7 +98,6 @@ module.exports = {
           Object.assign(el.style, { top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px` });
         }
       });
-      // Realignment positioning parameters for the HUD tooltip if active
       if (window.ProjectGridTutorModeActive && hud.style.display === 'block') {
         const activeNode = self.activeFocusTarget || self.activeInputTarget;
         if (activeNode) { const r = activeNode.getBoundingClientRect(); hud.style.left = `${r.left}px`; hud.style.top = `${r.bottom + window.scrollY + 6}px`; }
@@ -120,7 +118,11 @@ module.exports = {
     if (tableParent) this.observerRef.observe(tableParent);
   },
 
-  buildHeaderDropup(titleIcon, key, defaults, rowsArray) { return UiDropdown.buildHeaderDropup(titleIcon, key, defaults, rowsArray); },
+  // FIX: Access the globally attached tracker pointer variable to cleanly avoid IIFE isolation blocks restriction bounds
+  buildHeaderDropup(titleIcon, key, defaults, rowsArray) { 
+    const targetInstance = globalThis.UiDropdown || UiDropdown;
+    return targetInstance.buildHeaderDropup(titleIcon, key, defaults, rowsArray); 
+  },
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) { return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); }
 };
 

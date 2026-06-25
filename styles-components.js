@@ -64,7 +64,6 @@ module.exports = {
           z-index: 600000 !important; 
         }
         
-        /* UN-FOCUSABLE UN-CLICKABLE LABELS FOR DESCRIPTION ENHANCEMENTS */
         .projectgrid-dropup-header-title {
           font-size: 10px !important;
           font-weight: 700 !important;
@@ -112,7 +111,7 @@ module.exports = {
           overflow: hidden !important;
           white-space: nowrap !important;
         }
-  
+
         .projectgrid-custom-dropdown-list {
           display: flex !important;
           flex-direction: column !important;
@@ -137,6 +136,15 @@ module.exports = {
           border: 2px solid transparent !important;
           background-color: transparent !important;
         }
+        
+        /* FIX: Render dynamic high contrast background color configurations specifically over key selected list nodes */
+        .projectgrid-custom-dropdown-item.projectgrid-picker-highlight,
+        .projectgrid-custom-dropdown-item.projectgrid-row-focused,
+        .projectgrid-custom-dropdown-item:hover {
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
+          color: var(--text-accent, #70a1ff) !important;
+          border-radius: 4px !important;
+        }
   
         .projectgrid-command-picker {
           position: fixed !important; 
@@ -159,7 +167,11 @@ module.exports = {
           border: 2px solid transparent !important; 
           background-color: transparent !important; 
         }
-        /* HIGH PRIORITIZED PORTAL DISPLAY PANEL FOR DASHBOARD INLINE CHECKBOXES TASKS OVERLAY LISTS */
+        .projectgrid-picker-item.projectgrid-picker-highlight {
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
+          color: var(--text-accent, #70a1ff) !important;
+        }
+
         .projectgrid-wide-tasks-portal {
             display: flex !important;
             flex-direction: column !important;
@@ -168,10 +180,9 @@ module.exports = {
             border-radius: 6px !important;
             padding: 8px !important;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-            z-index: 700000 !important; /* Floats above standard filters choice panels layout context layers */
+            z-index: 700000 !important;
             box-sizing: border-box !important;
         }
-        /* HIGH CONTRAST NON-INTERACTIVE FLOATING TUTOR HUD OVERLAY PANEL */
         .projectgrid-tutor-tooltip-portal {
             position: fixed !important;
             background-color: #1a1a2e !important;
@@ -179,8 +190,8 @@ module.exports = {
             border-radius: 6px !important;
             padding: 8px 12px !important;
             box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75) !important;
-            z-index: 999999 !important; /* Floats above everything */
-            pointer-events: none !important; /* Click-through transparency */
+            z-index: 999999 !important;
+            pointer-events: none !important;
             max-width: 280px !important;
             display: none;
             box-sizing: border-box !important;
@@ -200,7 +211,6 @@ module.exports = {
             line-height: 1.4 !important;
             font-family: var(--font-monospace) !important;
         }
-
       `;
     }
   };
@@ -208,4 +218,3 @@ module.exports = {
   // ==========================================
   // END OF FILE: styles-components.js
   // ==========================================
-  
