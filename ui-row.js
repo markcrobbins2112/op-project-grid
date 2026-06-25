@@ -10,6 +10,7 @@ const UiRowTasks = require('./ui-row-tasks');
 const UiRowSelect = require('./ui-row-select');
 
 module.exports = {
+  // FIX 1: Explicitly capture filterInput as an active argument here
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
@@ -56,6 +57,7 @@ module.exports = {
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
+      // FIX 2: Safely forward filterInput down into the individual cell select button generators
       UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       tableRow.appendChild(cell);
     });

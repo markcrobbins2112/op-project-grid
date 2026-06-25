@@ -746,10 +746,14 @@ return {
       },
       {
         name: '📊 Columns',
+        // FIX 2: Realigned hardcoded row index parameters to match your actual column ordering
         items: [
           { name: '🔧 Tasks Column', action: () => MenuStateUtils.focusRowCell(activeRow, 1) },
-          { name: '🏷️ Tags Column', action: () => MenuStateUtils.focusRowCell(activeRow, 6) },
-          ...sortingFields.slice(4).map((f, i) => ({ name: `${f.icon} ${f.label} Column`, action: () => MenuStateUtils.focusRowCell(activeRow, 7 + i) }))
+          { name: '🏷️ Tags Column', action: () => MenuStateUtils.focusRowCell(activeRow, 7) }, // Was index 6
+          ...sortingFields.slice(4).map((f, i) => ({ 
+            name: `${f.icon} ${f.label} Column`, 
+            action: () => MenuStateUtils.focusRowCell(activeRow, 8 + i) // Was 7 + i
+          }))
         ]
       },
       {
@@ -1225,7 +1229,21 @@ return {
       }
   
       if (evt.key === 'Escape') {
-        evt.preventDefault(); filterInput.focus(); return true;
+        evt.preventDefault(); 
+        evt.stopPropagation();
+        
+        // FIX: Add a bulletproof DOM traversal fallback to find the bar if reference piping breaks
+        let targetInput = filterInput;
+        if (!targetInput) {
+          const rootContainer = tableRow.closest('.block-language-projectgrid') || tableRow.closest('table')?.parentElement;
+          targetInput = rootContainer?.querySelector('.projectgrid-filter-input');
+        }
+  
+        if (targetInput) {
+          targetInput.focus();
+          targetInput.select();
+        }
+        return true;
       }
   
       if (evt.key === 'Tab') {
@@ -1234,18 +1252,16 @@ return {
         let currentIdx = siblingButtons.indexOf(btn);
         let nextIdx = currentIdx + (evt.shiftKey ? -1 : 1);
         if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
-        else if (nextIdx < 0) filterInput.focus();
+        else if (nextIdx < 0 && filterInput) filterInput.focus();
         return true;
       }
       return false;
     },
   
-    // FIX: Added missing function to handle vertical focus jumping across rows
     jumpToVerticalRowCell(evt, currentTableRow, elementSelector, fieldIndex = 0) {
       const parentTableBody = currentTableRow.parentElement;
       if (!parentTableBody) return;
   
-      // Isolate only currently unfiltered visible rows
       const visibleRows = Array.from(parentTableBody.querySelectorAll('.projectgrid-matrix-row'))
         .filter(r => r.style.display !== 'none');
       
@@ -1255,16 +1271,14 @@ return {
       if (nextRowIdx >= 0 && nextRowIdx < visibleRows.length) {
         const targetRow = visibleRows[nextRowIdx];
         
-        // Clean up previous row focuses safely
         parentTableBody.querySelectorAll('.projectgrid-matrix-row').forEach(r => {
           r.classList.remove('projectgrid-row-focused');
         });
         
         targetRow.classList.add('projectgrid-row-focused');
   
-        // Query the specific interactive cell targets inside the newly targeted row
         const interactiveTargets = Array.from(targetRow.querySelectorAll(elementSelector));
-        const targetElement = interactiveTargets[fieldIndex] || interactiveTargets[0];
+        const targetElement = interactiveTargets[fieldIndex];
         
         if (targetElement) {
           targetElement.focus();
@@ -1690,7 +1704,6 @@ return {
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
 
-      // FIX: Trim the text content string FIRST before calling split() to avoid Array prototyping type crashes
       const cleanBtnText = btn.textContent.trim().split(' ')[0];
       selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
@@ -1764,11 +1777,15 @@ return {
             const val = customInput.value.trim();
             if (val === '') commitSelection(optionsList[selectionIdx]);
             else commitSelection(val);
-          } else if (e.key === 'Escape') { e.preventDefault(); closeDropdown(); btn.focus(); }
+          } else if (e.key === 'Escape') { 
+            // STAGE 1: Escape inside dynamic list inputs closes the list and highlights the cell button
+            e.preventDefault(); e.stopPropagation();
+            closeDropdown(); 
+            btn.focus(); 
+          }
         });
       } else {
         activeDropdown.tabIndex = 0;
-        // FIX: Force focus within a minor render tick cycle loop to ensure physical browser capture frames lock onto the parent panel overlay
         requestAnimationFrame(() => {
           if (activeDropdown) activeDropdown.focus();
         });
@@ -1781,7 +1798,12 @@ return {
           } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
             e.preventDefault(); e.stopPropagation();
             commitSelection(optionsList[selectionIdx]);
-          } else if (e.key === 'Escape') { e.preventDefault(); closeDropdown(); btn.focus(); }
+          } else if (e.key === 'Escape') { 
+            // STAGE 1: Escape inside standard list choices closes the list and highlights the cell button
+            e.preventDefault(); e.stopPropagation();
+            closeDropdown(); 
+            btn.focus(); 
+          }
         });
       }
 
@@ -1843,6 +1865,7 @@ return {
         if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar' || (evt.key === 'ArrowDown' && evt.altKey)) {
           evt.preventDefault(); openDropdown(); return;
         }
+        // STAGE 2: If list is closed, delegate escape interception directly to the row keys system mapper
         UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
       }
     });
@@ -1855,6 +1878,7 @@ return {
 })();
 
 return {
+  // FIX 1: Explicitly capture filterInput as an active argument here
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
@@ -1901,6 +1925,7 @@ return {
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
+      // FIX 2: Safely forward filterInput down into the individual cell select button generators
       UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       tableRow.appendChild(cell);
     });
@@ -2037,7 +2062,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
     StylesManager.injectStyles();
 
-    // Initialize the global tutor state tracker defaults to false on first boot
     window.ProjectGridTutorModeActive = false;
 
     this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
@@ -2054,27 +2078,23 @@ module.exports = class ProjectGridPlugin extends Plugin {
   renderProjectGridDashboard(sourceText, containerElement) {
     const rootTarget = sourceText.trim() || "__";
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
-    const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
     // Create the master horizontal toolbar wrapper
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
-    // System command picker gear configuration btn button icon
     const toolbarBtn = document.createElement('button');
     toolbarBtn.className = 'projectgrid-toolbar-btn';
     toolbarBtn.innerHTML = '⚙️';
     toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
     toolbar.appendChild(toolbarBtn);
 
-    // FIX: ADD THE INTERACTIVE TUTOR TOGGLE BUTTON TRACK NEXT TO THE GEAR ICON Btn
     const tutorToggleBtn = document.createElement('button');
     tutorToggleBtn.className = 'projectgrid-toolbar-btn projectgrid-tutor-toggle-btn';
     tutorToggleBtn.innerHTML = '❔';
     tutorToggleBtn.title = 'Toggle Tutor HUD Context Help Box Overlay (Ctrl+Alt+T)';
     toolbar.appendChild(tutorToggleBtn);
 
-    // Dynamic text span string block layout displaying multi-choice sort chain pipelines
     const sortLabel = document.createElement('span');
     sortLabel.id = 'projectgrid-sort-toolbar-label';
     sortLabel.className = 'projectgrid-sort-indicator-label';
@@ -2086,16 +2106,17 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     containerElement.appendChild(toolbar);
 
+    // FIX 1: Generate the master search cell input element BEFORE generating project notes rows
+    const headerSetup = UiBuilder.generateHeaderCell();
+
     const tableElement = document.createElement('table');
     tableElement.className = 'projectgrid-matrix-table';
 
     const tableHeader = document.createElement('thead');
     const headerRow = document.createElement('tr');
 
-    const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Core structural intermediate layout headers mappings
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 7% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="tasks" title="Tasks Todo">🔧</div></th>
       <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="created" title="Folder Created Date">🆕</div></th>
@@ -2105,7 +2126,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Define multi-select dropdown column targets schema configurations
     const columnDropdowns = [
       { icon: '🏷️', key: 'tags', options: ['⬛'] },
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
@@ -2122,6 +2142,8 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const rowsArray = [];
     const universalTagsSet = new Set();
 
+    const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
+
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -2134,6 +2156,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
         }
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
+        // Now accurately passes the valid filterInput element to avoid blank escape routes
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
         
         tableBody.appendChild(rowRef.element);
@@ -2157,7 +2180,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    // System Picker Command Core execution dispatch trigger wire rules
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();
@@ -2165,14 +2187,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
       window.dispatchEvent(scrollLockEvt);
     });
 
-    // FIX: ATTACH CLICK HANDLER TO SWITCH ACCENT BACKGROUND AND MANAGE GLOBALS IN TUTOR HOOKS
     const handleTutorToggle = () => {
       window.ProjectGridTutorModeActive = !window.ProjectGridTutorModeActive;
       if (window.ProjectGridTutorModeActive) {
         tutorToggleBtn.classList.add('projectgrid-tutor-active');
         tutorToggleBtn.style.backgroundColor = 'var(--text-accent, #70a1ff)';
         tutorToggleBtn.style.color = '#000000';
-        // Immediately force recalculations to show help boxes right away over active nodes
         if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
           window.ProjectGridTriggerTutorHelpBoxRedraw(document.activeElement);
         }
@@ -2190,7 +2210,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       handleTutorToggle();
     });
 
-    // Global background keyboard shortcuts listener trap (Ctrl+Alt+T handles fast accessibility toggles)
     const hotkeyListener = (evt) => {
       if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
         evt.preventDefault();

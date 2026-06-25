@@ -51,10 +51,14 @@ module.exports = {
       },
       {
         name: '📊 Columns',
+        // FIX 2: Realigned hardcoded row index parameters to match your actual column ordering
         items: [
           { name: '🔧 Tasks Column', action: () => MenuStateUtils.focusRowCell(activeRow, 1) },
-          { name: '🏷️ Tags Column', action: () => MenuStateUtils.focusRowCell(activeRow, 6) },
-          ...sortingFields.slice(4).map((f, i) => ({ name: `${f.icon} ${f.label} Column`, action: () => MenuStateUtils.focusRowCell(activeRow, 7 + i) }))
+          { name: '🏷️ Tags Column', action: () => MenuStateUtils.focusRowCell(activeRow, 7) }, // Was index 6
+          ...sortingFields.slice(4).map((f, i) => ({ 
+            name: `${f.icon} ${f.label} Column`, 
+            action: () => MenuStateUtils.focusRowCell(activeRow, 8 + i) // Was 7 + i
+          }))
         ]
       },
       {

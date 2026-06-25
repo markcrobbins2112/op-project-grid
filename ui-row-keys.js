@@ -11,7 +11,21 @@ module.exports = {
       }
   
       if (evt.key === 'Escape') {
-        evt.preventDefault(); filterInput.focus(); return true;
+        evt.preventDefault(); 
+        evt.stopPropagation();
+        
+        // FIX: Add a bulletproof DOM traversal fallback to find the bar if reference piping breaks
+        let targetInput = filterInput;
+        if (!targetInput) {
+          const rootContainer = tableRow.closest('.block-language-projectgrid') || tableRow.closest('table')?.parentElement;
+          targetInput = rootContainer?.querySelector('.projectgrid-filter-input');
+        }
+  
+        if (targetInput) {
+          targetInput.focus();
+          targetInput.select();
+        }
+        return true;
       }
   
       if (evt.key === 'Tab') {
@@ -20,18 +34,16 @@ module.exports = {
         let currentIdx = siblingButtons.indexOf(btn);
         let nextIdx = currentIdx + (evt.shiftKey ? -1 : 1);
         if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
-        else if (nextIdx < 0) filterInput.focus();
+        else if (nextIdx < 0 && filterInput) filterInput.focus();
         return true;
       }
       return false;
     },
   
-    // FIX: Added missing function to handle vertical focus jumping across rows
     jumpToVerticalRowCell(evt, currentTableRow, elementSelector, fieldIndex = 0) {
       const parentTableBody = currentTableRow.parentElement;
       if (!parentTableBody) return;
   
-      // Isolate only currently unfiltered visible rows
       const visibleRows = Array.from(parentTableBody.querySelectorAll('.projectgrid-matrix-row'))
         .filter(r => r.style.display !== 'none');
       
@@ -41,16 +53,14 @@ module.exports = {
       if (nextRowIdx >= 0 && nextRowIdx < visibleRows.length) {
         const targetRow = visibleRows[nextRowIdx];
         
-        // Clean up previous row focuses safely
         parentTableBody.querySelectorAll('.projectgrid-matrix-row').forEach(r => {
           r.classList.remove('projectgrid-row-focused');
         });
         
         targetRow.classList.add('projectgrid-row-focused');
   
-        // Query the specific interactive cell targets inside the newly targeted row
         const interactiveTargets = Array.from(targetRow.querySelectorAll(elementSelector));
-        const targetElement = interactiveTargets[fieldIndex] || interactiveTargets[0];
+        const targetElement = interactiveTargets[fieldIndex];
         
         if (targetElement) {
           targetElement.focus();

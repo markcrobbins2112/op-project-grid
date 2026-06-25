@@ -33,7 +33,6 @@ module.exports = {
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
 
-      // FIX: Trim the text content string FIRST before calling split() to avoid Array prototyping type crashes
       const cleanBtnText = btn.textContent.trim().split(' ')[0];
       selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
@@ -107,11 +106,15 @@ module.exports = {
             const val = customInput.value.trim();
             if (val === '') commitSelection(optionsList[selectionIdx]);
             else commitSelection(val);
-          } else if (e.key === 'Escape') { e.preventDefault(); closeDropdown(); btn.focus(); }
+          } else if (e.key === 'Escape') { 
+            // STAGE 1: Escape inside dynamic list inputs closes the list and highlights the cell button
+            e.preventDefault(); e.stopPropagation();
+            closeDropdown(); 
+            btn.focus(); 
+          }
         });
       } else {
         activeDropdown.tabIndex = 0;
-        // FIX: Force focus within a minor render tick cycle loop to ensure physical browser capture frames lock onto the parent panel overlay
         requestAnimationFrame(() => {
           if (activeDropdown) activeDropdown.focus();
         });
@@ -124,7 +127,12 @@ module.exports = {
           } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
             e.preventDefault(); e.stopPropagation();
             commitSelection(optionsList[selectionIdx]);
-          } else if (e.key === 'Escape') { e.preventDefault(); closeDropdown(); btn.focus(); }
+          } else if (e.key === 'Escape') { 
+            // STAGE 1: Escape inside standard list choices closes the list and highlights the cell button
+            e.preventDefault(); e.stopPropagation();
+            closeDropdown(); 
+            btn.focus(); 
+          }
         });
       }
 
@@ -186,6 +194,7 @@ module.exports = {
         if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar' || (evt.key === 'ArrowDown' && evt.altKey)) {
           evt.preventDefault(); openDropdown(); return;
         }
+        // STAGE 2: If list is closed, delegate escape interception directly to the row keys system mapper
         UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
       }
     });

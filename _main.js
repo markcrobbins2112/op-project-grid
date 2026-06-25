@@ -12,7 +12,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
     StylesManager.injectStyles();
 
-    // Initialize the global tutor state tracker defaults to false on first boot
     window.ProjectGridTutorModeActive = false;
 
     this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
@@ -29,27 +28,23 @@ module.exports = class ProjectGridPlugin extends Plugin {
   renderProjectGridDashboard(sourceText, containerElement) {
     const rootTarget = sourceText.trim() || "__";
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
-    const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
     // Create the master horizontal toolbar wrapper
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
-    // System command picker gear configuration btn button icon
     const toolbarBtn = document.createElement('button');
     toolbarBtn.className = 'projectgrid-toolbar-btn';
     toolbarBtn.innerHTML = '⚙️';
     toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
     toolbar.appendChild(toolbarBtn);
 
-    // FIX: ADD THE INTERACTIVE TUTOR TOGGLE BUTTON TRACK NEXT TO THE GEAR ICON Btn
     const tutorToggleBtn = document.createElement('button');
     tutorToggleBtn.className = 'projectgrid-toolbar-btn projectgrid-tutor-toggle-btn';
     tutorToggleBtn.innerHTML = '❔';
     tutorToggleBtn.title = 'Toggle Tutor HUD Context Help Box Overlay (Ctrl+Alt+T)';
     toolbar.appendChild(tutorToggleBtn);
 
-    // Dynamic text span string block layout displaying multi-choice sort chain pipelines
     const sortLabel = document.createElement('span');
     sortLabel.id = 'projectgrid-sort-toolbar-label';
     sortLabel.className = 'projectgrid-sort-indicator-label';
@@ -61,16 +56,17 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     containerElement.appendChild(toolbar);
 
+    // FIX 1: Generate the master search cell input element BEFORE generating project notes rows
+    const headerSetup = UiBuilder.generateHeaderCell();
+
     const tableElement = document.createElement('table');
     tableElement.className = 'projectgrid-matrix-table';
 
     const tableHeader = document.createElement('thead');
     const headerRow = document.createElement('tr');
 
-    const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Core structural intermediate layout headers mappings
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 7% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="tasks" title="Tasks Todo">🔧</div></th>
       <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="created" title="Folder Created Date">🆕</div></th>
@@ -80,7 +76,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Define multi-select dropdown column targets schema configurations
     const columnDropdowns = [
       { icon: '🏷️', key: 'tags', options: ['⬛'] },
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
@@ -97,6 +92,8 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const rowsArray = [];
     const universalTagsSet = new Set();
 
+    const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
+
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
@@ -109,6 +106,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
         }
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
+        // Now accurately passes the valid filterInput element to avoid blank escape routes
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
         
         tableBody.appendChild(rowRef.element);
@@ -132,7 +130,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    // System Picker Command Core execution dispatch trigger wire rules
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();
@@ -140,14 +137,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
       window.dispatchEvent(scrollLockEvt);
     });
 
-    // FIX: ATTACH CLICK HANDLER TO SWITCH ACCENT BACKGROUND AND MANAGE GLOBALS IN TUTOR HOOKS
     const handleTutorToggle = () => {
       window.ProjectGridTutorModeActive = !window.ProjectGridTutorModeActive;
       if (window.ProjectGridTutorModeActive) {
         tutorToggleBtn.classList.add('projectgrid-tutor-active');
         tutorToggleBtn.style.backgroundColor = 'var(--text-accent, #70a1ff)';
         tutorToggleBtn.style.color = '#000000';
-        // Immediately force recalculations to show help boxes right away over active nodes
         if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
           window.ProjectGridTriggerTutorHelpBoxRedraw(document.activeElement);
         }
@@ -165,7 +160,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       handleTutorToggle();
     });
 
-    // Global background keyboard shortcuts listener trap (Ctrl+Alt+T handles fast accessibility toggles)
     const hotkeyListener = (evt) => {
       if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
         evt.preventDefault();
