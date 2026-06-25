@@ -5,21 +5,17 @@
 const UiDropdown = require('./ui-dropdown');
 
 module.exports = {
-  // FIX 2: SYSTEM ROUTER DIRECTLY INVOKES EXPORTED DROPDOWN HANDLES TO BYPASS PREVENTDEFAULT CONFLICTS
   openHeaderDropup(key) {
     const activePicker = document.querySelector('.projectgrid-command-picker');
     if (activePicker) activePicker.remove();
 
-    // Pull functional instances right from the shared repository pool
     const targetDropdownInstance = UiDropdown.activeDropdownInstances && UiDropdown.activeDropdownInstances[key];
     
     if (targetDropdownInstance && typeof targetDropdownInstance.open === 'function') {
       requestAnimationFrame(() => {
-        // Force focus onto trigger head to maintain context bounds
         if (targetDropdownInstance.triggerElement) {
           targetDropdownInstance.triggerElement.focus();
         }
-        // Direct method call bypasses volatile DOM click events completely
         targetDropdownInstance.open();
       });
     }
@@ -32,8 +28,15 @@ module.exports = {
 
     const targetCell = rowObj.element.children[cellIndex];
     const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
+    
     if (interactive) {
-      interactive.focus();
+      requestAnimationFrame(() => {
+        interactive.focus();
+        // FIX: Programmatically trigger the local open handle to unpack dropdown lists instantly when requested from picker wheel menus
+        if (typeof interactive.openDropdown === 'function') {
+          interactive.openDropdown();
+        }
+      });
     }
   },
 

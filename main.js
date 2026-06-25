@@ -645,21 +645,17 @@ return uiDropdownModule;
 })();
 
 return {
-  // FIX 2: SYSTEM ROUTER DIRECTLY INVOKES EXPORTED DROPDOWN HANDLES TO BYPASS PREVENTDEFAULT CONFLICTS
   openHeaderDropup(key) {
     const activePicker = document.querySelector('.projectgrid-command-picker');
     if (activePicker) activePicker.remove();
 
-    // Pull functional instances right from the shared repository pool
     const targetDropdownInstance = UiDropdown.activeDropdownInstances && UiDropdown.activeDropdownInstances[key];
     
     if (targetDropdownInstance && typeof targetDropdownInstance.open === 'function') {
       requestAnimationFrame(() => {
-        // Force focus onto trigger head to maintain context bounds
         if (targetDropdownInstance.triggerElement) {
           targetDropdownInstance.triggerElement.focus();
         }
-        // Direct method call bypasses volatile DOM click events completely
         targetDropdownInstance.open();
       });
     }
@@ -672,8 +668,15 @@ return {
 
     const targetCell = rowObj.element.children[cellIndex];
     const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
+    
     if (interactive) {
-      interactive.focus();
+      requestAnimationFrame(() => {
+        interactive.focus();
+        // FIX: Programmatically trigger the local open handle to unpack dropdown lists instantly when requested from picker wheel menus
+        if (typeof interactive.openDropdown === 'function') {
+          interactive.openDropdown();
+        }
+      });
     }
   },
 
@@ -1687,8 +1690,8 @@ return {
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
 
-      // FIX: Extract string component [0] to match exact value tags in options list array tracks
-      const cleanBtnText = btn.textContent.split(' ')[0].trim();
+      // FIX: Trim the text content string FIRST before calling split() to avoid Array prototyping type crashes
+      const cleanBtnText = btn.textContent.trim().split(' ')[0];
       selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
@@ -1737,7 +1740,6 @@ return {
       
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
-          // FIX: Layer standard keyboard highlight class markers onto items to drive responsive stylesheet rule sets
           if (lIdx === selectionIdx) {
             li.classList.add('projectgrid-picker-highlight');
             li.classList.add('projectgrid-row-focused');
@@ -1766,7 +1768,11 @@ return {
         });
       } else {
         activeDropdown.tabIndex = 0;
-        activeDropdown.focus();
+        // FIX: Force focus within a minor render tick cycle loop to ensure physical browser capture frames lock onto the parent panel overlay
+        requestAnimationFrame(() => {
+          if (activeDropdown) activeDropdown.focus();
+        });
+
         activeDropdown.addEventListener('keydown', (e) => {
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault(); e.stopPropagation();
@@ -1840,6 +1846,8 @@ return {
         UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
       }
     });
+
+    btn.openDropdown = openDropdown;
 
     cell.appendChild(btn);
   }

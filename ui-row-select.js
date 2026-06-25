@@ -33,8 +33,8 @@ module.exports = {
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
 
-      // FIX: Extract string component [0] to match exact value tags in options list array tracks
-      const cleanBtnText = btn.textContent.split(' ')[0].trim();
+      // FIX: Trim the text content string FIRST before calling split() to avoid Array prototyping type crashes
+      const cleanBtnText = btn.textContent.trim().split(' ')[0];
       selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
@@ -83,7 +83,6 @@ module.exports = {
       
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
-          // FIX: Layer standard keyboard highlight class markers onto items to drive responsive stylesheet rule sets
           if (lIdx === selectionIdx) {
             li.classList.add('projectgrid-picker-highlight');
             li.classList.add('projectgrid-row-focused');
@@ -112,7 +111,11 @@ module.exports = {
         });
       } else {
         activeDropdown.tabIndex = 0;
-        activeDropdown.focus();
+        // FIX: Force focus within a minor render tick cycle loop to ensure physical browser capture frames lock onto the parent panel overlay
+        requestAnimationFrame(() => {
+          if (activeDropdown) activeDropdown.focus();
+        });
+
         activeDropdown.addEventListener('keydown', (e) => {
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault(); e.stopPropagation();
@@ -186,6 +189,8 @@ module.exports = {
         UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
       }
     });
+
+    btn.openDropdown = openDropdown;
 
     cell.appendChild(btn);
   }
