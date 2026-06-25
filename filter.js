@@ -8,6 +8,16 @@ module.exports = {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
 
+    // DOM-DRIVEN GLOBAL WRITER: Pulls data directly from the active HTML element container
+    const syncGlobalPathFromElementDataset = (targetTableRowElement) => {
+      if (targetTableRowElement && targetTableRowElement.hasAttribute('data-directory')) {
+        window.ProjectGridIndicatedDirectory = targetTableRowElement.getAttribute('data-directory');
+        console.log(`[ProjectGrid DOM Sync] Global Directory Cached: ${window.ProjectGridIndicatedDirectory}`);
+      } else {
+        window.ProjectGridIndicatedDirectory = 'No folder selected';
+      }
+    };
+
     const applyFilter = () => {
       const val = filterInput.value.toLowerCase().trim();
       clearButton.style.visibility = val ? 'visible' : 'hidden';
@@ -98,16 +108,20 @@ module.exports = {
       if (visibleRows.length > 0) {
         if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
         
-        // GLOBAL LOCK EXPOSURE: Expose running index to the shared window scope tracking registers
         window.ProjectGridCurrentFocusedIndex = currentFocusedIndex;
 
+        rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
         const finalTargetRow = visibleRows[currentFocusedIndex].element;
+        
         if (finalTargetRow) {
           finalTargetRow.classList.add('projectgrid-row-focused');
+          // PASS A: Grab data attribute value on initial boot initialization pass
+          syncGlobalPathFromElementDataset(finalTargetRow);
           if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
         }
       } else {
-        window.ProjectGridCurrentFocusedIndex = -1; // Clear on empty tables states
+        window.ProjectGridCurrentFocusedIndex = -1;
+        window.ProjectGridIndicatedDirectory = 'No folder selected';
       }
     };
 
@@ -117,12 +131,17 @@ module.exports = {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
-      window.ProjectGridCurrentFocusedIndex = index; // Synchronize index shifts immediately
+      window.ProjectGridCurrentFocusedIndex = index;
       
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      
       rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
       if (visibleRows[index] && visibleRows[index].element) {
         visibleRows[index].element.classList.add('projectgrid-row-focused');
+        
+        // PASS B: Grab data attribute value cleanly during active keyboard selection shifts
+        syncGlobalPathFromElementDataset(visibleRows[index].element);
+        
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
       }
     });

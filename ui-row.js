@@ -16,6 +16,10 @@ module.exports = {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
+    // DATA STAMP INJECTION: Calculate the absolute system path and bind it directly to the HTML node
+    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path).replace(/[/\\]+/g, '\\');
+    tableRow.setAttribute('data-directory', absoluteFolderDiskPath);
+
     rowTrackingReference.yamlMetadataValues = {};
     rowTrackingReference.launcherValues = {};
     rowTrackingReference.folderDatesValues = {};
@@ -61,46 +65,38 @@ module.exports = {
         tableRow.appendChild(cell);
       } 
       else if (col.type === 'scanner-check') {
-        const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
         const checkPath = path.join(absoluteFolderDiskPath, col.targetFile);
         const hasFile = fs.existsSync(checkPath);
         
         cell.className += ' projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
 
         if (col.key === 'agents' && !hasFile) {
-          const absoluteLocalPath = absoluteFolderDiskPath.replace(/[/\\]+/g, '\\');
           const fileAnchor = document.createElement('a');
           
-          fileAnchor.href = `aip://aimd/_ ${absoluteLocalPath}`;
+          fileAnchor.href = `aip://aimd/_ ${absoluteFolderDiskPath}`;
           fileAnchor.className = 'projectgrid-aip-icon-btn';
           fileAnchor.textContent = '❌';
           fileAnchor.title = `AGENTS.md missing! Click to initialize framework layout via aip://aimd/ using the "_" default template.`;
           fileAnchor.style.textDecoration = 'none';
           fileAnchor.style.cursor = 'pointer';
 
-          // AUTOMATED POST-LAUNCH EVENT RE-SCAN TRIGGER
           fileAnchor.addEventListener('click', () => {
             let totalPollAttempts = 0;
-            const maxPollAttemptsLimit = 15; // Capped tightly at 15 tries (approx 3 seconds total execution boundary window)
+            const maxPollAttemptsLimit = 15;
 
             const liveFileWatcherInterval = setInterval(() => {
               totalPollAttempts++;
               const isFileNowPresentOnDisk = fs.existsSync(checkPath);
 
-              // 1. If file appears, tear down polling interval parameters and trigger grid redraw cascade
               if (isFileNowPresentOnDisk || totalPollAttempts >= maxPollAttemptsLimit) {
                 clearInterval(liveFileWatcherInterval);
-
                 if (isFileNowPresentOnDisk && window.ProjectGridTriggerFilterUpdate) {
-                  // Programmatically swap out text nodes icons safely without tearing down global rows state pools
                   rowTrackingReference.yamlMetadataValues[col.key] = '✅';
                   cell.innerHTML = '✅';
-                  
-                  // Run full filter aggregator calculation loop pass to refresh header counts strings metrics cleanly
                   window.ProjectGridTriggerFilterUpdate();
                 }
               }
-            }, 200); // Poll disk mesh nodes every 200ms
+            }, 200);
           });
 
           rowTrackingReference.yamlMetadataValues[col.key] = '❌';

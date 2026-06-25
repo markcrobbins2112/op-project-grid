@@ -5,19 +5,9 @@
 const GridConfig = require('./grid-config');
 const MenuStateUtils = require('./menu-state-utils');
 
-const menuStateModule = {
+module.exports = {
   getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
-    // 1. STABLE FOCUS TARGETING: Query via global window pointer first, fallback to DOM class, then baseline row
-    let focusedRowIdx = window.ProjectGridCurrentFocusedIndex !== undefined ? window.ProjectGridCurrentFocusedIndex : -1;
-    const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-    
-    let activeRow = null;
-    if (focusedRowIdx >= 0 && focusedRowIdx < visibleRows.length) {
-      activeRow = visibleRows[focusedRowIdx];
-    } else {
-      activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused')) || visibleRows[0] || rowsArray[0];
-    }
-
+    const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
     const config = globalThis.GridConfig || GridConfig || { columns: [] };
     const columnsList = config.columns || [];
     
@@ -31,13 +21,14 @@ const menuStateModule = {
     const activeSortEngine = globalThis.MenuStateSort || null;
     const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
     
-    const rawDirPath = (activeRow && activeRow.folder && activeRow.folder.path) ? String(activeRow.folder.path) : 'No folder selected';
+    // FIXED STABLE BINDING: Pull the absolute full path string directly from our global tracker register
+    const liveIndicatedFullDirectory = window.ProjectGridIndicatedDirectory || 'No folder selected';
 
     return [
       {
         name: 'Filters', 
         displayName: '<u>F</u>ilters',
-        icon: '📁', // RESTORED FIRST LEVEL ICON
+        icon: '📁',
         acceleratorKey: 'f',
         items: selectableColumns.map(f => ({ 
           name: `${f.icon} ${f.label} Filter`, 
@@ -47,10 +38,11 @@ const menuStateModule = {
       {
         name: 'Columns',
         displayName: '<u>C</u>olumns',
-        icon: '📊', // RESTORED FIRST LEVEL ICON
+        icon: '📊',
         acceleratorKey: 'c',
         items: [
-          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          // TITLE ITEM HEADER: Displays the live absolute global path full directory string cleanly
+          { name: `📂 ${liveIndicatedFullDirectory}`, isHeaderTitle: true },
           ...interactiveFocusColumns.map(item => ({ 
             name: `${item.col.icon} ${item.col.label} Column`, 
             action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) 
@@ -60,10 +52,11 @@ const menuStateModule = {
       {
         name: 'Launcher',
         displayName: '<u>L</u>auncher',
-        icon: '🚀', // RESTORED FIRST LEVEL ICON
+        icon: '🚀',
         acceleratorKey: 'l',
         items: [
-          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          // TITLE ITEM HEADER: Displays the live absolute global path full directory string cleanly
+          { name: `📂 ${liveIndicatedFullDirectory}`, isHeaderTitle: true },
           ...launcherColumns.map(l => ({ 
             name: `${l.icon} Open in ${l.label}`, 
             action: () => MenuStateUtils.fireProtocol(activeRow, l.key) 
@@ -73,7 +66,7 @@ const menuStateModule = {
       {
         name: 'Sort',
         displayName: '<u>S</u>ort',
-        icon: '📶', // RESTORED FIRST LEVEL ICON
+        icon: '📶',
         acceleratorKey: 's',
         items: [
           {

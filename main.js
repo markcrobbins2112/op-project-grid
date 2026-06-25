@@ -1297,6 +1297,10 @@ return {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
+    // DATA STAMP INJECTION: Calculate the absolute system path and bind it directly to the HTML node
+    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path).replace(/[/\\]+/g, '\\');
+    tableRow.setAttribute('data-directory', absoluteFolderDiskPath);
+
     rowTrackingReference.yamlMetadataValues = {};
     rowTrackingReference.launcherValues = {};
     rowTrackingReference.folderDatesValues = {};
@@ -1342,46 +1346,38 @@ return {
         tableRow.appendChild(cell);
       } 
       else if (col.type === 'scanner-check') {
-        const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
         const checkPath = path.join(absoluteFolderDiskPath, col.targetFile);
         const hasFile = fs.existsSync(checkPath);
         
         cell.className += ' projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
 
         if (col.key === 'agents' && !hasFile) {
-          const absoluteLocalPath = absoluteFolderDiskPath.replace(/[/\\]+/g, '\\');
           const fileAnchor = document.createElement('a');
           
-          fileAnchor.href = `aip://aimd/_ ${absoluteLocalPath}`;
+          fileAnchor.href = `aip://aimd/_ ${absoluteFolderDiskPath}`;
           fileAnchor.className = 'projectgrid-aip-icon-btn';
           fileAnchor.textContent = '❌';
           fileAnchor.title = `AGENTS.md missing! Click to initialize framework layout via aip://aimd/ using the "_" default template.`;
           fileAnchor.style.textDecoration = 'none';
           fileAnchor.style.cursor = 'pointer';
 
-          // AUTOMATED POST-LAUNCH EVENT RE-SCAN TRIGGER
           fileAnchor.addEventListener('click', () => {
             let totalPollAttempts = 0;
-            const maxPollAttemptsLimit = 15; // Capped tightly at 15 tries (approx 3 seconds total execution boundary window)
+            const maxPollAttemptsLimit = 15;
 
             const liveFileWatcherInterval = setInterval(() => {
               totalPollAttempts++;
               const isFileNowPresentOnDisk = fs.existsSync(checkPath);
 
-              // 1. If file appears, tear down polling interval parameters and trigger grid redraw cascade
               if (isFileNowPresentOnDisk || totalPollAttempts >= maxPollAttemptsLimit) {
                 clearInterval(liveFileWatcherInterval);
-
                 if (isFileNowPresentOnDisk && window.ProjectGridTriggerFilterUpdate) {
-                  // Programmatically swap out text nodes icons safely without tearing down global rows state pools
                   rowTrackingReference.yamlMetadataValues[col.key] = '✅';
                   cell.innerHTML = '✅';
-                  
-                  // Run full filter aggregator calculation loop pass to refresh header counts strings metrics cleanly
                   window.ProjectGridTriggerFilterUpdate();
                 }
               }
-            }, 200); // Poll disk mesh nodes every 200ms
+            }, 200);
           });
 
           rowTrackingReference.yamlMetadataValues[col.key] = '❌';
@@ -1891,19 +1887,9 @@ return {
 })();
 globalThis.MenuStateUtils = MenuStateUtils;
 
-const menuStateModule = {
+return {
   getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
-    // 1. STABLE FOCUS TARGETING: Query via global window pointer first, fallback to DOM class, then baseline row
-    let focusedRowIdx = window.ProjectGridCurrentFocusedIndex !== undefined ? window.ProjectGridCurrentFocusedIndex : -1;
-    const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-    
-    let activeRow = null;
-    if (focusedRowIdx >= 0 && focusedRowIdx < visibleRows.length) {
-      activeRow = visibleRows[focusedRowIdx];
-    } else {
-      activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused')) || visibleRows[0] || rowsArray[0];
-    }
-
+    const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
     const config = globalThis.GridConfig || GridConfig || { columns: [] };
     const columnsList = config.columns || [];
     
@@ -1917,13 +1903,14 @@ const menuStateModule = {
     const activeSortEngine = globalThis.MenuStateSort || null;
     const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
     
-    const rawDirPath = (activeRow && activeRow.folder && activeRow.folder.path) ? String(activeRow.folder.path) : 'No folder selected';
+    // FIXED STABLE BINDING: Pull the absolute full path string directly from our global tracker register
+    const liveIndicatedFullDirectory = window.ProjectGridIndicatedDirectory || 'No folder selected';
 
     return [
       {
         name: 'Filters', 
         displayName: '<u>F</u>ilters',
-        icon: '📁', // RESTORED FIRST LEVEL ICON
+        icon: '📁',
         acceleratorKey: 'f',
         items: selectableColumns.map(f => ({ 
           name: `${f.icon} ${f.label} Filter`, 
@@ -1933,10 +1920,11 @@ const menuStateModule = {
       {
         name: 'Columns',
         displayName: '<u>C</u>olumns',
-        icon: '📊', // RESTORED FIRST LEVEL ICON
+        icon: '📊',
         acceleratorKey: 'c',
         items: [
-          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          // TITLE ITEM HEADER: Displays the live absolute global path full directory string cleanly
+          { name: `📂 ${liveIndicatedFullDirectory}`, isHeaderTitle: true },
           ...interactiveFocusColumns.map(item => ({ 
             name: `${item.col.icon} ${item.col.label} Column`, 
             action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) 
@@ -1946,10 +1934,11 @@ const menuStateModule = {
       {
         name: 'Launcher',
         displayName: '<u>L</u>auncher',
-        icon: '🚀', // RESTORED FIRST LEVEL ICON
+        icon: '🚀',
         acceleratorKey: 'l',
         items: [
-          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          // TITLE ITEM HEADER: Displays the live absolute global path full directory string cleanly
+          { name: `📂 ${liveIndicatedFullDirectory}`, isHeaderTitle: true },
           ...launcherColumns.map(l => ({ 
             name: `${l.icon} Open in ${l.label}`, 
             action: () => MenuStateUtils.fireProtocol(activeRow, l.key) 
@@ -1959,7 +1948,7 @@ const menuStateModule = {
       {
         name: 'Sort',
         displayName: '<u>S</u>ort',
-        icon: '📶', // RESTORED FIRST LEVEL ICON
+        icon: '📶',
         acceleratorKey: 's',
         items: [
           {
@@ -2274,6 +2263,16 @@ return {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
 
+    // DOM-DRIVEN GLOBAL WRITER: Pulls data directly from the active HTML element container
+    const syncGlobalPathFromElementDataset = (targetTableRowElement) => {
+      if (targetTableRowElement && targetTableRowElement.hasAttribute('data-directory')) {
+        window.ProjectGridIndicatedDirectory = targetTableRowElement.getAttribute('data-directory');
+        console.log(`[ProjectGrid DOM Sync] Global Directory Cached: ${window.ProjectGridIndicatedDirectory}`);
+      } else {
+        window.ProjectGridIndicatedDirectory = 'No folder selected';
+      }
+    };
+
     const applyFilter = () => {
       const val = filterInput.value.toLowerCase().trim();
       clearButton.style.visibility = val ? 'visible' : 'hidden';
@@ -2364,16 +2363,20 @@ return {
       if (visibleRows.length > 0) {
         if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
         
-        // GLOBAL LOCK EXPOSURE: Expose running index to the shared window scope tracking registers
         window.ProjectGridCurrentFocusedIndex = currentFocusedIndex;
 
+        rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
         const finalTargetRow = visibleRows[currentFocusedIndex].element;
+        
         if (finalTargetRow) {
           finalTargetRow.classList.add('projectgrid-row-focused');
+          // PASS A: Grab data attribute value on initial boot initialization pass
+          syncGlobalPathFromElementDataset(finalTargetRow);
           if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
         }
       } else {
-        window.ProjectGridCurrentFocusedIndex = -1; // Clear on empty tables states
+        window.ProjectGridCurrentFocusedIndex = -1;
+        window.ProjectGridIndicatedDirectory = 'No folder selected';
       }
     };
 
@@ -2383,12 +2386,17 @@ return {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
-      window.ProjectGridCurrentFocusedIndex = index; // Synchronize index shifts immediately
+      window.ProjectGridCurrentFocusedIndex = index;
       
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      
       rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
       if (visibleRows[index] && visibleRows[index].element) {
         visibleRows[index].element.classList.add('projectgrid-row-focused');
+        
+        // PASS B: Grab data attribute value cleanly during active keyboard selection shifts
+        syncGlobalPathFromElementDataset(visibleRows[index].element);
+        
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
       }
     });
