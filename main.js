@@ -309,6 +309,19 @@ return {
           border: 2px solid transparent !important; 
           background-color: transparent !important; 
         }
+        /* HIGH PRIORITIZED PORTAL DISPLAY PANEL FOR DASHBOARD INLINE CHECKBOXES TASKS OVERLAY LISTS */
+        .projectgrid-wide-tasks-portal {
+            display: flex !important;
+            flex-direction: column !important;
+            background-color: var(--background-secondary, #1a1a1a) !important;
+            border: 2px solid var(--text-accent, #70a1ff) !important;
+            border-radius: 6px !important;
+            padding: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+            z-index: 700000 !important; /* Floats above standard filters choice panels layout context layers */
+            box-sizing: border-box !important;
+        }
+
       `;
     }
   };
@@ -704,97 +717,109 @@ return {
       const globalCounts = {};
       const visibleCounts = {};
 
+      // 1. Process rows visibility flags
       rowsArray.forEach(row => {
-        const metadata = row.yamlMetadataValues || {};
-        const launchers = row.launcherValues || {};
-        const allFields = { ...metadata, ...launchers };
-
-        Object.keys(allFields).forEach(key => {
-          const valueStr = String(allFields[key]);
-          if (!globalCounts[key]) globalCounts[key] = { total: 0, valMap: {} };
-          if (!visibleCounts[key]) visibleCounts[key] = { valMap: {} };
-
-          globalCounts[key].total++;
-          globalCounts[key].valMap[valueStr] = (globalCounts[key].valMap[valueStr] || 0) + 1;
-        });
-
         const passText = row.searchText.includes(val);
         const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
         
         if (passText && passDropdowns) {
           row.element.style.display = '';
-          Object.keys(allFields).forEach(key => {
-            const valueStr = String(allFields[key]);
-            visibleCounts[key].valMap[valueStr] = (visibleCounts[key].valMap[valueStr] || 0) + 1;
-          });
         } else {
           row.element.style.display = 'none';
         }
       });
 
+      // 2. Loop through the row items data to compute accurate non-null metrics counters
+      rowsArray.forEach(row => {
+        const metadata = row.yamlMetadataValues || {};
+        const launchers = row.launcherValues || {};
+        const allFields = { ...metadata, ...launchers };
+        const isRowVisible = row.element.style.display !== 'none';
+
+        Object.keys(allFields).forEach(key => {
+          if (!globalCounts[key]) globalCounts[key] = { nonNullTotal: 0 };
+          if (!visibleCounts[key]) visibleCounts[key] = { nonNullVisible: 0 };
+
+          const valueStr = String(allFields[key]).trim();
+          
+          // FIX 1: FILTER ENGINE EXCLUDES EMPTY '⬛' PLACEHOLDERS FROM THE COUNT TALLIES
+          if (valueStr && valueStr !== '⬛' && valueStr !== '') {
+            globalCounts[key].nonNullTotal++;
+            if (isRowVisible) {
+              visibleCounts[key].nonNullVisible++;
+            }
+          }
+        });
+      });
+
+      // 3. Render select cell text items cleanly without trails
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
         
         selects.forEach(btn => {
           const fIdx = btn.getAttribute('data-field-index');
+          
+          // Fallback array selector routing matching column cell geometry indexes
           const fieldsConfigKeys = ['stars', 'value', 'size', 'depth', 'priority', 'status', 'lang', 'target'];
           const key = fieldsConfigKeys[fIdx];
           if (!key) return;
 
           const currentVal = row.yamlMetadataValues ? String(row.yamlMetadataValues[key]) : '⬛';
-          const visNum = visibleCounts[key]?.valMap[currentVal] || 0;
-          const totNum = globalCounts[key]?.valMap[currentVal] || 0;
-          btn.textContent = `${currentVal} ${visNum}/${totNum}`;
+          
+          // Pull visibility matches purely for rows displaying this specific property choice value
+          let valueSpecificVisible = 0;
+          let valueSpecificTotal = 0;
+
+          rowsArray.forEach(r => {
+            const rVal = r.yamlMetadataValues ? String(r.yamlMetadataValues[key]) : '⬛';
+            if (rVal === currentVal) {
+              valueSpecificTotal++;
+              if (r.element.style.display !== 'none') {
+                valueSpecificVisible++;
+              }
+            }
+          });
+
+          btn.textContent = `${currentVal} ${valueSpecificVisible}/${valueSpecificTotal}`;
         });
       });
 
+      // 4. Update the interactive table column header triggers text blocks cleanly
+      // Maps explicit, clean matching icon key indexes arrays to completely avoid string slice accumulation bugs
+      const headerIconsMap = {
+        tags: '🏷️', stars: '⭐', value: '💲', size: '🐘',
+        depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯'
+      };
+
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
-        if (!key) return;
-        const totalItems = globalCounts[key]?.total || 0;
-        const visibleItems = Object.values(visibleCounts[key]?.valMap || {}).reduce((a, b) => a + b, 0);
-        const baseIcon = trigger.textContent.split(' ');
-        trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
+        if (!key || !headerIconsMap[key]) return;
+
+        // FIX 2: RE-WRITE CONTENT GRIDS BY COMPLETELY ERASING OLD VALUES USING HARDCODED BASE ICONS MAPS
+        const baseIcon = headerIconsMap[key];
+        const nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
+        const nonNullTot = globalCounts[key]?.nonNullTotal || 0;
+
+        trigger.textContent = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
       });
 
+      // 5. Restore core row indicator outlines positions cleanly
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-      
       if (visibleRows.length > 0) {
-        let targetMatchIdx = 0;
-
-        if (lastTrackedRowElement && !visibleRows.some(r => r.element === lastTrackedRowElement)) {
-          let absoluteOldIdx = rowsArray.findIndex(r => r.element === lastTrackedRowElement);
-          let minimumDistance = Infinity;
-
-          visibleRows.forEach((vRow, vIdx) => {
-            let absoluteNewIdx = rowsArray.findIndex(r => r.element === vRow.element);
-            let currentDist = Math.abs(absoluteOldIdx - absoluteNewIdx);
-            if (currentDist < minimumDistance) {
-              minimumDistance = currentDist;
-              targetMatchIdx = vIdx;
-            }
-          });
-        } else if (lastTrackedRowElement) {
-          targetMatchIdx = visibleRows.findIndex(r => r.element === lastTrackedRowElement);
+        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) {
+          currentFocusedIndex = 0;
         }
-
-        currentFocusedIndex = targetMatchIdx >= 0 ? targetMatchIdx : 0;
         const finalTargetRow = visibleRows[currentFocusedIndex].element;
-        
         finalTargetRow.classList.add('projectgrid-row-focused');
         lastTrackedRowElement = finalTargetRow;
-        
-        if (window.ProjectGridUpdateRowOverlay) {
-          window.ProjectGridUpdateRowOverlay(finalTargetRow);
-        }
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
       } else {
         currentFocusedIndex = -1;
         lastTrackedRowElement = null;
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
       }
 
-      // FIX: Force immediate recalculation to snap position grids perfectly right after filtering data
       if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc();
     };
 
@@ -1277,6 +1302,215 @@ return {
     }
   };
 })();
+const UiRowTasks = (function() {
+return {
+    buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference) {
+      const cell = document.createElement('td');
+      cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
+      
+      const btn = document.createElement('div');
+      btn.className = 'projectgrid-custom-select-btn projectgrid-tasks-trigger-btn';
+      btn.tabIndex = 0;
+      btn.textContent = '0/0';
+  
+      let activePanel = null;
+  
+      const updateCountersText = async () => {
+        const file = app.vault.getAbstractFileByPath(expectedNotePath);
+        if (!file) return;
+        const content = await app.vault.read(file);
+        const parsed = parseTasksSection(content);
+        
+        btn.textContent = `${parsed.uncheckedCount}/${parsed.totalCount}`;
+        rowTrackingReference.launcherValues = rowTrackingReference.launcherValues || {};
+        rowTrackingReference.launcherValues['tasks'] = `${parsed.uncheckedCount}/${parsed.totalCount}`;
+      };
+  
+      const parseTasksSection = (text) => {
+        const lines = text.split('\n');
+        let insideTasks = false;
+        const tasksList = [];
+        let unchecked = 0;
+  
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (line.trim().startsWith('## Incoming Tasks')) { insideTasks = true; continue; }
+          if (insideTasks && line.trim().startsWith('##')) { break; }
+          
+          if (insideTasks) {
+            const match = line.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+            if (match) {
+              const isChecked = match[1].toLowerCase() === 'x';
+              if (!isChecked) unchecked++;
+              tasksList.push({ lineIndex: i, text: match[2].trim(), checked: isChecked, rawLine: line });
+            }
+          }
+        }
+        return { tasks: tasksList, uncheckedCount: unchecked, totalCount: tasksList.length, lines };
+      };
+  
+      const openWideTasksPanel = async () => {
+        if (activePanel) activePanel.remove();
+        activePanel = document.createElement('div');
+        activePanel.className = 'projectgrid-wide-tasks-portal';
+  
+        const rect = btn.getBoundingClientRect();
+        Object.assign(activePanel.style, {
+          position: 'fixed', top: `${rect.bottom + window.scrollY + 4}px`,
+          left: `${Math.max(10, rect.left - 200)}px`, width: '380px'
+        });
+  
+        const file = app.vault.getAbstractFileByPath(expectedNotePath);
+        if (!file) return;
+        const content = await app.vault.read(file);
+        const data = parseTasksSection(content);
+  
+        const title = document.createElement('div');
+        title.className = 'projectgrid-dropup-header-title';
+        title.textContent = `🔧 Incoming Tasks List (${data.uncheckedCount} Pending)`;
+        activePanel.appendChild(title);
+  
+        const itemsBox = document.createElement('div');
+        itemsBox.style.maxHeight = '220px';
+        itemsBox.style.overflowY = 'auto';
+  
+        data.tasks.forEach(task => {
+          const row = document.createElement('div');
+          row.className = 'projectgrid-dropup-option';
+          row.style.justifyContent = 'space-between';
+  
+          const left = document.createElement('label');
+          left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.gap = '6px';
+          
+          const cb = document.createElement('input');
+          cb.type = 'checkbox'; cb.checked = task.checked;
+          cb.tabIndex = -1;
+          cb.addEventListener('change', async () => {
+            await writeTaskStateChange(task.lineIndex, cb.checked ? '- [x] ' + task.text : '- [ ] ' + task.text);
+            openWideTasksPanel();
+          });
+  
+          left.appendChild(cb);
+          left.appendChild(document.createTextNode(task.text));
+          row.appendChild(left);
+  
+          const del = document.createElement('span');
+          del.innerHTML = '✕'; del.style.cursor = 'pointer'; del.style.color = 'var(--text-error, #ff4757)';
+          del.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await writeTaskStateChange(task.lineIndex, null);
+            openWideTasksPanel();
+          });
+          row.appendChild(del);
+          itemsBox.appendChild(row);
+        });
+        activePanel.appendChild(itemsBox);
+  
+        const inputWrap = document.createElement('div');
+        inputWrap.className = 'projectgrid-tags-input-container';
+        
+        const textIn = document.createElement('input');
+        textIn.type = 'text'; textIn.className = 'projectgrid-tags-custom-entry-field';
+        textIn.placeholder = '➕ Create New Checklist Item...';
+        
+        textIn.addEventListener('keydown', async (e) => {
+          if (e.key === 'Enter' && textIn.value.trim()) {
+            e.preventDefault();
+            await appendNewTaskLine('- [ ] ' + textIn.value.trim(), data.lines);
+            openWideTasksPanel();
+          }
+        });
+        inputWrap.appendChild(textIn);
+        activePanel.appendChild(inputWrap);
+  
+        // --- FIX: ABSOLUTE PORTAL ESCAPE INTERCEPTOR CLOSES PANEL AND FOCUSES BUTTON ---
+        activePanel.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            closeWideTasksPanel();
+          }
+        });
+        // ------------------------------------------------------------------------------
+  
+        document.body.appendChild(activePanel);
+        
+        // Update our topmost global overlay framework tracker immediately
+        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(activePanel);
+      };
+  
+      const closeWideTasksPanel = () => {
+        if (activePanel) {
+          activePanel.remove();
+          activePanel = null;
+        }
+        btn.focus(); // Returns active cursor selection cleanly back to the task grid column
+        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      };
+  
+      const writeTaskStateChange = async (lineIdx, newlineValue) => {
+        const file = app.vault.getAbstractFileByPath(expectedNotePath);
+        if (!file) return;
+        const content = await app.vault.read(file);
+        const lines = content.split('\n');
+  
+        if (newlineValue === null) lines.splice(lineIdx, 1);
+        else lines[lineIdx] = newlineValue;
+  
+        await app.vault.modify(file, lines.join('\n'));
+        await updateCountersText();
+      };
+  
+      const appendNewTaskLine = async (rawLineText, existingLines) => {
+        const file = app.vault.getAbstractFileByPath(expectedNotePath);
+        if (!file) return;
+        
+        let headingIndex = existingLines.findIndex(l => l.trim().startsWith('## Incoming Tasks'));
+        if (headingIndex === -1) {
+          existingLines.push('\n## Incoming Tasks');
+          existingLines.push(rawLineText);
+        } else {
+          existingLines.splice(headingIndex + 1, 0, rawLineText);
+        }
+  
+        await app.vault.modify(file, existingLines.join('\n'));
+        await updateCountersText();
+      };
+  
+      btn.addEventListener('focus', () => {
+        openWideTasksPanel();
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
+      });
+  
+      btn.addEventListener('blur', () => {
+        // Buffer delay prevents premature destruction when focusing interior inputs
+        setTimeout(() => {
+          if (activePanel && !activePanel.contains(document.activeElement) && document.activeElement !== btn) {
+            activePanel.remove();
+            activePanel = null;
+            if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          }
+        }, 150);
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
+      });
+  
+      btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); });
+      
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeWideTasksPanel();
+        }
+      });
+  
+      setTimeout(updateCountersText, 20);
+      cell.appendChild(btn);
+      tableRow.appendChild(cell);
+    }
+  };
+})();
 const UiRowSelect = (function() {
 const UiRowKeys = (function() {
 return {
@@ -1454,16 +1688,19 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2 & 3: Directory dates check loops (Modularly parsed)
+    // Column 2: Checkbox Tasks module injection
+    UiRowTasks.buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference);
+
+    // Columns 3 & 4: Directory timestamps
     UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
 
-    // Columns 4, 5, 6: Launcher Button Links (Appended modularly)
+    // Columns 5, 6, 7: Application launcher short tracks links
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
-    // Column 7: Interactive extensible Tags column segment (Appended modularly)
+    // Column 8: User extensible Tags collection field selector layout
     UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
 
-    // Columns 8 through 15: Structural field configuration metadata tracks
+    // Columns 9 through 16: Frontmatter metadata columns tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -1621,12 +1858,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
   onunload() {
     const styleEl = document.getElementById('obsidian-projectgrid-styles');
     if (styleEl) styleEl.remove();
-    const overlay = document.getElementById('projectgrid-global-focus-overlay');
-    if (overlay) overlay.remove();
-    const iOverlay = document.getElementById('projectgrid-global-input-overlay');
-    if (iOverlay) iOverlay.remove();
-    const rOverlay = document.getElementById('projectgrid-global-row-overlay');
-    if (rOverlay) rOverlay.remove();
+    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal').forEach(el => el.remove());
   }
 
   renderProjectGridDashboard(sourceText, containerElement) {
@@ -1651,7 +1883,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     sortLabel.style.color = 'var(--text-muted)';
     sortLabel.textContent = '📶 Default Directory Sort Order';
     toolbar.appendChild(sortLabel);
-    
     containerElement.appendChild(toolbar);
 
     const tableElement = document.createElement('table');
@@ -1663,7 +1894,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
+    // FIX: ADD THE INTERACTIVE TASKS HEADER SLOT DIRECTLY AFTER NOTE FILE COLUMN (COL 1)
     headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 7% !important; text-align: center;" title="Incoming Checkbox Tasks Hierarchy">🔧</th>
       <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
       <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
@@ -1671,9 +1904,8 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // FIX: ADDED TAGS FIELD SYMBOL BEFORE THE REST OF THE COLUMN DROPDOWNS ARRAYS
     const columnDropdowns = [
-      { icon: '🏷️', key: 'tags', options: ['⬛'] }, // Dynamically populated below during compilation scan
+      { icon: '🏷️', key: 'tags', options: ['⬛'] },
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
       { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
@@ -1686,8 +1918,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
 
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
-
-    // Track unique tags across all scanning sweeps to build the header dropup choices pipeline
     const universalTagsSet = new Set();
 
     targetFolders.forEach(folder => {
@@ -1696,7 +1926,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
         const fileCache = this.app.metadataCache.getCache(expectedNotePath);
         const frontmatter = fileCache ? fileCache.frontmatter : null;
 
-        // Parse frontmatter tags array for the header select options list mapping
         if (frontmatter && frontmatter.tags) {
           const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
           rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
@@ -1710,7 +1939,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Populate the tags choices array dynamically from discovered notes metadata
     const tagsConfig = columnDropdowns.find(c => c.key === 'tags');
     if (tagsConfig) {
       Array.from(universalTagsSet).sort().forEach(t => tagsConfig.options.push(t));

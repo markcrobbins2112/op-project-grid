@@ -6,6 +6,7 @@ const UiColor = require('./ui-color');
 const UiRowDates = require('./ui-row-dates');
 const UiRowActions = require('./ui-row-actions');
 const UiRowTags = require('./ui-row-tags');
+const UiRowTasks = require('./ui-row-tasks');
 const UiRowSelect = require('./ui-row-select');
 
 module.exports = {
@@ -28,16 +29,19 @@ module.exports = {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2 & 3: Directory dates check loops (Modularly parsed)
+    // Column 2: Checkbox Tasks module injection
+    UiRowTasks.buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference);
+
+    // Columns 3 & 4: Directory timestamps
     UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
 
-    // Columns 4, 5, 6: Launcher Button Links (Appended modularly)
+    // Columns 5, 6, 7: Application launcher short tracks links
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
-    // Column 7: Interactive extensible Tags column segment (Appended modularly)
+    // Column 8: User extensible Tags collection field selector layout
     UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
 
-    // Columns 8 through 15: Structural field configuration metadata tracks
+    // Columns 9 through 16: Frontmatter metadata columns tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },

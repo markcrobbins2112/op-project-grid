@@ -20,12 +20,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
   onunload() {
     const styleEl = document.getElementById('obsidian-projectgrid-styles');
     if (styleEl) styleEl.remove();
-    const overlay = document.getElementById('projectgrid-global-focus-overlay');
-    if (overlay) overlay.remove();
-    const iOverlay = document.getElementById('projectgrid-global-input-overlay');
-    if (iOverlay) iOverlay.remove();
-    const rOverlay = document.getElementById('projectgrid-global-row-overlay');
-    if (rOverlay) rOverlay.remove();
+    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal').forEach(el => el.remove());
   }
 
   renderProjectGridDashboard(sourceText, containerElement) {
@@ -50,7 +45,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     sortLabel.style.color = 'var(--text-muted)';
     sortLabel.textContent = '📶 Default Directory Sort Order';
     toolbar.appendChild(sortLabel);
-    
     containerElement.appendChild(toolbar);
 
     const tableElement = document.createElement('table');
@@ -62,7 +56,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
+    // FIX: ADD THE INTERACTIVE TASKS HEADER SLOT DIRECTLY AFTER NOTE FILE COLUMN (COL 1)
     headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 7% !important; text-align: center;" title="Incoming Checkbox Tasks Hierarchy">🔧</th>
       <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
       <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
@@ -70,9 +66,8 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // FIX: ADDED TAGS FIELD SYMBOL BEFORE THE REST OF THE COLUMN DROPDOWNS ARRAYS
     const columnDropdowns = [
-      { icon: '🏷️', key: 'tags', options: ['⬛'] }, // Dynamically populated below during compilation scan
+      { icon: '🏷️', key: 'tags', options: ['⬛'] },
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
       { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
@@ -85,8 +80,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
 
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
-
-    // Track unique tags across all scanning sweeps to build the header dropup choices pipeline
     const universalTagsSet = new Set();
 
     targetFolders.forEach(folder => {
@@ -95,7 +88,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
         const fileCache = this.app.metadataCache.getCache(expectedNotePath);
         const frontmatter = fileCache ? fileCache.frontmatter : null;
 
-        // Parse frontmatter tags array for the header select options list mapping
         if (frontmatter && frontmatter.tags) {
           const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
           rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
@@ -109,7 +101,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    // Populate the tags choices array dynamically from discovered notes metadata
     const tagsConfig = columnDropdowns.find(c => c.key === 'tags');
     if (tagsConfig) {
       Array.from(universalTagsSet).sort().forEach(t => tagsConfig.options.push(t));

@@ -159,6 +159,19 @@ module.exports = {
           border: 2px solid transparent !important; 
           background-color: transparent !important; 
         }
+        /* HIGH PRIORITIZED PORTAL DISPLAY PANEL FOR DASHBOARD INLINE CHECKBOXES TASKS OVERLAY LISTS */
+        .projectgrid-wide-tasks-portal {
+            display: flex !important;
+            flex-direction: column !important;
+            background-color: var(--background-secondary, #1a1a1a) !important;
+            border: 2px solid var(--text-accent, #70a1ff) !important;
+            border-radius: 6px !important;
+            padding: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+            z-index: 700000 !important; /* Floats above standard filters choice panels layout context layers */
+            box-sizing: border-box !important;
+        }
+
       `;
     }
   };
