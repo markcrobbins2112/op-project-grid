@@ -29,7 +29,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const rootTarget = sourceText.trim() || "__";
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
 
-    // Create the master horizontal toolbar wrapper
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -56,7 +55,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     containerElement.appendChild(toolbar);
 
-    // FIX 1: Generate the master search cell input element BEFORE generating project notes rows
     const headerSetup = UiBuilder.generateHeaderCell();
 
     const tableElement = document.createElement('table');
@@ -106,7 +104,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
         }
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
-        // Now accurately passes the valid filterInput element to avoid blank escape routes
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
         
         tableBody.appendChild(rowRef.element);
@@ -123,6 +120,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
     });
+
+    // Add read-only columns headers mappings
+    headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 4% !important; text-align: center;" title="Git Repo Detected">💿 th</th>
+      <th style="width: 4% !important; text-align: center;" title="AGENTS.md File Discovered">🤖 th</th>
+    `);
 
     tableHeader.appendChild(headerRow);
     tableElement.appendChild(tableHeader);

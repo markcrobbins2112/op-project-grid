@@ -14,13 +14,9 @@ module.exports = {
         evt.preventDefault(); 
         evt.stopPropagation();
         
-        // FIX: Add a bulletproof DOM traversal fallback to find the bar if reference piping breaks
-        let targetInput = filterInput;
-        if (!targetInput) {
-          const rootContainer = tableRow.closest('.block-language-projectgrid') || tableRow.closest('table')?.parentElement;
-          targetInput = rootContainer?.querySelector('.projectgrid-filter-input');
-        }
-  
+        // FIX: Query the live document DOM tree globally if the parameter reference is missing
+        let targetInput = filterInput || document.querySelector('.projectgrid-filter-input');
+        
         if (targetInput) {
           targetInput.focus();
           targetInput.select();
@@ -34,7 +30,10 @@ module.exports = {
         let currentIdx = siblingButtons.indexOf(btn);
         let nextIdx = currentIdx + (evt.shiftKey ? -1 : 1);
         if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
-        else if (nextIdx < 0 && filterInput) filterInput.focus();
+        else if (nextIdx < 0) {
+          let fallbackInput = filterInput || document.querySelector('.projectgrid-filter-input');
+          if (fallbackInput) fallbackInput.focus();
+        }
         return true;
       }
       return false;

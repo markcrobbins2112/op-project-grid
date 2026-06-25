@@ -27,7 +27,7 @@ return {
           font-weight: 600 !important;
           color: var(--text-muted, #888888) !important;
           border-bottom: 2px solid var(--background-modifier-border, #3a3a3a) !important;
-          padding: 6px 4px !important;
+          padding: 4px 2px !important;
           vertical-align: middle;
           position: relative !important;
           text-align: center !important;
@@ -36,23 +36,25 @@ return {
           text-align: left !important;
         }
   
-        /* FIX: CELL PADDING REDUCED BY 40% TO FORCE ABSOLUTE COMPRESSION TO DATE COLUMNS BOUNDARIES */
+        /* FIX: Date fields scaled up to match column select button formatting exactly */
         .projectgrid-timestamp-scaled-td {
-          font-size: 8px !important; 
+          font-size: 11px !important; 
           text-align: center !important;
           white-space: nowrap !important;
-          width: 1% !important; 
-          padding: 6px 2px !important; /* Horizontally squashes track borders tighter around text values */
+          width: 90px !important; 
+          padding: 4px 2px !important;
           color: var(--text-muted) !important;
         }
   
+        /* COMPRESSION: Flatten widths down to enforce an absolute narrow grid footprint */
         .projectgrid-uniform-yaml-th,
         .projectgrid-uniform-yaml-td {
-          width: 62px !important;
-          min-width: 62px !important;
-          max-width: 62px !important;
+          width: 50px !important;
+          min-width: 50px !important;
+          max-width: 50px !important;
           text-align: center !important;
           box-sizing: border-box !important;
+          padding: 2px 1px !important;
         }
   
         .projectgrid-filter-wrapper {
@@ -73,12 +75,6 @@ return {
           outline: none !important;
           box-shadow: none !important;
         }
-        .projectgrid-filter-input:focus {
-          background-color: var(--background-primary, #1e1e1e) !important;
-          border-color: var(--background-modifier-border, #3a3a3a) !important;
-          outline: none !important;
-          box-shadow: none !important;
-        }
         
         .projectgrid-clear-btn {
           position: absolute !important;
@@ -91,15 +87,22 @@ return {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        .projectgrid-matrix-cell { padding: 6px 4px !important; vertical-align: middle !important; }
-        .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; }
+        .projectgrid-matrix-cell { padding: 4px 2px !important; vertical-align: middle !important; }
+        .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; max-width: 140px !important; overflow: hidden; text-overflow: ellipsis; }
         .projectgrid-matrix-link { text-decoration: none !important; }
-        .projectgrid-matrix-link:hover { text-decoration: none !important; }
-        .action-icon-cell { text-align: center !important; }
+        .action-icon-cell { text-align: center !important; width: 24px !important; }
         .action-icon-cell a { text-decoration: none !important; }
-        .action-icon-cell a:hover { text-decoration: none !important; }
         .projectgrid-aip-icon-btn.is-vault-missing { opacity: 0.15 !important; }
         .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
+        
+        /* READ-ONLY SCANNER COLUMNS */
+        .projectgrid-readonly-scanner-td {
+          font-size: 11px !important;
+          text-align: center !important;
+          width: 32px !important;
+          padding: 4px 2px !important;
+          user-select: none !important;
+        }
       `;
     }
   };
@@ -1116,6 +1119,8 @@ return {
 })();
 const UiBuilder = (function() {
 const UiRow = (function() {
+const fs = require('fs');
+const path = require('path');
 const UiColor = (function() {
 return {
     getColorForFirstCharacter(filename) {
@@ -1232,13 +1237,9 @@ return {
         evt.preventDefault(); 
         evt.stopPropagation();
         
-        // FIX: Add a bulletproof DOM traversal fallback to find the bar if reference piping breaks
-        let targetInput = filterInput;
-        if (!targetInput) {
-          const rootContainer = tableRow.closest('.block-language-projectgrid') || tableRow.closest('table')?.parentElement;
-          targetInput = rootContainer?.querySelector('.projectgrid-filter-input');
-        }
-  
+        // FIX: Query the live document DOM tree globally if the parameter reference is missing
+        let targetInput = filterInput || document.querySelector('.projectgrid-filter-input');
+        
         if (targetInput) {
           targetInput.focus();
           targetInput.select();
@@ -1252,7 +1253,10 @@ return {
         let currentIdx = siblingButtons.indexOf(btn);
         let nextIdx = currentIdx + (evt.shiftKey ? -1 : 1);
         if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
-        else if (nextIdx < 0 && filterInput) filterInput.focus();
+        else if (nextIdx < 0) {
+          let fallbackInput = filterInput || document.querySelector('.projectgrid-filter-input');
+          if (fallbackInput) fallbackInput.focus();
+        }
         return true;
       }
       return false;
@@ -1878,7 +1882,6 @@ return {
 })();
 
 return {
-  // FIX 1: Explicitly capture filterInput as an active argument here
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
@@ -1898,16 +1901,16 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Column 2: Checkbox Tasks module injection
+    // Column 2: Checkbox Tasks
     UiRowTasks.buildTasksColumn(tableRow, expectedNotePath, app, rowTrackingReference);
 
     // Columns 3 & 4: Directory timestamps
     UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
 
-    // Columns 5, 6, 7: Application launcher short tracks links
+    // Columns 5, 6, 7: Application launcher shortcuts
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
-    // Column 8: User extensible Tags collection field selector layout
+    // Column 8: User extensible Tags collection field
     UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
 
     // Columns 9 through 16: Frontmatter metadata columns tracks
@@ -1925,10 +1928,30 @@ return {
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
-      // FIX 2: Safely forward filterInput down into the individual cell select button generators
       UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       tableRow.appendChild(cell);
     });
+
+    // SCANNER ADDITIONS: Perform real-time physical disk queries over project directories
+    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
+    
+    // 💿 Check 1: .git detection
+    const gitPath = path.join(absoluteFolderDiskPath, '.git');
+    const hasGit = fs.existsSync(gitPath);
+    const gitCell = document.createElement('td');
+    gitCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td';
+    gitCell.textContent = hasGit ? '✅' : '❌';
+    gitCell.title = hasGit ? '.git directory identified' : 'No local deployment branch found';
+    tableRow.appendChild(gitCell);
+
+    // 🤖 Check 2: AGENTS.md detection
+    const agentsPath = path.join(absoluteFolderDiskPath, 'AGENTS.md');
+    const hasAgents = fs.existsSync(agentsPath);
+    const agentsCell = document.createElement('td');
+    agentsCell.className = 'projectgrid-matrix-cell projectgrid-readonly-scanner-td';
+    agentsCell.textContent = hasAgents ? '✅' : '❌';
+    agentsCell.title = hasAgents ? 'AGENTS.md configuration discovered' : 'No structural bot routines mapped';
+    tableRow.appendChild(agentsCell);
 
     return tableRow;
   }
@@ -2079,7 +2102,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const rootTarget = sourceText.trim() || "__";
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
 
-    // Create the master horizontal toolbar wrapper
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -2106,7 +2128,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     containerElement.appendChild(toolbar);
 
-    // FIX 1: Generate the master search cell input element BEFORE generating project notes rows
     const headerSetup = UiBuilder.generateHeaderCell();
 
     const tableElement = document.createElement('table');
@@ -2156,7 +2177,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
         }
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
-        // Now accurately passes the valid filterInput element to avoid blank escape routes
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
         
         tableBody.appendChild(rowRef.element);
@@ -2173,6 +2193,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
     });
+
+    // Add read-only columns headers mappings
+    headerRow.insertAdjacentHTML('beforeend', `
+      <th style="width: 4% !important; text-align: center;" title="Git Repo Detected">💿 th</th>
+      <th style="width: 4% !important; text-align: center;" title="AGENTS.md File Discovered">🤖 th</th>
+    `);
 
     tableHeader.appendChild(headerRow);
     tableElement.appendChild(tableHeader);
