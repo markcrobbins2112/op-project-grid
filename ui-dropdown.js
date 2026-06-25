@@ -23,6 +23,13 @@ module.exports = {
         if (activePanel) { activePanel.remove(); activePanel = null; }
         if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
         if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(null);
+        document.removeEventListener('mousedown', handleOutsideClickGlobalClosure);
+      };
+  
+      const handleOutsideClickGlobalClosure = (e) => {
+        if (activePanel && !activePanel.contains(e.target) && !trigger.contains(e.target)) {
+          closePanel();
+        }
       };
   
       const openPanel = () => {
@@ -44,7 +51,6 @@ module.exports = {
         labelHeader.textContent = `📋 Filters: ${key.toUpperCase()}`;
         activePanel.appendChild(labelHeader);
   
-        // FIX: ALL FILTER HEADERS ENFORCE ZERO TEXT INPUT FIELDS NATIVELY
         const scrollingContainer = document.createElement('div');
         scrollingContainer.style.overflowY = 'auto';
         scrollingContainer.style.flex = '1';
@@ -74,16 +80,23 @@ module.exports = {
   
         activePanel.addEventListener('keydown', (e) => {
           const options = scrollingContainer.querySelectorAll('.projectgrid-dropup-option');
+          if (options.length === 0) return;
+  
           if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault(); e.stopPropagation();
-            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
+            
+            selectionIdx = e.key === 'ArrowDown' ? 
+              ((selectionIdx + 1) % options.length) : 
+              ((selectionIdx - 1 + options.length) % options.length);
             
             options.forEach((lbl, lIdx) => {
               if (lIdx === selectionIdx) {
                 lbl.classList.add('projectgrid-row-focused');
                 if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
                 lbl.scrollIntoView({ block: 'nearest' });
-              } else { lbl.classList.remove('projectgrid-row-focused'); }
+              } else { 
+                lbl.classList.remove('projectgrid-row-focused'); 
+              }
             });
           } else if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
             e.preventDefault(); e.stopPropagation();
@@ -97,15 +110,19 @@ module.exports = {
           }
         });
   
-        setTimeout(() => {
+        // FIX 1: DELAY GLOBAL MOUSE LISTENER TRACKS VIA ANIMATION FRAMES TO BYPASS BUBBLING COLLISIONS
+        requestAnimationFrame(() => {
+          document.addEventListener('mousedown', handleOutsideClickGlobalClosure);
           isOpeningPanel = false;
+          if (activePanel) activePanel.focus();
+          
           const firstOpt = scrollingContainer.querySelector('.projectgrid-dropup-option');
           if (firstOpt && window.ProjectGridUpdateFocusOverlay) {
             firstOpt.classList.add('projectgrid-row-focused');
             window.ProjectGridUpdateFocusOverlay(firstOpt);
           }
           if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(activePanel, 'filter-panel');
-        }, 20);
+        });
       };
   
       const handleToggle = (opt, isChecked) => {
@@ -149,14 +166,17 @@ module.exports = {
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
         if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(trigger, 'filter-header');
       });
-      trigger.addEventListener('blur', () => {
-        setTimeout(() => { if (activePanel && !activePanel.contains(document.activeElement)) { closePanel(); } }, 180);
-        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
-      });
+  
       trigger.addEventListener('mousedown', (e) => {
+        // FIX 2: PREVENT BUBBLING STOP AT CELL BASELINE TO BLOCK ACCIDENTAL IMMEDIATE CLOSURES
+        e.preventDefault();
         e.stopPropagation();
-        if (activePanel && !isOpeningPanel) closePanel();
-        else { trigger.focus(); openPanel(); }
+        if (activePanel && !isOpeningPanel) {
+          closePanel();
+        } else {
+          trigger.focus();
+          openPanel();
+        }
       });
   
       th.appendChild(trigger);
