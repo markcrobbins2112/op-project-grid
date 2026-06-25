@@ -7,7 +7,7 @@ const MenuDom = require('./menu-dom');
 
 module.exports = {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; 
+    let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -88,7 +88,6 @@ module.exports = {
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
         
-        // FIX: SAVES TARGET SELECTION NODE TO RE-POSITION VIEWS ON CANVAS SCROLL TRIGGERS
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
@@ -116,9 +115,21 @@ module.exports = {
         activeIndex = 0;
         renderMenu();
       } else if (pickerLevel === 2) {
+        // FIX: IF SORT LEVEL 2 ROOT IS ACTIVE, RUN ACTION WITHOUT DESTROYING MENUS PREMATURELY
         const selectedAction = activeItems[activeIndex].action;
+        if (selectedAction) {
+          selectedAction();
+          
+          // Re-scaffold schema bounds to instantly render modified 🟢/🟡/🔴 icons states
+          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
+          if (currentCategoryText === '📶 Sort') {
+            const masterSchema = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeItems = masterSchema[storedCategoryIndex].items;
+            renderMenu(); // Re-render updates immediately
+            return;
+          }
+        }
         closeAllPickers();
-        if (selectedAction) selectedAction();
       }
     };
   }

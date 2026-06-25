@@ -3,10 +3,45 @@
 // ==========================================
 
 module.exports = {
-    activeSortChain: [],
+    activeSortChain: [], // Tracks up to 3 active sorting keys: string elements
   
     getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
       const activeRow = rowsArray.find(row => row.element.classList.contains('projectgrid-row-focused'));
+  
+      // Baseline definitions of all available sortable parameters
+      const sortingFields = [
+        { key: 'tasks', label: 'Tasks Todo', icon: '🔧' },
+        { key: 'created', label: 'Created Date', icon: '🆕' },
+        { key: 'updated', label: 'Updated Date', icon: '🆙' },
+        { key: 'tagcount', label: 'Tag Count', icon: '🏷️' },
+        { key: 'stars', label: 'Stars', icon: '⭐' },
+        { key: 'value', label: 'Value', icon: '💲' },
+        { key: 'size', label: 'Size', icon: '🐘' },
+        { key: 'depth', label: 'Depth', icon: '🎱' },
+        { key: 'priority', label: 'Priority', icon: '🏅' },
+        { key: 'status', label: 'Status', icon: '🚦' },
+        { key: 'lang', label: 'Lang', icon: '🔤' },
+        { key: 'target', label: 'Target', icon: '🎯' }
+      ];
+  
+      // Build the dynamic items array for the Sort sub-menu block
+      const sortMenuItems = [
+        { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
+      ];
+  
+      sortingFields.forEach(field => {
+        const chainIndex = this.activeSortChain.indexOf(field.key);
+        let prefix = '⚫ ';
+        
+        if (chainIndex === 0) prefix = '🟢 ';
+        else if (chainIndex === 1) prefix = '🟡 ';
+        else if (chainIndex === 2) prefix = '🔴 ';
+  
+        sortMenuItems.push({
+          name: `${prefix}${field.icon} ${field.label}`,
+          action: () => this.handleSortChainClick(field.key, rowsArray)
+        });
+      });
   
       return [
         {
@@ -24,7 +59,6 @@ module.exports = {
           ]
         },
         {
-          // FIX: ADVANCED ALL ENTRY CELL SHIFT INDICES BY +1 STEP TO MATCH NEW TABULAR GRID ALLOCATIONS
           name: '📊 Columns',
           items: [
             { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 7) },
@@ -47,20 +81,7 @@ module.exports = {
         },
         {
           name: '📶 Sort',
-          items: [
-            { name: '🏷️ Tags to Sort Chain', action: () => this.toggleSortChainKey('tags', rowsArray) },
-            { name: '🆕 Created Date to Sort Chain', action: () => this.toggleSortChainKey('created', rowsArray) },
-            { name: '🆙 Updated Date to Sort Chain', action: () => this.toggleSortChainKey('updated', rowsArray) },
-            { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
-            { name: '💲 Value to Sort Chain', action: () => this.toggleSortChainKey('value', rowsArray) },
-            { name: '🐘 Size to Sort Chain', action: () => this.toggleSortChainKey('size', rowsArray) },
-            { name: '🎱 Depth to Sort Chain', action: () => this.toggleSortChainKey('depth', rowsArray) },
-            { name: '🏅 Priority to Sort Chain', action: () => this.toggleSortChainKey('priority', rowsArray) },
-            { name: '🚦 Status to Sort Chain', action: () => this.toggleSortChainKey('status', rowsArray) },
-            { name: '🔤 Lang to Sort Chain', action: () => this.toggleSortChainKey('lang', rowsArray) },
-            { name: '🎯 Target to Sort Chain', action: () => this.toggleSortChainKey('target', rowsArray) },
-            { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
-          ]
+          items: sortMenuItems
         },
         {
           name: '⚙️ System',
@@ -72,24 +93,32 @@ module.exports = {
       ];
     },
   
-    toggleSortChainKey(key, rowsArray) {
+    handleSortChainClick(key, rowsArray) {
       const existingIdx = this.activeSortChain.indexOf(key);
+  
       if (existingIdx > -1) {
+        // Member exists: remove it, and other remaining items slide up in rank
         this.activeSortChain.splice(existingIdx, 1);
       } else {
-        if (this.activeSortChain.length >= 3) {
-          alert("Maximum sort chain hierarchy length reached! Please clear sorts or drop a column first.");
-          return;
+        // Member doesn't exist: append if space allows, otherwise inject at index 0
+        if (this.activeSortChain.length < 3) {
+          this.activeSortChain.push(key);
+        } else {
+          this.activeSortChain.unshift(key);
+          if (this.activeSortChain.length > 3) {
+            this.activeSortChain.pop(); // Remove old trailing key to stay inside 3 elements max
+          }
         }
-        this.activeSortChain.push(key);
       }
+  
+      // Execute sorting computation immediately on user input
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
       this.activeSortChain = [];
       this.updateToolbarLabel();
-      const parentTableBody = rowsArray?.element?.parentElement;
+      const parentTableBody = rowsArray[0]?.element?.parentElement;
       if (parentTableBody) {
         rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
         rowsArray.forEach(row => parentTableBody.appendChild(row.element));
@@ -101,7 +130,7 @@ module.exports = {
       this.updateToolbarLabel();
       if (this.activeSortChain.length === 0) return;
   
-      const parentTableBody = rowsArray?.element?.parentElement;
+      const parentTableBody = rowsArray[0]?.element?.parentElement;
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
@@ -109,14 +138,36 @@ module.exports = {
         const valsB = rowB.yamlMetadataValues || {};
         const datesA = rowA.folderDatesValues || {};
         const datesB = rowB.folderDatesValues || {};
-  
-        const mergedA = { ...valsA, ...datesA };
-        const mergedB = { ...valsB, ...datesB };
+        const launchersA = rowA.launcherValues || {};
+        const launchersB = rowB.launcherValues || {};
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          const valA = String(mergedA[currentKey] || '').replace(/[^\w.: ]/g, '');
-          const valB = String(mergedB[currentKey] || '').replace(/[^\w.: ]/g, '');
+          let valA = '';
+          let valB = '';
+  
+          if (currentKey === 'created' || currentKey === 'updated') {
+            valA = String(datesA[currentKey] || '');
+            valB = String(datesB[currentKey] || '');
+          } else if (currentKey === 'tasks') {
+            // Extracts the raw incomplete task count integer from the fraction string "X/Y"
+            const taskStrA = String(launchersA['tasks'] || '0/0').split('/')[0];
+            const taskStrB = String(launchersB['tasks'] || '0/0').split('/')[0];
+            valA = String(taskStrA).padStart(5, '0');
+            valB = String(taskStrB).padStart(5, '0');
+          } else if (currentKey === 'tagcount') {
+            // Counts the array slice elements inside comma-delimited strings
+            const tagStrA = String(valsA['tags'] || '⬛');
+            const tagStrB = String(valsB['tags'] || '⬛');
+            const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
+            const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
+            valA = String(countA).padStart(5, '0');
+            valB = String(countB).padStart(5, '0');
+          } else {
+            valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
+            valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+          }
+  
           if (valA !== valB) {
             return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
           }
@@ -136,8 +187,13 @@ module.exports = {
         indicator.textContent = '📶 Default Directory Sort Order';
         indicator.style.color = 'var(--text-muted)';
       } else {
-        const formattedChain = this.activeSortChain.map(k => k.toUpperCase()).join(' ➔ ');
-        indicator.textContent = `📶 Sorted by: ${formattedChain}`;
+        const formattedChain = this.activeSortChain.map((k, idx) => {
+          let symbol = '🟢';
+          if (idx === 1) symbol = '🟡';
+          if (idx === 2) symbol = '🔴';
+          return `${symbol}${k.toUpperCase()}`;
+        }).join(' ➔ ');
+        indicator.textContent = `📶 Sort Chain: ${formattedChain}`;
         indicator.style.color = 'var(--text-accent)';
       }
     },
