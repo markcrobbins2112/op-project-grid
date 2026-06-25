@@ -2,8 +2,8 @@
 // START OF FILE: menu-state-sort.js
 // ==========================================
 
-module.exports = {
-    activeSortChain: [],
+const menuStateSortModule = {
+    activeSortChain: [], // Array holds up to 3 active column keys
   
     executeDynamicSortChain(rowsArray) {
       this.updateToolbarLabel();
@@ -15,8 +15,14 @@ module.exports = {
         return;
       }
   
+      // Helper function to extract a true directory filename baseline string
+      const getRowDirName = (r) => (r.folder && r.folder.name ? String(r.folder.name) : '');
+  
       if (this.activeSortChain.length === 0) {
-        rowsArray.sort((a, b) => String(a.searchText || '').localeCompare(String(b.searchText || '')));
+        // Fallback default: Sort strictly by folder directory name alphabetically
+        rowsArray.sort((rowA, rowB) => {
+          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+        });
       } else {
         rowsArray.sort((rowA, rowB) => {
           const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
@@ -28,38 +34,56 @@ module.exports = {
   
           for (let i = 0; i < this.activeSortChain.length; i++) {
             const currentKey = this.activeSortChain[i];
+            
+            // Check if the current evaluation property is a numeric/count field
+            const isNumericField = ['tasks', 'tagcount', 'stars', 'value', 'size', 'depth', 'priority'].includes(currentKey);
+            
             let valA = ''; let valB = '';
   
             if (currentKey === 'created' || currentKey === 'updated') {
               valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
             } else if (currentKey === 'tasks') {
-              // PARITY CORRECTION: Read task counts natively out of yamlMetadataValues instead of launchers bucket
+              // Parse ratios text tokens strings (e.g. "2/5")
               const taskStrA = String(valsA['tasks'] || '0/0').split('/');
               const taskStrB = String(valsB['tasks'] || '0/0').split('/');
-              
-              // Pad values symmetrically to guarantee perfect numeric character sorting (e.g., 00002 vs 00005)
-              valA = String(taskStrA[0] || '0').padStart(5, '0');
-              valB = String(taskStrB[0] || '0').padStart(5, '0');
+              // Extract completed item counts explicitly to run mathematical evaluations
+              valA = parseInt(taskStrA[0], 10) || 0;
+              valB = parseInt(taskStrB[0], 10) || 0;
             } else if (currentKey === 'tagcount') {
               const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
-              const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
-              const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
-              valA = String(countA).padStart(5, '0'); valB = String(countB).padStart(5, '0');
+              valA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
+              valB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
+            } else if (isNumericField) {
+              // Strip emojis and extract raw digits for numeric parameters columns
+              const cleanA = String(mergedA[currentKey] || '').replace(/[^\d]/g, '');
+              const cleanB = String(mergedB[currentKey] || '').replace(/[^\d]/g, '');
+              valA = cleanA !== '' ? parseInt(cleanA, 10) : -1; // Empty/⬛ drops to lowest value marker
+              valB = cleanB !== '' ? parseInt(cleanB, 10) : -1;
             } else {
-              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '');
-              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '');
+              // Text field comparison path (Source Language, Build Target, etc.)
+              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
+              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
+              if (valA === '' || valA === '⬛') valA = 'zzzzz';
+              if (valB === '' || valB === '⬛') valB = 'zzzzz';
             }
   
             if (valA !== valB) {
-              return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+              if (isNumericField) {
+                // FIXED NUMERIC TRACK: Enforces descending order directly (highest integers first)
+                return valB - valA;
+              } else {
+                // Default ascending text comparison path
+                return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+              }
             }
           }
-          return 0;
+          
+          // FIXED TIE-BREAKER PASSTHROUGH: If values match identically across tiers, sort alphabetically by folder directory name
+          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
         });
       }
   
       rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
-      window.ProjectGridActiveSortChainListRun = () => this.executeDynamicSortChain(rowsArray);
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   
@@ -76,6 +100,9 @@ module.exports = {
       }
     }
   };
+  
+  globalThis.MenuStateSort = menuStateSortModule;
+  module.exports = menuStateSortModule;
   
   // ==========================================
   // END OF FILE: menu-state-sort.js

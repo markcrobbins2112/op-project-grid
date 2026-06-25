@@ -17,6 +17,7 @@ module.exports = {
 
     const headerSetup = UiBuilder.generateHeaderCell();
     
+    // FIXED CORRECTION: Aligned callback handle directly to catch and trigger your floating picker overlay panel
     const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
       const targetMenuStateInstance = globalThis.MenuState || MenuState;
       const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
@@ -37,9 +38,10 @@ module.exports = {
     headerRow.appendChild(headerSetup.cell);
     
     const activeConfig = globalThis.GridConfig || GridConfig;
+    const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
 
-    if (activeConfig && activeConfig.columns) {
-      activeConfig.columns.forEach(col => {
+    if (columnsList.length > 0) {
+      columnsList.forEach(col => {
         if (col.key === 'title') return;
         
         if (col.type === 'timestamp' || col.type === 'launcher') {

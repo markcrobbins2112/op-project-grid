@@ -3,14 +3,17 @@
 // ==========================================
 
 module.exports = {
-    createToolbarLayout(containerElement, onGearClick) {
+    createToolbarLayout(containerElement, onHamburgerClick) {
       const toolbar = document.createElement('div');
       toolbar.className = 'projectgrid-toolbar';
       
       const toolbarBtn = document.createElement('button');
       toolbarBtn.className = 'projectgrid-toolbar-btn';
-      toolbarBtn.innerHTML = '⚙️';
+      // FIXED: Swapped out the old gear icon for the classic hamburger symbol
+      toolbarBtn.innerHTML = '☰';
       toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
+      toolbarBtn.style.fontSize = '16px'; // Ensures perfect visual centering metrics alignment
+      toolbarBtn.style.fontWeight = 'bold';
       toolbar.appendChild(toolbarBtn);
   
       const tutorToggleBtn = document.createElement('button');
@@ -32,7 +35,7 @@ module.exports = {
   
       toolbarBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        onGearClick();
+        onHamburgerClick();
       });
   
       const handleTutorToggle = () => {

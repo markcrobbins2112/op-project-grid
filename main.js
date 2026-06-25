@@ -855,15 +855,134 @@ return {
 })();
 globalThis.MenuStateUtils = MenuStateUtils;
 
+const MenuStateSort = (function() {
+// ==========================================
+// START OF FILE: menu-state-sort.js
+// ==========================================
+
+const menuStateSortModule = {
+    activeSortChain: [], // Array holds up to 3 active column keys
+  
+    executeDynamicSortChain(rowsArray) {
+      this.updateToolbarLabel();
+      window.ProjectGridActiveSortChainList = this.activeSortChain;
+  
+      const liveTableBody = document.querySelector('.projectgrid-matrix-table tbody');
+      if (!liveTableBody || !rowsArray || rowsArray.length === 0) {
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        return;
+      }
+  
+      // Helper function to extract a true directory filename baseline string
+      const getRowDirName = (r) => (r.folder && r.folder.name ? String(r.folder.name) : '');
+  
+      if (this.activeSortChain.length === 0) {
+        // Fallback default: Sort strictly by folder directory name alphabetically
+        rowsArray.sort((rowA, rowB) => {
+          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+        });
+      } else {
+        rowsArray.sort((rowA, rowB) => {
+          const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
+          const datesA = rowA.folderDatesValues || {}; const datesB = rowB.folderDatesValues || {};
+          const launchersA = rowA.launcherValues || {}; const launchersB = rowB.launcherValues || {};
+          
+          const mergedA = { ...valsA, ...datesA, ...launchersA }; 
+          const mergedB = { ...valsB, ...datesB, ...launchersB };
+  
+          for (let i = 0; i < this.activeSortChain.length; i++) {
+            const currentKey = this.activeSortChain[i];
+            
+            // Check if the current evaluation property is a numeric/count field
+            const isNumericField = ['tasks', 'tagcount', 'stars', 'value', 'size', 'depth', 'priority'].includes(currentKey);
+            
+            let valA = ''; let valB = '';
+  
+            if (currentKey === 'created' || currentKey === 'updated') {
+              valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
+            } else if (currentKey === 'tasks') {
+              // Parse ratios text tokens strings (e.g. "2/5")
+              const taskStrA = String(valsA['tasks'] || '0/0').split('/');
+              const taskStrB = String(valsB['tasks'] || '0/0').split('/');
+              // Extract completed item counts explicitly to run mathematical evaluations
+              valA = parseInt(taskStrA[0], 10) || 0;
+              valB = parseInt(taskStrB[0], 10) || 0;
+            } else if (currentKey === 'tagcount') {
+              const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
+              valA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
+              valB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
+            } else if (isNumericField) {
+              // Strip emojis and extract raw digits for numeric parameters columns
+              const cleanA = String(mergedA[currentKey] || '').replace(/[^\d]/g, '');
+              const cleanB = String(mergedB[currentKey] || '').replace(/[^\d]/g, '');
+              valA = cleanA !== '' ? parseInt(cleanA, 10) : -1; // Empty/⬛ drops to lowest value marker
+              valB = cleanB !== '' ? parseInt(cleanB, 10) : -1;
+            } else {
+              // Text field comparison path (Source Language, Build Target, etc.)
+              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
+              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
+              if (valA === '' || valA === '⬛') valA = 'zzzzz';
+              if (valB === '' || valB === '⬛') valB = 'zzzzz';
+            }
+  
+            if (valA !== valB) {
+              if (isNumericField) {
+                // FIXED NUMERIC TRACK: Enforces descending order directly (highest integers first)
+                return valB - valA;
+              } else {
+                // Default ascending text comparison path
+                return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+              }
+            }
+          }
+          
+          // FIXED TIE-BREAKER PASSTHROUGH: If values match identically across tiers, sort alphabetically by folder directory name
+          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+        });
+      }
+  
+      rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    },
+  
+    updateToolbarLabel() {
+      const indicator = document.getElementById('projectgrid-sort-toolbar-label'); if (!indicator) return;
+      if (this.activeSortChain.length === 0) {
+        indicator.textContent = '📶 Default Directory Sort Order'; indicator.style.color = 'var(--text-muted)';
+      } else {
+        const formattedChain = this.activeSortChain.map((k, idx) => {
+          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; 
+          return `${symbol}${k.toUpperCase()}`;
+        }).join(' ➔ ');
+        indicator.textContent = `📶 Sort Chain: ${formattedChain}`; indicator.style.color = 'var(--text-accent)';
+      }
+    }
+  };
+  
+  globalThis.MenuStateSort = menuStateSortModule;
+  return menuStateSortModule;
+  
+  // ==========================================
+  // END OF FILE: menu-state-sort.js
+  // ==========================================
+})();
+globalThis.MenuStateSort = MenuStateSort;
+
 const menuStateModule = {
   getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
     const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
-    
-    // SAFE FALLBACK PASS: Protect against un-instantiated global variables states during late module load frames
     const config = globalThis.GridConfig || GridConfig || { columns: [] };
     const columnsList = config.columns || [];
     
     const selectableColumns = columnsList.filter(c => c.type === 'yaml-select' || c.type === 'tags-cell');
+    const interactiveFocusColumns = columnsList
+      .map((col, idx) => ({ col, originalIdx: idx }))
+      .filter(item => item.col.type === 'yaml-select' || item.col.type === 'tags-cell');
+    const launcherColumns = columnsList.filter(c => c.type === 'launcher');
+    const sortableColumns = columnsList.filter(c => c.key !== 'title' && c.type !== 'launcher');
+
+    const activeSortEngine = globalThis.MenuStateSort || MenuStateSort;
+    const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
 
     return [
       {
@@ -872,16 +991,60 @@ const menuStateModule = {
       },
       {
         name: '📊 Columns',
-        items: columnsList.map((col, idx) => ({
-          name: `${col.icon} ${col.label} Column`,
-          action: () => MenuStateUtils.focusRowCell(activeRow, idx)
-        }))
+        items: interactiveFocusColumns.map(item => ({ name: `${item.col.icon} ${item.col.label} Column`, action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) }))
       },
       {
-        name: '🚀 Launch',
-        items: columnsList.filter(c => c.type === 'launcher').map(l => ({
-          name: `${l.icon} Open in ${l.label}`, action: () => MenuStateUtils.fireProtocol(activeRow, l.key)
-        }))
+        name: '🚀 Launcher',
+        items: launcherColumns.map(l => ({ name: `${l.icon} Open in ${l.label}`, action: () => MenuStateUtils.fireProtocol(activeRow, l.key) }))
+      },
+      {
+        name: '📶 Sort',
+        items: [
+          {
+            name: '❌ Clear Sort Chain Parameters',
+            action: () => {
+              if (activeSortEngine) {
+                activeSortEngine.activeSortChain = [];
+                activeSortEngine.executeDynamicSortChain(rowsArray);
+              }
+            }
+          },
+          ...sortableColumns.map(s => {
+            const chainIdx = currentChain.indexOf(s.key);
+            let statusIcon = '⚫'; // Default: Unsorted slot
+            if (chainIdx === 0) statusIcon = '🟢';
+            if (chainIdx === 1) statusIcon = '🟡';
+            if (chainIdx === 2) statusIcon = '🔴';
+
+            return {
+              name: `${statusIcon} ${s.icon} ${s.label}`,
+              action: () => {
+                if (activeSortEngine) {
+                  let chain = [...activeSortEngine.activeSortChain];
+                  const existingIdx = chain.indexOf(s.key);
+
+                  if (existingIdx > -1) {
+                    // Item in chain: Remove it, remaining items move up automatically
+                    chain.splice(existingIdx, 1);
+                  } else {
+                    // Item not in chain
+                    if (chain.length < 3) {
+                      // Apply to next available vacant slot
+                      chain.push(s.key);
+                    } else {
+                      // Chain full: Push to the BEGINNING, slide items down, discard oldest
+                      chain.unshift(s.key);
+                      if (chain.length > 3) chain.pop();
+                    }
+                  }
+
+                  activeSortEngine.activeSortChain = chain;
+                  activeSortEngine.executeDynamicSortChain(rowsArray);
+                }
+              }
+            };
+          })
+        ]
       }
     ];
   }
@@ -2298,14 +2461,17 @@ const MainToolbar = (function() {
 // ==========================================
 
 return {
-    createToolbarLayout(containerElement, onGearClick) {
+    createToolbarLayout(containerElement, onHamburgerClick) {
       const toolbar = document.createElement('div');
       toolbar.className = 'projectgrid-toolbar';
       
       const toolbarBtn = document.createElement('button');
       toolbarBtn.className = 'projectgrid-toolbar-btn';
-      toolbarBtn.innerHTML = '⚙️';
+      // FIXED: Swapped out the old gear icon for the classic hamburger symbol
+      toolbarBtn.innerHTML = '☰';
       toolbarBtn.title = 'Open ScrollLock System Commands Picker Menu';
+      toolbarBtn.style.fontSize = '16px'; // Ensures perfect visual centering metrics alignment
+      toolbarBtn.style.fontWeight = 'bold';
       toolbar.appendChild(toolbarBtn);
   
       const tutorToggleBtn = document.createElement('button');
@@ -2327,7 +2493,7 @@ return {
   
       toolbarBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        onGearClick();
+        onHamburgerClick();
       });
   
       const handleTutorToggle = () => {
@@ -2583,7 +2749,57 @@ return {
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
-    // RESTORED: Standard ScrollLock event capture sequence behaves exactly like your proven historical baseline
+    const renderMenu = () => {
+      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+        activeIndex = idx;
+        executeSelection();
+      }, closeAllPickers);
+
+      setTimeout(() => {
+        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
+        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
+          window.ProjectGridUpdateFocusOverlay(activeItem);
+        }
+      }, 10);
+    };
+
+    const executeSelection = () => {
+      if (pickerLevel === 1) {
+        storedCategoryIndex = activeIndex;
+        activeItems = activeItems[activeIndex].items;
+        pickerLevel = 2;
+        activeIndex = 0;
+        renderMenu();
+      } else if (pickerLevel === 2) {
+        const selectedAction = activeItems[activeIndex].action;
+        if (selectedAction) {
+          selectedAction();
+          
+          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
+          if (currentCategoryText === '📶 Sort') {
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeItems = masterSchema[storedCategoryIndex].items;
+            renderMenu(); 
+            return;
+          }
+        }
+        closeAllPickers();
+      }
+    };
+
+    // =========================================================================
+    // FIXED GLOBAL PORTAL MAPPER
+    // =========================================================================
+    // Explicitly connects the hamburger toolbar click to your rendering channel
+    window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
+      pickerLevel = 1; // Explicitly toggle category mode selection
+      activeIndex = 0;
+      activeItems = customActiveItems;
+      renderMenu();
+    };
+    // =========================================================================
+
     window.addEventListener('keydown', (evt) => {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
@@ -2658,45 +2874,6 @@ return {
         if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
-
-    const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
-        activeIndex = idx;
-        executeSelection();
-      }, closeAllPickers);
-
-      setTimeout(() => {
-        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
-        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
-          window.ProjectGridUpdateFocusOverlay(activeItem);
-        }
-      }, 10);
-    };
-
-    const executeSelection = () => {
-      if (pickerLevel === 1) {
-        storedCategoryIndex = activeIndex;
-        activeItems = activeItems[activeIndex].items;
-        pickerLevel = 2;
-        activeIndex = 0;
-        renderMenu();
-      } else if (pickerLevel === 2) {
-        const selectedAction = activeItems[activeIndex].action;
-        if (selectedAction) {
-          selectedAction();
-          
-          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
-          if (currentCategoryText === '📶 Sort') {
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); 
-            return;
-          }
-        }
-        closeAllPickers();
-      }
-    };
   }
 };
 
@@ -2752,6 +2929,7 @@ return {
 
       const activeSortChain = window.ProjectGridActiveSortChainList || [];
 
+      // Update interactive filter headers triggers
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key || !headerIconsMap[key]) return;
@@ -2759,41 +2937,42 @@ return {
         let baseIcon = headerIconsMap[key];
         const chainIdx = activeSortChain.indexOf(key);
         
-        if (chainIdx === 0) baseIcon = '🟢' + baseIcon;
-        else if (chainIdx === 1) baseIcon = '🟡' + baseIcon;
-        else if (chainIdx === 2) baseIcon = '🔴' + baseIcon;
+        // Append micro-font rank badge strings next to active column headers
+        if (chainIdx === 0) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🟢</span>' + baseIcon;
+        else if (chainIdx === 1) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🟡</span>' + baseIcon;
+        else if (chainIdx === 2) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🔴</span>' + baseIcon;
 
-        // Default list evaluation mapping
         let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
-        // FIXED UNIFIED COUNTERS: Calculate precise checked / total ratios dynamically across scanner check fields
         if (key === 'tasks' || key === 'created' || key === 'updated') {
           nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }
-        else if (key === 'git' || key === 'agents') {
-          // Checked metric = rows matching '✅' marker symbol status that are actively visible on screen
-          nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[key] === '✅').length;
-          nonNullTot = rowsArray.filter(r => r.yamlMetadataValues?.[key] === '✅').length;
-        }
 
-        trigger.textContent = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
+        trigger.innerHTML = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
       });
 
-      // Update Git & Agents headers that are plain text cells (not dropup triggers)
+      // Update static read-only table headers elements
       document.querySelectorAll('.projectgrid-matrix-table th').forEach(th => {
         const contentStr = th.textContent.trim();
-        // Target headers based on literal emoji markers signatures
-        if (contentStr.startsWith('💿') || contentStr.startsWith('🤖')) {
-          const isGitColumn = contentStr.startsWith('💿');
-          const colKey = isGitColumn ? 'git' : 'agents';
-          const iconToken = isGitColumn ? '💿' : '🤖';
+        let targetKey = '';
+        let baseEmoji = '';
+        
+        if (contentStr.includes('💿')) { targetKey = 'git'; baseEmoji = '💿'; }
+        if (contentStr.includes('🤖')) { targetKey = 'agents'; baseEmoji = '🤖'; }
+        
+        if (targetKey) {
+          const chainIdx = activeSortChain.indexOf(targetKey);
+          let badgePrefix = '';
+          if (chainIdx === 0) badgePrefix = '<span style="font-size:8px; vertical-align:middle;">🟢</span>';
+          if (chainIdx === 1) badgePrefix = '<span style="font-size:8px; vertical-align:middle;">🟡</span>';
+          if (chainIdx === 2) badgePrefix = '<span style="font-size:8px; vertical-align:middle;">🔴</span>';
 
-          const checkedVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[colKey] === '✅').length;
-          const checkedTotal = rowsArray.filter(r => r.yamlMetadataValues?.[colKey] === '✅').length;
+          const checkedVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none' && r.yamlMetadataValues?.[targetKey] === '✅').length;
+          const checkedTotal = rowsArray.filter(r => r.yamlMetadataValues?.[targetKey] === '✅').length;
           
-          th.textContent = `${iconToken} ${checkedVis}/${checkedTotal}`;
+          th.innerHTML = `${badgePrefix}${baseEmoji} ${checkedVis}/${checkedTotal}`;
         }
       });
 
@@ -2844,6 +3023,7 @@ return {
 
     const headerSetup = UiBuilder.generateHeaderCell();
     
+    // FIXED CORRECTION: Aligned callback handle directly to catch and trigger your floating picker overlay panel
     const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
       const targetMenuStateInstance = globalThis.MenuState || MenuState;
       const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
@@ -2864,9 +3044,10 @@ return {
     headerRow.appendChild(headerSetup.cell);
     
     const activeConfig = globalThis.GridConfig || GridConfig;
+    const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
 
-    if (activeConfig && activeConfig.columns) {
-      activeConfig.columns.forEach(col => {
+    if (columnsList.length > 0) {
+      columnsList.forEach(col => {
         if (col.key === 'title') return;
         
         if (col.type === 'timestamp' || col.type === 'launcher') {

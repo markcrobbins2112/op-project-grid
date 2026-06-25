@@ -21,7 +21,57 @@ module.exports = {
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
-    // RESTORED: Standard ScrollLock event capture sequence behaves exactly like your proven historical baseline
+    const renderMenu = () => {
+      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+        activeIndex = idx;
+        executeSelection();
+      }, closeAllPickers);
+
+      setTimeout(() => {
+        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
+        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
+          window.ProjectGridUpdateFocusOverlay(activeItem);
+        }
+      }, 10);
+    };
+
+    const executeSelection = () => {
+      if (pickerLevel === 1) {
+        storedCategoryIndex = activeIndex;
+        activeItems = activeItems[activeIndex].items;
+        pickerLevel = 2;
+        activeIndex = 0;
+        renderMenu();
+      } else if (pickerLevel === 2) {
+        const selectedAction = activeItems[activeIndex].action;
+        if (selectedAction) {
+          selectedAction();
+          
+          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
+          if (currentCategoryText === '📶 Sort') {
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeItems = masterSchema[storedCategoryIndex].items;
+            renderMenu(); 
+            return;
+          }
+        }
+        closeAllPickers();
+      }
+    };
+
+    // =========================================================================
+    // FIXED GLOBAL PORTAL MAPPER
+    // =========================================================================
+    // Explicitly connects the hamburger toolbar click to your rendering channel
+    window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
+      pickerLevel = 1; // Explicitly toggle category mode selection
+      activeIndex = 0;
+      activeItems = customActiveItems;
+      renderMenu();
+    };
+    // =========================================================================
+
     window.addEventListener('keydown', (evt) => {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
@@ -96,45 +146,6 @@ module.exports = {
         if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
-
-    const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
-        activeIndex = idx;
-        executeSelection();
-      }, closeAllPickers);
-
-      setTimeout(() => {
-        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
-        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
-          window.ProjectGridUpdateFocusOverlay(activeItem);
-        }
-      }, 10);
-    };
-
-    const executeSelection = () => {
-      if (pickerLevel === 1) {
-        storedCategoryIndex = activeIndex;
-        activeItems = activeItems[activeIndex].items;
-        pickerLevel = 2;
-        activeIndex = 0;
-        renderMenu();
-      } else if (pickerLevel === 2) {
-        const selectedAction = activeItems[activeIndex].action;
-        if (selectedAction) {
-          selectedAction();
-          
-          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
-          if (currentCategoryText === '📶 Sort') {
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); 
-            return;
-          }
-        }
-        closeAllPickers();
-      }
-    };
   }
 };
 
