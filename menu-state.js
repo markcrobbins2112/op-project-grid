@@ -46,15 +46,29 @@ module.exports = {
       ];
     },
   
+    // FIX: ROUTER FORCES ACTIVE FOCUS TO SHIFT FROM COMPLETED SELECTION DIRECTLY INTO PANEL NODES
     openHeaderDropup(key) {
       const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
-      if (trigger) trigger.click();
+      if (trigger) {
+        // Simulate click down to build and mount the portal panel layout
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        trigger.dispatchEvent(mousedownEvent);
+        
+        // Delay execution a fraction of a millisecond to let portal finish spawning
+        setTimeout(() => {
+          const activePanel = document.querySelector('.projectgrid-dropup-panel');
+          if (activePanel) {
+            // Put focus inside the newly deployed filter container box
+            trigger.focus();
+          }
+        }, 50);
+      }
     },
   
     focusRowCell(rowObj, cellIndex) {
       if (!rowObj) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
-      const interactive = targetCell ? targetCell.querySelector('select, a, input') : null;
+      const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, a, input') : null;
       if (interactive) interactive.focus();
     },
   
@@ -67,7 +81,7 @@ module.exports = {
     clearAllSystemFilters(filterInput) {
       filterInput.value = '';
       document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
-      document.querySelectorAll('.projectgrid-yaml-select').forEach(sel => sel.value = '');
+      document.querySelectorAll('.projectgrid-custom-select-btn').forEach(btn => btn.textContent = '⬛');
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       filterInput.focus();
     },

@@ -31,7 +31,7 @@ return {
           font-weight: 600 !important;
           color: var(--text-muted, #888888) !important;
           border-bottom: 2px solid var(--background-modifier-border, #3a3a3a) !important;
-          padding: 8px !important;
+          padding: 6px 4px !important;
           vertical-align: middle;
           position: relative !important;
           text-align: center !important;
@@ -39,6 +39,16 @@ return {
         .projectgrid-matrix-table th:first-child {
           text-align: left !important;
         }
+  
+        .projectgrid-uniform-yaml-th,
+        .projectgrid-uniform-yaml-td {
+          width: 62px !important;
+          min-width: 62px !important;
+          max-width: 62px !important;
+          text-align: center !important;
+          box-sizing: border-box !important;
+        }
+  
         .projectgrid-filter-wrapper {
           position: relative !important;
           display: flex !important;
@@ -66,6 +76,7 @@ return {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
+        /* MASTER HUE-CYCLING CRITICAL DEFINITION MAP */
         @keyframes projectgrid-hue-cycle {
           0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
           100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
@@ -78,41 +89,51 @@ return {
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
+        
+        /* FIX: ENACTIVE ROTATING HUE INNER GLOW ENFORCED BOUNDS FOR ROW TRACKS */
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
           animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
   
-        .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
+        .projectgrid-matrix-cell { padding: 6px 4px !important; vertical-align: middle !important; }
         .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; }
         .projectgrid-matrix-link { text-decoration: none !important; }
         .projectgrid-matrix-link:hover { text-decoration: none !important; }
+        
+        /* FIX: FORCE NO UNDERLINES ON THE LAUNCH COLUMNS LINK HANDLERS */
         .action-icon-cell { text-align: center !important; }
+        .action-icon-cell a { text-decoration: none !important; }
+        .action-icon-cell a:hover { text-decoration: none !important; }
   
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
-          padding: 4px 8px !important;
+          padding: 4px 2px !important;
           border-radius: 4px !important;
           user-select: none !important;
           font-size: 13px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
         }
         .projectgrid-header-dropup-trigger:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.08)) !important;
         }
   
-        /* FIX: FLOATING DIALOG CONFIGURATION THAT BYPASSES TABLE LAYOUT DISTORTIONS Completely */
         .projectgrid-dropup-panel {
+          display: flex !important;
+          flex-direction: column !important; 
           background-color: var(--background-secondary, #1a1a1a) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 6px !important;
           padding: 6px !important;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
-          min-width: 120px !important;
-          max-height: 240px !important;
+          min-width: 125px !important;
+          max-height: 260px !important;
           overflow-y: auto !important;
           box-sizing: border-box !important;
         }
+        
         .projectgrid-dropup-option {
           display: flex !important;
           align-items: center !important;
@@ -122,11 +143,17 @@ return {
           user-select: none !important;
           color: var(--text-normal, #ffffff) !important;
           font-size: 11px !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          border: 2px solid transparent !important;
+        }
+        
+        /* FIX: ENFORCE NATIVE HUE BORDER ALIGNMENT STATES TO ACTIVE CHECKBOX INDICATORS TOO */
+        .projectgrid-dropup-option.projectgrid-row-focused {
+          animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
         .projectgrid-dropup-option:hover {
-          background-color: var(--text-accent, #70a1ff) !important;
-          color: #000000 !important;
-          border-radius: 4px !important;
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.03)) !important;
         }
         .projectgrid-dropup-option input[type="checkbox"] {
           margin: 0 !important;
@@ -138,7 +165,7 @@ return {
           color: var(--text-normal, #dddddd) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 4px !important;
-          padding: 4px 6px !important;
+          padding: 4px 2px !important;
           font-size: 11px !important;
           width: 100% !important;
           box-sizing: border-box !important;
@@ -147,6 +174,9 @@ return {
           position: relative !important;
           user-select: none !important;
           text-align: center !important;
+          text-overflow: ellipsis !important;
+          overflow: hidden !important;
+          white-space: nowrap !important;
         }
         .projectgrid-custom-select-btn:focus {
           border-color: var(--text-accent, #70a1ff) !important;
@@ -154,7 +184,8 @@ return {
         }
   
         .projectgrid-custom-dropdown-list {
-          position: absolute !important;
+          display: flex !important;
+          flex-direction: column !important;
           background-color: var(--background-secondary, #202020) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 4px !important;
@@ -165,15 +196,17 @@ return {
           box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
           box-sizing: border-box !important;
         }
+        
+        /* FIX: SUB-SELECTION ITEM BOX OUTLINES ENFORCE ONLY HUE REVOLVING CHROME BOUNDS */
         .projectgrid-custom-dropdown-item {
-          padding: 4px 8px !important;
+          padding: 4px 4px !important;
           cursor: pointer !important;
           color: var(--text-normal) !important;
           text-align: center !important;
-        }
-        .projectgrid-item-indicator-focused {
-          background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.06)) !important;
-          animation: projectgrid-hue-cycle 2s linear infinite !important;
+          font-size: 11px !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          border: 2px solid transparent !important;
         }
   
         .projectgrid-command-picker {
@@ -251,15 +284,29 @@ return {
       ];
     },
   
+    // FIX: ROUTER FORCES ACTIVE FOCUS TO SHIFT FROM COMPLETED SELECTION DIRECTLY INTO PANEL NODES
     openHeaderDropup(key) {
       const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
-      if (trigger) trigger.click();
+      if (trigger) {
+        // Simulate click down to build and mount the portal panel layout
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        trigger.dispatchEvent(mousedownEvent);
+        
+        // Delay execution a fraction of a millisecond to let portal finish spawning
+        setTimeout(() => {
+          const activePanel = document.querySelector('.projectgrid-dropup-panel');
+          if (activePanel) {
+            // Put focus inside the newly deployed filter container box
+            trigger.focus();
+          }
+        }, 50);
+      }
     },
   
     focusRowCell(rowObj, cellIndex) {
       if (!rowObj) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
-      const interactive = targetCell ? targetCell.querySelector('select, a, input') : null;
+      const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, a, input') : null;
       if (interactive) interactive.focus();
     },
   
@@ -272,7 +319,7 @@ return {
     clearAllSystemFilters(filterInput) {
       filterInput.value = '';
       document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
-      document.querySelectorAll('.projectgrid-yaml-select').forEach(sel => sel.value = '');
+      document.querySelectorAll('.projectgrid-custom-select-btn').forEach(btn => btn.textContent = '⬛');
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       filterInput.focus();
     },
@@ -331,7 +378,7 @@ return {
 
 return {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Main Categories, 2 = Sub Items wheel
+    let pickerLevel = 0; // 0 = Closed, 1 = Categories Wheel, 2 = Sub Items list
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -349,7 +396,6 @@ return {
           filterInput.focus();
           filterInput.select();
         } else {
-          // Open level 1 menu: Main Categories wheel
           pickerLevel = 1;
           activeIndex = 0;
           activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
@@ -361,8 +407,16 @@ return {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
+      // FIX: IF EXTENSION DROPDOWN HEADER PANEL IS OPENED, FORWARD KEYBOARD ARROW CONTROL TRACKS
+      const openHeaderPanel = document.querySelector('.projectgrid-dropup-panel');
+      if (openHeaderPanel) {
+        // Drop standard text cursor movements while menu handles selections
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp' || evt.key === 'Escape' || evt.key === 'Enter') {
+          return; 
+        }
+      }
+
       if (pickerLevel > 0) {
-        // --- INTERCEPT LOGIC FOR ACTIVE PROMPT PICKERS ---
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
           if (evt.key === 'ArrowDown') {
@@ -377,7 +431,6 @@ return {
         } else if (evt.key === 'Escape') {
           evt.preventDefault();
           if (pickerLevel === 2) {
-            // Drop back from sub-items to root category layout list
             pickerLevel = 1;
             activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeIndex = storedCategoryIndex;
@@ -419,14 +472,12 @@ return {
 
     const executeSelection = () => {
       if (pickerLevel === 1) {
-        // Step into sub-picker array items wheel context
         storedCategoryIndex = activeIndex;
         activeItems = activeItems[activeIndex].items;
         pickerLevel = 2;
         activeIndex = 0;
         render();
       } else if (pickerLevel === 2) {
-        // Fire action and return focus cleanly back to search bar
         const selectedAction = activeItems[activeIndex].action;
         closeAllPickers();
         if (selectedAction) selectedAction();
@@ -455,7 +506,7 @@ return {
         const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
         
         if (passText && passDropdowns) {
-          row.element.style.display = '';
+          row.element.style.display = ''; // Clear inline styles to display row natively
         } else {
           row.element.style.display = 'none';
         }
@@ -464,7 +515,7 @@ return {
 
     filterInput.addEventListener('input', applyFilter);
 
-    // Initialize the modular key controller sequence
+    // FIX: Core visibility checking condition updated to cleanly match visible row element arrays
     MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
       return rowsArray.filter(row => row.element.style.display !== 'none');
     }, (index) => {
@@ -487,16 +538,18 @@ const UiDropdown = (function() {
 return {
     buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
       const th = document.createElement('th');
-      th.style.width = '8%';
-      th.style.textAlign = 'center';
+      th.className = 'projectgrid-uniform-yaml-th';
       
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
       trigger.setAttribute('data-key', key);
+      trigger.tabIndex = 0; // Allows headers to receive explicit keyboard focus
       trigger.textContent = titleIcon;
   
       let activePanel = null;
+      let selectionIdx = 0;
       const activeFilters = new Set(defaults);
+      const fullOptionsList = ['[ALL]', ...defaults];
   
       const closePanel = () => {
         if (activePanel) { activePanel.remove(); activePanel = null; }
@@ -504,35 +557,36 @@ return {
   
       const openPanel = () => {
         closePanel();
+        selectionIdx = 0;
         activePanel = document.createElement('div');
         activePanel.className = 'projectgrid-dropup-panel';
   
-        // Calculate placement boundaries dynamically relative to the screen viewport
         const rect = trigger.getBoundingClientRect();
         activePanel.style.position = 'fixed';
         activePanel.style.top = `${rect.bottom + window.scrollY + 4}px`;
         activePanel.style.left = `${rect.left + window.scrollX}px`;
-        activePanel.style.zIndex = '300000'; // Higher portal priority tracking plane
+        activePanel.style.zIndex = '300000';
+        activePanel.style.height = 'auto';
   
-        defaults.forEach(opt => {
+        fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
           
+          // FIX: APPLY HUE ROTATING BORDER TO CURRENTLY CHOSEN KEYBOARD SELECTION INDICATOR
+          if (oIdx === selectionIdx) wrapper.classList.add('projectgrid-row-focused');
+          
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
-          checkbox.checked = activeFilters.has(opt);
+          checkbox.tabIndex = -1; // Keep focus locked on the parent container
+          
+          if (opt === '[ALL]') {
+            checkbox.checked = (activeFilters.size === defaults.length);
+          } else {
+            checkbox.checked = activeFilters.has(opt);
+          }
   
           checkbox.addEventListener('change', () => {
-            if (checkbox.checked) activeFilters.add(opt);
-            else activeFilters.delete(opt);
-            
-            rowsArray.forEach(row => {
-              if (!row.dropdownFilters) row.dropdownFilters = {};
-              const currentVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
-              row.dropdownFilters[key] = activeFilters.has(currentVal) || (currentVal === '⬛' && activeFilters.has('⬛'));
-            });
-  
-            if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+            handleToggle(opt, checkbox.checked);
           });
   
           wrapper.appendChild(checkbox);
@@ -540,22 +594,87 @@ return {
           activePanel.appendChild(wrapper);
         });
   
-        // Prevent panel clicks from closing the dropdown prematurely
+        trigger.addEventListener('keydown', handlePanelKeys);
         activePanel.addEventListener('mousedown', (e) => e.stopPropagation());
-  
         document.body.appendChild(activePanel);
       };
   
+      const handleToggle = (opt, isChecked) => {
+        if (opt === '[ALL]') {
+          if (isChecked) defaults.forEach(d => activeFilters.add(d));
+          else activeFilters.clear();
+        } else {
+          if (isChecked) activeFilters.add(opt);
+          else activeFilters.delete(opt);
+        }
+  
+        if (activePanel) {
+          const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
+          boxes[0].checked = (activeFilters.size === defaults.length);
+          defaults.forEach((d, idx) => {
+            boxes[idx + 1].checked = activeFilters.has(d);
+          });
+        }
+  
+        rowsArray.forEach(row => {
+          if (!row.dropdownFilters) row.dropdownFilters = {};
+          const currentVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
+          row.dropdownFilters[key] = activeFilters.has(currentVal) || (currentVal === '⬛' && activeFilters.has('⬛'));
+        });
+  
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+      };
+  
+      // FIX: NATIVE CAPTURING ROUTINE STEPS CHROME BORDER INDICATOR SELECTIONS RELIABLY
+      function handlePanelKeys(evt) {
+        if (!activePanel) return;
+  
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+          evt.preventDefault();
+          evt.stopPropagation(); // Stop parent components from executing main row drift jumps
+          
+          if (evt.key === 'ArrowDown') {
+            selectionIdx = (selectionIdx + 1) >= fullOptionsList.length ? 0 : selectionIdx + 1;
+          } else {
+            selectionIdx = (selectionIdx - 1) < 0 ? fullOptionsList.length - 1 : selectionIdx - 1;
+          }
+  
+          activePanel.querySelectorAll('.projectgrid-dropup-option').forEach((lbl, lIdx) => {
+            if (lIdx === selectionIdx) lbl.className = 'projectgrid-dropup-option projectgrid-row-focused';
+            else lbl.className = 'projectgrid-dropup-option';
+          });
+        } else if (evt.key === ' ' || evt.key === 'Spacebar') {
+          evt.preventDefault();
+          const cb = activePanel.querySelectorAll('input[type="checkbox"]')[selectionIdx];
+          cb.checked = !cb.checked;
+          handleToggle(fullOptionsList[selectionIdx], cb.checked);
+        } else if (evt.key === 'Enter' || evt.key === 'Escape') {
+          evt.preventDefault();
+          trigger.removeEventListener('keydown', handlePanelKeys);
+          closePanel();
+          trigger.focus();
+        }
+      }
+  
       trigger.addEventListener('mousedown', (e) => {
         e.stopPropagation();
-        // Close any other open filter panels before toggling this one
         document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
         if (activePanel) closePanel(); else openPanel();
       });
   
-      // Close listener when clicking anywhere else on the note canvas
+      // Ensure listeners drop when user exits container
+      trigger.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (activePanel && !activePanel.contains(document.activeElement)) {
+            trigger.removeEventListener('keydown', handlePanelKeys);
+            closePanel();
+          }
+        }, 150);
+      });
+  
       document.addEventListener('mousedown', function closeHeaderMenu(e) {
-        if (activePanel && !trigger.contains(e.target)) {
+        if (activePanel && !trigger.contains(e.target) && !activePanel.contains(e.target)) {
+          trigger.removeEventListener('keydown', handlePanelKeys);
           closePanel();
         }
       });
@@ -584,20 +703,174 @@ return {
     }
   };
 })();
+const UiRowActions = (function() {
+return {
+    appendLauncherButtons(tableRow, folder, absoluteVaultRoot) {
+      const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
+      
+      const actions = [
+        { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
+        { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
+        { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault' }
+      ];
+  
+      actions.forEach(act => {
+        const cell = document.createElement('td');
+        cell.className = 'projectgrid-matrix-cell action-icon-cell';
+        cell.innerHTML = `<a href="aip://${act.protocol}/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="${act.title}">${act.icon}</a>`;
+        tableRow.appendChild(cell);
+      });
+    }
+  };
+})();
+const UiRowSelect = (function() {
+const UiRowKeys = (function() {
+return {
+    handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput) {
+      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+        evt.preventDefault();
+        const parentTable = tableRow.parentElement;
+        const visibleRows = Array.from(parentTable.querySelectorAll('.projectgrid-matrix-row')).filter(r => r.style.display !== 'none');
+        const currentRowIdx = visibleRows.indexOf(tableRow);
+        let nextRowIdx = currentRowIdx + (evt.key === 'ArrowDown' ? 1 : -1);
+  
+        if (nextRowIdx >= 0 && nextRowIdx < visibleRows.length) {
+          const targetRow = visibleRows[nextRowIdx];
+          parentTable.querySelectorAll('.projectgrid-matrix-row').forEach(r => r.classList.remove('projectgrid-row-focused'));
+          
+          targetRow.classList.add('projectgrid-row-focused');
+          const targetSelectBtn = targetRow.querySelectorAll('.projectgrid-custom-select-btn')[fieldIdx];
+          if (targetSelectBtn) {
+            targetSelectBtn.focus();
+            targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+        }
+        return true;
+      }
+  
+      if (evt.key === 'Escape') {
+        evt.preventDefault();
+        filterInput.focus();
+        return true;
+      }
+  
+      if (evt.key === 'Tab') {
+        evt.preventDefault();
+        const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
+        let nextIdx = fieldIdx + (evt.shiftKey ? -1 : 1);
+        if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
+        else if (nextIdx < 0) filterInput.focus();
+        return true;
+      }
+  
+      if (!cfg.isExtendable && (evt.key === 'ArrowRight' || evt.key === 'ArrowLeft')) {
+        evt.preventDefault();
+        const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
+        let nextIdx = fieldIdx + (evt.key === 'ArrowRight' ? 1 : -1);
+        if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
+        return true;
+      }
+      
+      return false;
+    }
+  };
+})();
+
+return {
+  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+    const btn = document.createElement('div');
+    btn.className = 'projectgrid-custom-select-btn';
+    btn.tabIndex = 0;
+    btn.setAttribute('data-field-index', fieldIdx);
+
+    const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
+    rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+    btn.textContent = rawVal || '⬛';
+
+    let optionsList = ['⬛', ...cfg.defaults];
+    if (rawVal && !optionsList.includes(rawVal)) optionsList.push(rawVal);
+
+    let activeDropdown = null;
+    let selectionIdx = optionsList.indexOf(rawVal || '⬛');
+
+    const closeDropdown = () => { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } };
+
+    const openDropdown = () => {
+      closeDropdown();
+      activeDropdown = document.createElement('ul');
+      activeDropdown.className = 'projectgrid-custom-dropdown-list';
+      
+      const rect = btn.getBoundingClientRect();
+      Object.assign(activeDropdown.style, {
+        position: 'fixed', top: `${rect.bottom + window.scrollY}px`,
+        left: `${rect.left + window.scrollX}px`, width: `${rect.width}px`,
+        zIndex: '200000', height: 'auto', maxHeight: 'none'
+      });
+
+      optionsList.forEach((opt, oIdx) => {
+        const li = document.createElement('li');
+        li.className = oIdx === selectionIdx ? 'projectgrid-custom-dropdown-item projectgrid-row-focused' : 'projectgrid-custom-dropdown-item';
+        li.textContent = opt;
+        li.addEventListener('mousedown', (e) => { e.preventDefault(); commitSelection(opt); });
+        activeDropdown.appendChild(li);
+      });
+      document.body.appendChild(activeDropdown);
+    };
+
+    const commitSelection = async (value) => {
+      const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
+      const finalVal = value === '⬛' ? '' : value;
+      if (fileAbstract) {
+        await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
+          if (finalVal === '') { delete fm[cfg.key]; rowTrackingReference.yamlMetadataValues[cfg.key] = '⬛'; }
+          else { fm[cfg.key] = finalVal; rowTrackingReference.yamlMetadataValues[cfg.key] = finalVal; }
+        });
+        btn.textContent = value; closeDropdown();
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
+        if (fieldIdx + 1 < siblingButtons.length) siblingButtons[fieldIdx + 1].focus();
+        else filterInput.focus();
+      }
+    };
+
+    btn.addEventListener('blur', () => setTimeout(closeDropdown, 120));
+    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); btn.focus(); if (activeDropdown) closeDropdown(); else openDropdown(); });
+
+    btn.addEventListener('keydown', (evt) => {
+      if (activeDropdown) {
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+          evt.preventDefault();
+          selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
+          activeDropdown.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((li, lIdx) => {
+            li.className = lIdx === selectionIdx ? 'projectgrid-custom-dropdown-item projectgrid-row-focused' : 'projectgrid-custom-dropdown-item';
+          });
+          return;
+        } else if (evt.key === 'Enter') { evt.preventDefault(); commitSelection(optionsList[selectionIdx]); return; }
+        else if (evt.key === 'Escape') { evt.preventDefault(); closeDropdown(); btn.focus(); return; }
+      }
+      if (!activeDropdown) {
+        if (evt.key === 'ArrowDown' && evt.altKey) { evt.preventDefault(); openDropdown(); return; }
+        UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
+      }
+    });
+
+    cell.appendChild(btn);
+  }
+};
+})();
 
 return {
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
-    const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
+    // Column 1: Core Note link cell
     const noteCell = document.createElement('td');
     noteCell.className = 'projectgrid-matrix-cell note-title-cell';
     const fileAnchor = document.createElement('a');
     fileAnchor.className = 'internal-link projectgrid-matrix-link';
     fileAnchor.setAttribute('data-href', expectedNotePath);
     fileAnchor.textContent = `+${folder.name}.md`;
-    
     fileAnchor.style.color = UiColor.getColorForFirstCharacter(folder.name);
     
     fileAnchor.addEventListener('click', (evt) => {
@@ -607,21 +880,10 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2, 3, 4: Standard Launcher links mapping the 3 action protocols
-    const actions = [
-      { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
-      { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
-      { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault' }
-    ];
+    // Columns 2, 3, 4: Launcher Buttons (Appended modularly)
+    UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot);
 
-    actions.forEach(act => {
-      const cell = document.createElement('td');
-      cell.className = 'projectgrid-matrix-cell action-icon-cell';
-      cell.innerHTML = `<a href="aip://${act.protocol}/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="${act.title}">${act.icon}</a>`;
-      tableRow.appendChild(cell);
-    });
-
-    // Columns 5 through 12: Matches the 8 exact frontmatter keys with corrected option values
+    // Columns 5 through 12: Define the 8 metadata keys
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -637,148 +899,11 @@ return {
 
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
-      cell.className = 'projectgrid-matrix-cell select-cell';
+      cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
       
-      const btn = document.createElement('div');
-      btn.className = 'projectgrid-custom-select-btn';
-      btn.tabIndex = 0; 
-      btn.setAttribute('data-field-index', fieldIdx);
+      // Call custom select button builder (Defined in ui-row-select.js)
+      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       
-      const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-      rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
-
-      btn.textContent = rawVal || '⬛';
-
-      let optionsList = ['⬛', ...cfg.defaults];
-      if (rawVal && !optionsList.includes(rawVal)) optionsList.push(rawVal);
-
-      let activeDropdown = null;
-      let selectionIdx = optionsList.indexOf(rawVal || '⬛');
-
-      const closeDropdown = () => {
-        if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; }
-      };
-
-      const openDropdown = () => {
-        closeDropdown();
-        activeDropdown = document.createElement('ul');
-        activeDropdown.className = 'projectgrid-custom-dropdown-list';
-        
-        const rect = btn.getBoundingClientRect();
-        activeDropdown.style.position = 'fixed';
-        activeDropdown.style.top = `${rect.bottom + window.scrollY}px`;
-        activeDropdown.style.left = `${rect.left + window.scrollX}px`;
-        activeDropdown.style.width = `${Math.max(rect.width, 100)}px`;
-        activeDropdown.style.zIndex = '200000';
-        
-        optionsList.forEach((opt, oIdx) => {
-          const li = document.createElement('li');
-          li.className = 'projectgrid-custom-dropdown-item';
-          li.textContent = opt;
-          
-          if (oIdx === selectionIdx) li.classList.add('projectgrid-row-focused');
-          
-          li.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            commitSelection(opt);
-          });
-          activeDropdown.appendChild(li);
-        });
-        
-        document.body.appendChild(activeDropdown);
-      };
-
-      const commitSelection = async (value) => {
-        const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
-        const finalVal = value === '⬛' ? '' : value;
-        
-        if (fileAbstract) {
-          await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
-            if (finalVal === '') {
-              delete fm[cfg.key];
-              rowTrackingReference.yamlMetadataValues[cfg.key] = '⬛';
-            } else {
-              fm[cfg.key] = finalVal;
-              rowTrackingReference.yamlMetadataValues[cfg.key] = finalVal;
-            }
-          });
-          
-          btn.textContent = value;
-          closeDropdown();
-          if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-          
-          const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
-          if (fieldIdx + 1 < siblingButtons.length) {
-            siblingButtons[fieldIdx + 1].focus();
-          } else {
-            filterInput.focus();
-          }
-        }
-      };
-
-      btn.addEventListener('blur', () => {
-        setTimeout(closeDropdown, 120);
-      });
-      btn.addEventListener('mousedown', (e) => { 
-        e.stopPropagation(); 
-        btn.focus();
-        if (activeDropdown) closeDropdown(); else openDropdown(); 
-      });
-
-      btn.addEventListener('keydown', (evt) => {
-        if (activeDropdown) {
-          if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-            evt.preventDefault();
-            if (evt.key === 'ArrowDown') {
-              selectionIdx = (selectionIdx + 1) >= optionsList.length ? 0 : selectionIdx + 1;
-            } else {
-              selectionIdx = (selectionIdx - 1) < 0 ? optionsList.length - 1 : selectionIdx - 1;
-            }
-
-            activeDropdown.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((li, lIdx) => {
-              if (lIdx === selectionIdx) li.classList.add('projectgrid-row-focused');
-              else li.classList.remove('projectgrid-row-focused');
-            });
-            return;
-          } else if (evt.key === 'Enter') {
-            evt.preventDefault();
-            commitSelection(optionsList[selectionIdx]);
-            return;
-          } else if (evt.key === 'Escape') {
-            evt.preventDefault();
-            closeDropdown();
-            btn.focus();
-            return;
-          }
-        }
-
-        if (!activeDropdown) {
-          if (evt.key === 'Escape') {
-            evt.preventDefault();
-            filterInput.focus();
-          } else if (evt.key === 'Tab') {
-            evt.preventDefault();
-            const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
-            let nextIdx = fieldIdx + (evt.shiftKey ? -1 : 1);
-            
-            if (nextIdx >= 0 && nextIdx < siblingButtons.length) {
-              siblingButtons[nextIdx].focus();
-            } else if (nextIdx < 0) {
-              filterInput.focus();
-            }
-          } else if (evt.key === 'ArrowDown' && evt.altKey) {
-            evt.preventDefault();
-            openDropdown();
-          } else if (!cfg.isExtendable && (evt.key === 'ArrowRight' || evt.key === 'ArrowLeft')) {
-            evt.preventDefault();
-            const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
-            let nextIdx = fieldIdx + (evt.key === 'ArrowRight' ? 1 : -1);
-            if (nextIdx >= 0 && nextIdx < siblingButtons.length) siblingButtons[nextIdx].focus();
-          }
-        }
-      });
-
-      cell.appendChild(btn);
       tableRow.appendChild(cell);
     });
 

@@ -7,7 +7,7 @@ const MenuDom = require('./menu-dom');
 
 module.exports = {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Main Categories, 2 = Sub Items wheel
+    let pickerLevel = 0; // 0 = Closed, 1 = Categories Wheel, 2 = Sub Items list
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -25,7 +25,6 @@ module.exports = {
           filterInput.focus();
           filterInput.select();
         } else {
-          // Open level 1 menu: Main Categories wheel
           pickerLevel = 1;
           activeIndex = 0;
           activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
@@ -37,8 +36,16 @@ module.exports = {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
+      // FIX: IF EXTENSION DROPDOWN HEADER PANEL IS OPENED, FORWARD KEYBOARD ARROW CONTROL TRACKS
+      const openHeaderPanel = document.querySelector('.projectgrid-dropup-panel');
+      if (openHeaderPanel) {
+        // Drop standard text cursor movements while menu handles selections
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp' || evt.key === 'Escape' || evt.key === 'Enter') {
+          return; 
+        }
+      }
+
       if (pickerLevel > 0) {
-        // --- INTERCEPT LOGIC FOR ACTIVE PROMPT PICKERS ---
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
           if (evt.key === 'ArrowDown') {
@@ -53,7 +60,6 @@ module.exports = {
         } else if (evt.key === 'Escape') {
           evt.preventDefault();
           if (pickerLevel === 2) {
-            // Drop back from sub-items to root category layout list
             pickerLevel = 1;
             activeItems = MenuState.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
             activeIndex = storedCategoryIndex;
@@ -95,14 +101,12 @@ module.exports = {
 
     const executeSelection = () => {
       if (pickerLevel === 1) {
-        // Step into sub-picker array items wheel context
         storedCategoryIndex = activeIndex;
         activeItems = activeItems[activeIndex].items;
         pickerLevel = 2;
         activeIndex = 0;
         render();
       } else if (pickerLevel === 2) {
-        // Fire action and return focus cleanly back to search bar
         const selectedAction = activeItems[activeIndex].action;
         closeAllPickers();
         if (selectedAction) selectedAction();

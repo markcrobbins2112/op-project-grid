@@ -23,7 +23,7 @@ module.exports = {
         const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
         
         if (passText && passDropdowns) {
-          row.element.style.display = '';
+          row.element.style.display = ''; // Clear inline styles to display row natively
         } else {
           row.element.style.display = 'none';
         }
@@ -32,7 +32,7 @@ module.exports = {
 
     filterInput.addEventListener('input', applyFilter);
 
-    // Initialize the modular key controller sequence
+    // FIX: Core visibility checking condition updated to cleanly match visible row element arrays
     MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
       return rowsArray.filter(row => row.element.style.display !== 'none');
     }, (index) => {

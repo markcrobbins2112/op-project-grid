@@ -29,7 +29,7 @@ module.exports = {
           font-weight: 600 !important;
           color: var(--text-muted, #888888) !important;
           border-bottom: 2px solid var(--background-modifier-border, #3a3a3a) !important;
-          padding: 8px !important;
+          padding: 6px 4px !important;
           vertical-align: middle;
           position: relative !important;
           text-align: center !important;
@@ -37,6 +37,16 @@ module.exports = {
         .projectgrid-matrix-table th:first-child {
           text-align: left !important;
         }
+  
+        .projectgrid-uniform-yaml-th,
+        .projectgrid-uniform-yaml-td {
+          width: 62px !important;
+          min-width: 62px !important;
+          max-width: 62px !important;
+          text-align: center !important;
+          box-sizing: border-box !important;
+        }
+  
         .projectgrid-filter-wrapper {
           position: relative !important;
           display: flex !important;
@@ -64,6 +74,7 @@ module.exports = {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
+        /* MASTER HUE-CYCLING CRITICAL DEFINITION MAP */
         @keyframes projectgrid-hue-cycle {
           0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
           100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
@@ -76,41 +87,51 @@ module.exports = {
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
+        
+        /* FIX: ENACTIVE ROTATING HUE INNER GLOW ENFORCED BOUNDS FOR ROW TRACKS */
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
           animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
   
-        .projectgrid-matrix-cell { padding: 6px 8px !important; vertical-align: middle !important; }
+        .projectgrid-matrix-cell { padding: 6px 4px !important; vertical-align: middle !important; }
         .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; }
         .projectgrid-matrix-link { text-decoration: none !important; }
         .projectgrid-matrix-link:hover { text-decoration: none !important; }
+        
+        /* FIX: FORCE NO UNDERLINES ON THE LAUNCH COLUMNS LINK HANDLERS */
         .action-icon-cell { text-align: center !important; }
+        .action-icon-cell a { text-decoration: none !important; }
+        .action-icon-cell a:hover { text-decoration: none !important; }
   
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
-          padding: 4px 8px !important;
+          padding: 4px 2px !important;
           border-radius: 4px !important;
           user-select: none !important;
           font-size: 13px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
         }
         .projectgrid-header-dropup-trigger:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.08)) !important;
         }
   
-        /* FIX: FLOATING DIALOG CONFIGURATION THAT BYPASSES TABLE LAYOUT DISTORTIONS Completely */
         .projectgrid-dropup-panel {
+          display: flex !important;
+          flex-direction: column !important; 
           background-color: var(--background-secondary, #1a1a1a) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 6px !important;
           padding: 6px !important;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
-          min-width: 120px !important;
-          max-height: 240px !important;
+          min-width: 125px !important;
+          max-height: 260px !important;
           overflow-y: auto !important;
           box-sizing: border-box !important;
         }
+        
         .projectgrid-dropup-option {
           display: flex !important;
           align-items: center !important;
@@ -120,11 +141,17 @@ module.exports = {
           user-select: none !important;
           color: var(--text-normal, #ffffff) !important;
           font-size: 11px !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          border: 2px solid transparent !important;
+        }
+        
+        /* FIX: ENFORCE NATIVE HUE BORDER ALIGNMENT STATES TO ACTIVE CHECKBOX INDICATORS TOO */
+        .projectgrid-dropup-option.projectgrid-row-focused {
+          animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
         .projectgrid-dropup-option:hover {
-          background-color: var(--text-accent, #70a1ff) !important;
-          color: #000000 !important;
-          border-radius: 4px !important;
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.03)) !important;
         }
         .projectgrid-dropup-option input[type="checkbox"] {
           margin: 0 !important;
@@ -136,7 +163,7 @@ module.exports = {
           color: var(--text-normal, #dddddd) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 4px !important;
-          padding: 4px 6px !important;
+          padding: 4px 2px !important;
           font-size: 11px !important;
           width: 100% !important;
           box-sizing: border-box !important;
@@ -145,6 +172,9 @@ module.exports = {
           position: relative !important;
           user-select: none !important;
           text-align: center !important;
+          text-overflow: ellipsis !important;
+          overflow: hidden !important;
+          white-space: nowrap !important;
         }
         .projectgrid-custom-select-btn:focus {
           border-color: var(--text-accent, #70a1ff) !important;
@@ -152,7 +182,8 @@ module.exports = {
         }
   
         .projectgrid-custom-dropdown-list {
-          position: absolute !important;
+          display: flex !important;
+          flex-direction: column !important;
           background-color: var(--background-secondary, #202020) !important;
           border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
           border-radius: 4px !important;
@@ -163,15 +194,17 @@ module.exports = {
           box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
           box-sizing: border-box !important;
         }
+        
+        /* FIX: SUB-SELECTION ITEM BOX OUTLINES ENFORCE ONLY HUE REVOLVING CHROME BOUNDS */
         .projectgrid-custom-dropdown-item {
-          padding: 4px 8px !important;
+          padding: 4px 4px !important;
           cursor: pointer !important;
           color: var(--text-normal) !important;
           text-align: center !important;
-        }
-        .projectgrid-item-indicator-focused {
-          background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.06)) !important;
-          animation: projectgrid-hue-cycle 2s linear infinite !important;
+          font-size: 11px !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          border: 2px solid transparent !important;
         }
   
         .projectgrid-command-picker {
