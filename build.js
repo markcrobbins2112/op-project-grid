@@ -17,6 +17,7 @@ let outDir = baseDir.replace(/^[^-]+-/, '');
 const destDir = path.join('c:\\_o\\.obsidian\\plugins', outDir);
 
 function bundle() {
+    // FIXED: Removed the self-referencing variable initialization bug
     const entryPath = path.join(SOURCE_DIR, ENTRY_FILE);
     
     if (!fs.existsSync(entryPath)) {
@@ -52,12 +53,19 @@ function bundle() {
                 processedModules.add(moduleFileName);
 
                 let moduleContent = fs.readFileSync(modulePath, 'utf8');
-                moduleContent = moduleContent.replace(/\/\/ ==========================================[\s\S]*?\/\/ ==========================================/g, '');
+                
+                moduleContent = moduleContent.replace(/\/\/ ==========================================\s*[\r\n]+(?:START|END) OF FILE: [^\r\n]*/g, '');
                 moduleContent = resolveDependencies(moduleContent);
 
                 let clearContent = moduleContent.replace(/module\.exports\s*=\s*/g, 'return ');
-                const isolatedBlock = `const ${variableName} = (function() {\n${clearContent.trim()}\n})();`;
-                updatedContent = updatedContent.replace(fullStatement, isolatedBlock);
+                
+                const isolatedBlock = `
+const ${variableName} = (function() {
+${clearContent.trim()}
+})();
+globalThis.${variableName} = ${variableName};`;
+
+                updatedContent = updatedContent.replace(fullStatement, () => isolatedBlock);
             } else {
                 console.error(`⚠️ Warning: Referenced module file missing -> ${modulePath}`);
             }
@@ -81,7 +89,6 @@ function deployToObsidian() {
             console.log(`📁 Created deployment directory: ${destDir}`);
         }
 
-        // TARGETED DEPLOYMENT: Only allow these two files into the vault
         const whitelistFiles = [OUTPUT_FILE, MANIFEST_FILE];
         let copyCount = 0;
 

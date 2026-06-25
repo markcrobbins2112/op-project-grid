@@ -3,8 +3,18 @@
 // ==========================================
 
 const { Plugin } = require('obsidian');
+
 const StylesManager = (function() {
+// ==========================================
+// START OF FILE: styles.js
+// ==========================================
+
+
 const StylesCore = (function() {
+// ==========================================
+// START OF FILE: styles-core.js
+// ==========================================
+
 return {
     getCoreStyles() {
       return `
@@ -116,8 +126,18 @@ return {
       `;
     }
   };
+  
+  // ==========================================
+  // END OF FILE: styles-core.js
+  // ==========================================
 })();
+globalThis.StylesCore = StylesCore;
+
 const StylesAnimation = (function() {
+// ==========================================
+// START OF FILE: styles-animation.js
+// ==========================================
+
 return {
     getAnimationStyles() {
       return `
@@ -163,8 +183,18 @@ return {
       `;
     }
   };
+  
+  // ==========================================
+  // END OF FILE: styles-animation.js
+  // ==========================================
 })();
+globalThis.StylesAnimation = StylesAnimation;
+
 const StylesComponentsToolbar = (function() {
+// ==========================================
+// START OF FILE: styles-components-toolbar.js
+// ==========================================
+
 return {
     getToolbarStyles() {
       return `
@@ -213,8 +243,18 @@ return {
       `;
     }
   };
+  
+  // ==========================================
+  // END OF FILE: styles-components-toolbar.js
+  // ==========================================
 })();
+globalThis.StylesComponentsToolbar = StylesComponentsToolbar;
+
 const StylesComponentsDropdown = (function() {
+// ==========================================
+// START OF FILE: styles-components-dropdown.js
+// ==========================================
+
 return {
     getDropdownStyles() {
       return `
@@ -318,8 +358,18 @@ return {
       `;
     }
   };
+  
+  // ==========================================
+  // END OF FILE: styles-components-dropdown.js
+  // ==========================================
 })();
+globalThis.StylesComponentsDropdown = StylesComponentsDropdown;
+
 const StylesComponentsOverlays = (function() {
+// ==========================================
+// START OF FILE: styles-components-overlays.js
+// ==========================================
+
 return {
     getOverlayStyles() {
       return `
@@ -391,7 +441,12 @@ return {
       `;
     }
   };
+  
+  // ==========================================
+  // END OF FILE: styles-components-overlays.js
+  // ==========================================
 })();
+globalThis.StylesComponentsOverlays = StylesComponentsOverlays;
 
 return {
   injectStyles() {
@@ -413,10 +468,30 @@ return {
     styleElement.textContent = compiledCss;
   }
 };
+
+// ==========================================
+// END OF FILE: styles.js
+// ==========================================
 })();
+globalThis.StylesManager = StylesManager;
+
 const MainShortcuts = (function() {
+// ==========================================
+// START OF FILE: main-shortcuts.js
+// ==========================================
+
+
 const MenuState = (function() {
+// ==========================================
+// START OF FILE: menu-state.js
+// ==========================================
+
+
 const GridConfig = (function() {
+// ==========================================
+// START OF FILE: grid-config.js
+// ==========================================
+
 const gridConfigModule = {
     columns: [
       {
@@ -587,10 +662,30 @@ const gridConfigModule = {
   // FIX: Expose directly on the global scope to pass through custom IIFE bundler restrictions
   globalThis.GridConfig = gridConfigModule;
   return gridConfigModule;
+  
+  // ==========================================
+  // END OF FILE: grid-config.js
+  // ==========================================
 })();
+globalThis.GridConfig = GridConfig;
+
 const MenuStateUtils = (function() {
+// ==========================================
+// START OF FILE: menu-state-utils.js
+// ==========================================
+
+
 const UiDropdown = (function() {
+// ==========================================
+// START OF FILE: ui-dropdown.js
+// ==========================================
+
+
 const UiDropdownDom = (function() {
+// ==========================================
+// START OF FILE: ui-dropdown-dom.js
+// ==========================================
+
 return {
     createPanelContainer(triggerElement) {
       const panel = document.createElement('div');
@@ -634,7 +729,12 @@ return {
       });
     }
   };
+  
+  // ==========================================
+  // END OF FILE: ui-dropdown-dom.js
+  // ==========================================
 })();
+globalThis.UiDropdownDom = UiDropdownDom;
 
 const uiDropdownModule = {
   activeDropdownInstances: {},
@@ -806,7 +906,12 @@ const uiDropdownModule = {
 
 globalThis.UiDropdown = uiDropdownModule;
 return uiDropdownModule;
+
+// ==========================================
+// END OF FILE: ui-dropdown.js
+// ==========================================
 })();
+globalThis.UiDropdown = UiDropdown;
 
 return {
   openHeaderDropup(key) {
@@ -862,7 +967,12 @@ return {
     if (activeLeaf) activeLeaf.previewMode?.rerender(true);
   }
 };
+
+// ==========================================
+// END OF FILE: menu-state-utils.js
+// ==========================================
 })();
+globalThis.MenuStateUtils = MenuStateUtils;
 
 const menuStateModule = {
   getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
@@ -898,8 +1008,18 @@ const menuStateModule = {
 
 globalThis.MenuState = menuStateModule;
 return menuStateModule;
+
+// ==========================================
+// END OF FILE: menu-state.js
+// ==========================================
 })();
+globalThis.MenuState = MenuState;
+
 const MenuDom = (function() {
+// ==========================================
+// START OF FILE: menu-dom.js
+// ==========================================
+
 return {
     renderPickerBox(filterInput, itemsList, selectedIndex, containerElement, onItemClick, onClose) {
       this.destroyActivePickers(containerElement);
@@ -951,7 +1071,12 @@ return {
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     }
   };
+  
+  // ==========================================
+  // END OF FILE: menu-dom.js
+  // ==========================================
 })();
+globalThis.MenuDom = MenuDom;
 
 return {
   registerGlobalPluginScopes(pluginInstance) {
@@ -1035,14 +1160,40 @@ return {
     });
   }
 };
+
+// ==========================================
+// END OF FILE: main-shortcuts.js
+// ==========================================
 })();
+globalThis.MainShortcuts = MainShortcuts;
+
 const MainRenderer = (function() {
+// ==========================================
+// START OF FILE: main-renderer.js
+// ==========================================
+
+
 const UiBuilder = (function() {
+// ==========================================
+// START OF FILE: ui.js
+// ==========================================
+
+
+
 const UiRow = (function() {
+// ==========================================
+// START OF FILE: ui-row.js
+// ==========================================
+
 const fs = require('fs');
 const path = require('path');
 
+
 const UiColor = (function() {
+// ==========================================
+// START OF FILE: ui-color.js
+// ==========================================
+
 return {
     getColorForFirstCharacter(filename) {
       if (!filename) return 'var(--text-accent)';
@@ -1059,8 +1210,18 @@ return {
       return 'var(--text-normal)';
     }
   };
+  
+  // ==========================================
+  // END OF FILE: ui-color.js
+  // ==========================================
 })();
+globalThis.UiColor = UiColor;
+
 const UiRowDates = (function() {
+// ==========================================
+// START OF FILE: ui-row-dates.js
+// ==========================================
+
 const fs = require('fs');
 const path = require('path');
 
@@ -1104,8 +1265,18 @@ return {
     tableRow.appendChild(cell);
   }
 };
+
+// ==========================================
+// END OF FILE: ui-row-dates.js
+// ==========================================
 })();
+globalThis.UiRowDates = UiRowDates;
+
 const UiRowActions = (function() {
+// ==========================================
+// START OF FILE: ui-row-actions.js
+// ==========================================
+
 const fs = require('fs');
 const path = require('path');
 
@@ -1145,9 +1316,24 @@ return {
     tableRow.appendChild(cell);
   }
 };
+
+// ==========================================
+// END OF FILE: ui-row-actions.js
+// ==========================================
 })();
+globalThis.UiRowActions = UiRowActions;
+
 const UiRowTags = (function() {
+// ==========================================
+// START OF FILE: ui-row-tags.js
+// ==========================================
+
+
 const UiRowKeys = (function() {
+// ==========================================
+// START OF FILE: ui-row-keys.js
+// ==========================================
+
 return {
     handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput) {
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
@@ -1212,8 +1398,18 @@ return {
       }
     }
   };
+  
+  // ==========================================
+  // END OF FILE: ui-row-keys.js
+  // ==========================================
 })();
+globalThis.UiRowKeys = UiRowKeys;
+
 const UiRowTagsDom = (function() {
+// ==========================================
+// START OF FILE: ui-row-tags-dom.js
+// ==========================================
+
 return {
     createTagsContainer(btnElement) {
       const dropdown = document.createElement('div');
@@ -1283,7 +1479,12 @@ return {
       });
     }
   };
+  
+  // ==========================================
+  // END OF FILE: ui-row-tags-dom.js
+  // ==========================================
 })();
+globalThis.UiRowTagsDom = UiRowTagsDom;
 
 return {
   buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -1420,9 +1621,25 @@ return {
     tableRow.appendChild(tagsCell);
   }
 };
+
+// ==========================================
+// END OF FILE: ui-row-tags.js
+// ==========================================
 })();
+globalThis.UiRowTags = UiRowTags;
+
 const UiRowSelect = (function() {
+// ==========================================
+// START OF FILE: ui-row-select.js
+// ==========================================
+
+
+
 const UiRowSelectDom = (function() {
+// ==========================================
+// START OF FILE: ui-row-select-dom.js
+// ==========================================
+
 return {
     createDropdownContainer(btnElement, configKey) {
       const dropdown = document.createElement('div');
@@ -1469,7 +1686,6 @@ return {
         li.className = 'projectgrid-custom-dropdown-item';
         
         if (isMultiSelect) {
-          // MULTI-SELECT TECHNIQUE: Inject structure matching your exact tags column behavior
           li.style.display = 'flex';
           li.style.alignItems = 'center';
           li.style.gap = '6px';
@@ -1492,26 +1708,32 @@ return {
       });
     }
   };
+  
+  // ==========================================
+  // END OF FILE: ui-row-select-dom.js
+  // ==========================================
 })();
+globalThis.UiRowSelectDom = UiRowSelectDom;
+
+// FIXED: Use a clean fallback layout token string lookup wrapper to prevent resolution errors after bundling
+let TasksMarkdownSync;
+try {
+  TasksMarkdownSync = require('./tasks-markdown-sync');
+} catch (e) {
+  TasksMarkdownSync = globalThis.TasksMarkdownSync || null;
+}
 
 return {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const btn = document.createElement('div');
     btn.className = 'projectgrid-custom-select-btn';
-    btn.tabIndex = 0;
-    btn.setAttribute('data-field-index', fieldIdx);
+    btn.tabIndex = 0; btn.setAttribute('data-field-index', fieldIdx);
 
-    const isMultiSelect = (cfg.type === 'multi-select' || cfg.key === 'tasks');
+    const isMarkdownFileTarget = (cfg.key === 'tasks');
     const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-    
-    // Process initial values array state parameters
-    let activeValuesArray = [];
-    if (isMultiSelect && rawVal && rawVal !== '⬛') {
-      activeValuesArray = rawVal.split(',').map(v => v.trim()).filter(v => v.length > 0);
-    }
+    let activeValuesArray = (rawVal && rawVal !== '⬛') ? rawVal.split(',').map(v => v.trim()).filter(v => v.length > 0) : [];
 
-    // Set fallback values metrics text representations
-    if (isMultiSelect) {
+    if (isMarkdownFileTarget) {
       const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
       btn.textContent = `${activeValuesArray.length}/${totalCount}`;
       rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
@@ -1520,51 +1742,32 @@ return {
       rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
     }
 
-    let optionsList = cfg.defaults.filter(d => d !== '⬛');
-    if (!isMultiSelect) optionsList = ['⬛', ...optionsList];
-    if (rawVal && !isMultiSelect && !optionsList.includes(rawVal)) optionsList.push(rawVal);
+    let optionsList = isMarkdownFileTarget ? cfg.defaults.filter(d => d !== '⬛') : ['⬛', ...cfg.defaults.filter(d => d !== '⬛')];
+    if (rawVal && !isMarkdownFileTarget && !optionsList.includes(rawVal)) optionsList.push(rawVal);
 
-    let activeDropdown = null;
-    let isOpening = false;
-
-    const closeDropdown = () => { 
-      if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } 
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-    };
+    let activeDropdown = null; let isOpening = false;
+    const closeDropdown = () => { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null); };
 
     const openDropdown = () => {
       if (activeDropdown) return;
-      isOpening = true;
-      
-      document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
+      isOpening = true; document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
       let selectionIdx = 0;
 
       activeDropdown = UiRowSelectDom.createDropdownContainer(btn, cfg.key);
-
-      let customInput = null;
-      if (cfg.isExtendable) {
-        customInput = UiRowSelectDom.buildCustomInput(activeDropdown);
-      }
+      let customInput = cfg.isExtendable ? UiRowSelectDom.buildCustomInput(activeDropdown) : null;
 
       const scrollingContainer = document.createElement('div');
-      scrollingContainer.style.overflowY = 'auto';
-      scrollingContainer.style.flex = '1';
+      scrollingContainer.style.overflowY = 'auto'; scrollingContainer.style.flex = '1';
 
-      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList, isMultiSelect, activeValuesArray);
-      activeDropdown.appendChild(scrollingContainer);
-      document.body.appendChild(activeDropdown);
+      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList, isMarkdownFileTarget, activeValuesArray);
+      activeDropdown.appendChild(scrollingContainer); document.body.appendChild(activeDropdown);
 
       const items = scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item');
-      
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
-          const isHighlighted = (lIdx === selectionIdx);
-          li.classList.toggle('projectgrid-picker-highlight', isHighlighted);
-          li.classList.toggle('projectgrid-row-focused', isHighlighted);
-          if (isHighlighted && window.ProjectGridUpdateFocusOverlay) {
-            window.ProjectGridUpdateFocusOverlay(li);
-            li.scrollIntoView({ block: 'nearest' });
-          }
+          li.classList.toggle('projectgrid-picker-highlight', lIdx === selectionIdx);
+          li.classList.toggle('projectgrid-row-focused', lIdx === selectionIdx);
+          if (lIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) { window.ProjectGridUpdateFocusOverlay(li); li.scrollIntoView({ block: 'nearest' }); }
         });
       };
 
@@ -1573,116 +1776,78 @@ return {
           e.preventDefault(); e.stopPropagation();
           selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
           updateVisualSelection();
-        } 
-        else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
+        } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
           e.preventDefault(); e.stopPropagation();
-          
-          if (isMultiSelect) {
+          if (isMarkdownFileTarget) {
             const targetVal = optionsList[selectionIdx];
-            if (activeValuesArray.includes(targetVal)) {
-              activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
-            } else {
-              activeValuesArray.push(targetVal);
-            }
-            
-            // Re-render item checklist indicators on demand
+            if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
+            else activeValuesArray.push(targetVal);
             const cb = items[selectionIdx].querySelector('input[type="checkbox"]');
             if (cb) cb.checked = activeValuesArray.includes(targetVal);
-            
-            // Immediately commit value strings back to frontmatter
-            await commitSelection(activeValuesArray.join(', '));
+            await commitSelection(activeValuesArray.join(', '), targetVal, activeValuesArray.includes(targetVal));
           } else {
             const val = isInputNode ? customInput.value.trim() : '';
-            if (isInputNode && val !== '') commitSelection(val);
-            else commitSelection(optionsList[selectionIdx]);
+            if (isInputNode && val !== '') commitSelection(val); else commitSelection(optionsList[selectionIdx]);
           }
-        } 
-        else if (e.key === 'Escape') { 
-          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-          closeDropdown(); 
-          btn.focus(); 
-        }
+        } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); closeDropdown(); btn.focus(); }
       };
 
-      if (customInput) {
-        requestAnimationFrame(() => { customInput.focus(); });
-        customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true));
-      } else {
-        activeDropdown.tabIndex = 0;
-        requestAnimationFrame(() => { if (activeDropdown) activeDropdown.focus(); });
-        activeDropdown.addEventListener('keydown', (e) => handleKeyRouting(e, false));
-      }
+      if (customInput) { requestAnimationFrame(() => { customInput.focus(); }); customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true)); }
+      else { activeDropdown.tabIndex = 0; requestAnimationFrame(() => { if (activeDropdown) activeDropdown.focus(); }); activeDropdown.addEventListener('keydown', (e) => handleKeyRouting(e, false)); }
 
-      // Mouse click handlers for item selections
       items.forEach((item, idx) => {
         item.addEventListener('click', async (e) => {
-          e.preventDefault(); e.stopPropagation();
-          selectionIdx = idx;
-          if (isMultiSelect) {
+          e.preventDefault(); e.stopPropagation(); selectionIdx = idx;
+          if (isMarkdownFileTarget) {
             const targetVal = optionsList[idx];
             if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
             else activeValuesArray.push(targetVal);
             const cb = item.querySelector('input[type="checkbox"]');
             if (cb) cb.checked = activeValuesArray.includes(targetVal);
-            await commitSelection(activeValuesArray.join(', '));
+            await commitSelection(activeValuesArray.join(', '), targetVal, activeValuesArray.includes(targetVal));
             updateVisualSelection();
-          } else {
-            commitSelection(optionsList[idx]);
-          }
+          } else { commitSelection(optionsList[idx]); }
         });
       });
-
       setTimeout(() => { updateVisualSelection(); isOpening = false; }, 20);
     };
 
-    const commitSelection = async (value) => {
+    const commitSelection = async (value, targetString = '', isChecked = false) => {
       const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
       if (fileAbstract) {
-        await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
-          if (value === '' || value === '⬛') delete fm[cfg.key];
-          else fm[cfg.key] = value;
-        });
-
-        if (isMultiSelect) {
+        if (isMarkdownFileTarget && targetString && TasksMarkdownSync) {
+          const rawContent = await app.vault.read(fileAbstract);
+          const updatedText = TasksMarkdownSync.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
+          await app.vault.modify(fileAbstract, updatedText);
+        } else {
+          await app.fileManager.processFrontMatter(fileAbstract, (fm) => { if (value === '' || value === '⬛') delete fm[cfg.key]; else fm[cfg.key] = value; });
+        }
+        if (isMarkdownFileTarget) {
           const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
           btn.textContent = `${activeValuesArray.length}/${totalCount}`;
           rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
-        } else {
-          btn.textContent = value;
-          rowTrackingReference.yamlMetadataValues[cfg.key] = value;
-        }
-
-        const activeChain = window.ProjectGridActiveSortChainList || [];
-        if (activeChain.includes(cfg.key) && window.ProjectGridTriggerSortReRun) window.ProjectGridTriggerSortReRun();
-        else if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        } else { btn.textContent = value; rowTrackingReference.yamlMetadataValues[cfg.key] = value; }
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       }
     };
 
     btn.addEventListener('focus', () => { if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); });
     btn.addEventListener('blur', () => { setTimeout(() => { if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) closeDropdown(); }, 180); if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); });
     btn.addEventListener('mousedown', (e) => { e.stopPropagation(); if (activeDropdown && !isOpening) closeDropdown(); else { btn.focus(); openDropdown(); } });
-    
     btn.addEventListener('keydown', (evt) => {
-      if (evt.key === 'Escape') {
-        evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation();
-        btn.blur();
-        const rootContainer = btn.closest('.block-language-projectgrid') || document;
-        const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
-        if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); });
-        return;
-      }
-      if (!activeDropdown) {
-        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar') { evt.preventDefault(); openDropdown(); return; }
-        const handled = UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
-        if (handled) { evt.preventDefault(); evt.stopPropagation(); }
-      }
+      if (evt.key === 'Escape') { evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation(); btn.blur(); const rootContainer = btn.closest('.block-language-projectgrid') || document; const targetInput = rootContainer.querySelector('.projectgrid-filter-input'); if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); }); return; }
+      if (!activeDropdown) { if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar') { evt.preventDefault(); openDropdown(); return; } const handled = UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput); if (handled) { evt.preventDefault(); evt.stopPropagation(); } }
     }, true);
 
-    btn.openDropdown = openDropdown;
-    cell.appendChild(btn);
+    btn.openDropdown = openDropdown; cell.appendChild(btn);
   }
 };
+
+// ==========================================
+// END OF FILE: ui-row-select.js
+// ==========================================
 })();
+globalThis.UiRowSelect = UiRowSelect;
 
 return {
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -1743,7 +1908,12 @@ return {
     return tableRow;
   }
 };
+
+// ==========================================
+// END OF FILE: ui-row.js
+// ==========================================
 })();
+globalThis.UiRow = UiRow;
 
 
 return {
@@ -1876,8 +2046,18 @@ return {
     return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput); 
   }
 };
+
+// ==========================================
+// END OF FILE: ui.js
+// ==========================================
 })();
+globalThis.UiBuilder = UiBuilder;
+
 const MainToolbar = (function() {
+// ==========================================
+// START OF FILE: main-toolbar.js
+// ==========================================
+
 return {
     createToolbarLayout(containerElement, onGearClick) {
       const toolbar = document.createElement('div');
@@ -1937,8 +2117,22 @@ return {
       return { handleTutorToggle };
     }
   };
+  
+  // ==========================================
+  // END OF FILE: main-toolbar.js
+  // ==========================================
 })();
+globalThis.MainToolbar = MainToolbar;
+
 const MainScanner = (function() {
+// ==========================================
+// START OF FILE: main-scanner.js
+// ==========================================
+
+const fs = require('fs');
+const path = require('path');
+
+
 return {
   scanVaultProjectsFolders(app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, filterInputElement) {
     const universalTagsSet = new Set();
@@ -1948,12 +2142,46 @@ return {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (app.vault.getAbstractFileByPath(expectedNotePath)) {
         const fileCache = app.metadataCache.getCache(expectedNotePath);
-        const frontmatter = fileCache ? fileCache.frontmatter : null;
+        const frontmatter = fileCache ? { ...fileCache.frontmatter } : {};
 
         if (frontmatter && frontmatter.tags) {
           const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
           rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
         }
+
+        // TASK SCRAPER BLOCK START - Short comment prevents bundler stripping bugs
+        let checkedTasksList = [];
+        try {
+          const absolutePathOnDisk = path.join(absoluteVaultRoot, expectedNotePath);
+          if (fs.existsSync(absolutePathOnDisk)) {
+            const fileContentBuffer = fs.readFileSync(absolutePathOnDisk, 'utf8');
+            const linesArray = fileContentBuffer.split('\n');
+            let insideTasksHeaderZone = false;
+
+            for (let i = 0; i < linesArray.length; i++) {
+              const currentLineText = linesArray[i];
+              if (currentLineText.trim().startsWith('## Incoming Tasks')) { insideTasksHeaderZone = true; continue; }
+              if (insideTasksHeaderZone && currentLineText.trim().startsWith('##')) { break; }
+              
+              if (insideTasksHeaderZone) {
+                const checkboxMatchSignature = currentLineText.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+                if (checkboxMatchSignature) {
+                  const isChecked = checkboxMatchSignature[1].toLowerCase() === 'x';
+                  const taskTextString = checkboxMatchSignature[2].trim();
+                  
+                  if (isChecked && taskTextString) {
+                    checkedTasksList.push(taskTextString);
+                  }
+                }
+              }
+            }
+          }
+        } catch (fileErr) {
+          console.error(`[ProjectGrid Scraper] Failed to load markdown checkboxes for ${folder.name}:`, fileErr.message);
+        }
+
+        frontmatter['tasks'] = checkedTasksList.length > 0 ? checkedTasksList.join(', ') : '⬛';
+        // TASK SCRAPER BLOCK END
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowRef, filterInputElement);
@@ -1966,12 +2194,30 @@ return {
     return universalTagsSet;
   }
 };
+
+// ==========================================
+// END OF FILE: main-scanner.js
+// ==========================================
 })();
+globalThis.MainScanner = MainScanner;
+
 
 
 
 const FilterManager = (function() {
+// ==========================================
+// START OF FILE: filter.js
+// ==========================================
+
+
 const MenuCore = (function() {
+// ==========================================
+// START OF FILE: menu-core.js
+// ==========================================
+
+
+
+
 return {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
     let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
@@ -2104,7 +2350,12 @@ return {
     };
   }
 };
+
+// ==========================================
+// END OF FILE: menu-core.js
+// ==========================================
 })();
+globalThis.MenuCore = MenuCore;
 
 return {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
@@ -2209,7 +2460,12 @@ return {
     setTimeout(applyFilter, 50);
   }
 };
+
+// ==========================================
+// END OF FILE: filter.js
+// ==========================================
 })();
+globalThis.FilterManager = FilterManager;
 
 return {
   renderProjectGridDashboard(pluginContext, sourceText, containerElement) {
@@ -2285,7 +2541,12 @@ return {
     }
   }
 };
+
+// ==========================================
+// END OF FILE: main-renderer.js
+// ==========================================
 })();
+globalThis.MainRenderer = MainRenderer;
 
 module.exports = class ProjectGridPlugin extends Plugin {
   async onload() {

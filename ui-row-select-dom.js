@@ -48,7 +48,6 @@ module.exports = {
         li.className = 'projectgrid-custom-dropdown-item';
         
         if (isMultiSelect) {
-          // MULTI-SELECT TECHNIQUE: Inject structure matching your exact tags column behavior
           li.style.display = 'flex';
           li.style.alignItems = 'center';
           li.style.gap = '6px';

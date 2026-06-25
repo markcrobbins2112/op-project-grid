@@ -33,8 +33,11 @@ module.exports = {
             if (currentKey === 'created' || currentKey === 'updated') {
               valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
             } else if (currentKey === 'tasks') {
-              const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
-              const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
+              // PARITY CORRECTION: Read task counts natively out of yamlMetadataValues instead of launchers bucket
+              const taskStrA = String(valsA['tasks'] || '0/0').split('/');
+              const taskStrB = String(valsB['tasks'] || '0/0').split('/');
+              
+              // Pad values symmetrically to guarantee perfect numeric character sorting (e.g., 00002 vs 00005)
               valA = String(taskStrA[0] || '0').padStart(5, '0');
               valB = String(taskStrB[0] || '0').padStart(5, '0');
             } else if (currentKey === 'tagcount') {
@@ -56,7 +59,7 @@ module.exports = {
       }
   
       rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
-      window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
+      window.ProjectGridActiveSortChainListRun = () => this.executeDynamicSortChain(rowsArray);
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   
@@ -77,4 +80,3 @@ module.exports = {
   // ==========================================
   // END OF FILE: menu-state-sort.js
   // ==========================================
-  
