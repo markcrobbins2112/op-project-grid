@@ -30,22 +30,38 @@ module.exports = {
         activePanel.className = 'projectgrid-dropup-panel';
   
         const rect = trigger.getBoundingClientRect();
-        activePanel.style.position = 'fixed';
-        activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
-        activePanel.style.left = `${rect.left + window.scrollX}px`;
+        Object.assign(activePanel.style, {
+          position: 'fixed', bottom: `${window.innerHeight - rect.top + 4}px`,
+          left: `${rect.left + window.scrollX}px`, zIndex: '300000', height: 'auto',
+          display: 'flex', flexDirection: 'column', width: '150px'
+        });
+  
+        // FEATURE 1: FILTER SEARCH BOX INJECTED STRAIGHT AT THE TOP HEADER REGION
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'projectgrid-tags-input-container';
+        inputWrapper.style.borderTop = 'none';
+        inputWrapper.style.borderBottom = '1px solid var(--background-modifier-border, #2e2e2e)';
+        inputWrapper.style.marginBottom = '4px';
+        
+        const customInput = document.createElement('input');
+        customInput.type = 'text';
+        customInput.className = 'projectgrid-tags-custom-entry-field';
+        customInput.placeholder = '➕ Filter options...';
+        inputWrapper.appendChild(customInput);
+        activePanel.appendChild(inputWrapper);
   
         const labelHeader = document.createElement('div');
         labelHeader.className = 'projectgrid-dropup-header-title';
         labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;
         activePanel.appendChild(labelHeader);
   
+        const scrollingContainer = document.createElement('div');
+        scrollingContainer.style.overflowY = 'auto';
+        scrollingContainer.style.flex = '1';
+  
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
-          
-          if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
-            setTimeout(() => window.ProjectGridUpdateFocusOverlay(wrapper), 10);
-          }
   
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
@@ -58,12 +74,67 @@ module.exports = {
   
           wrapper.appendChild(checkbox);
           wrapper.appendChild(document.createTextNode(opt));
-          activePanel.appendChild(wrapper);
+          scrollingContainer.appendChild(wrapper);
+        });
+        activePanel.appendChild(scrollingContainer);
+        document.body.appendChild(activePanel);
+  
+        // FEATURE 2: AUTO-FOCUS TEXT FIELD INPUT INSTANTLY ON OPENING
+        customInput.focus();
+  
+        // INTERCEPT LOGIC DRIVES UP/DOWN MOVEMENT SELECTIONS ACROSS SUB-CHECKBOXES
+        customInput.addEventListener('keydown', (e) => {
+          const options = scrollingContainer.querySelectorAll('.projectgrid-dropup-option');
+  
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault(); e.stopPropagation();
+            if (options.length === 0) return;
+  
+            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
+  
+            options.forEach((lbl, lIdx) => {
+              if (lIdx === selectionIdx) {
+                lbl.classList.add('projectgrid-row-focused');
+                if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
+                lbl.scrollIntoView({ block: 'nearest' });
+              } else {
+                lbl.classList.remove('projectgrid-row-focused');
+              }
+            });
+          } else if (e.key === 'Enter') {
+            e.preventDefault(); e.stopPropagation();
+            const typedText = customInput.value.trim();
+  
+            if (typedText === '') {
+              if (options[selectionIdx]) {
+                const cb = options[selectionIdx].querySelector('input[type="checkbox"]');
+                cb.checked = !cb.checked;
+                handleToggle(fullOptionsList[selectionIdx], cb.checked);
+              }
+            } else {
+              // Extend choices array path dynamically if matching field options aren't registered yet
+              if (!fullOptionsList.includes(typedText)) {
+                defaults.push(typedText);
+                activeFilters.add(typedText);
+                handleToggle(typedText, true);
+              }
+              closePanel();
+              trigger.focus();
+            }
+          } else if (e.key === 'Escape' || (e.key === 'Enter' && e.ctrlKey)) {
+            e.preventDefault(); e.stopPropagation();
+            closePanel();
+            trigger.focus();
+          }
         });
   
-        trigger.addEventListener('keydown', handlePanelKeys);
-        activePanel.addEventListener('mousedown', (e) => e.stopPropagation());
-        document.body.appendChild(activePanel);
+        setTimeout(() => {
+          const firstOpt = scrollingContainer.querySelector('.projectgrid-dropup-option');
+          if (firstOpt && window.ProjectGridUpdateFocusOverlay) {
+            firstOpt.classList.add('projectgrid-row-focused');
+            window.ProjectGridUpdateFocusOverlay(firstOpt);
+          }
+        }, 20);
       };
   
       const handleToggle = (opt, isChecked) => {
@@ -77,8 +148,8 @@ module.exports = {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          boxes.checked = (activeFilters.size === defaults.length);
-          defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
+          if (boxes[0]) boxes[0].checked = (activeFilters.size === defaults.length);
+          defaults.forEach((d, idx) => { if (boxes[idx + 1]) boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
         rowsArray.forEach(row => {
@@ -99,35 +170,11 @@ module.exports = {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
-      function handlePanelKeys(evt) {
-        if (!activePanel) return;
-  
-        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-          evt.preventDefault();
-          evt.stopPropagation();
-          
-          selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
-  
-          const labels = activePanel.querySelectorAll('.projectgrid-dropup-option');
-          if (labels[selectionIdx] && window.ProjectGridUpdateFocusOverlay) {
-            window.ProjectGridUpdateFocusOverlay(labels[selectionIdx]);
-          }
-        } else if (evt.key === ' ' || evt.key === 'Spacebar') {
-          evt.preventDefault();
-          const cb = activePanel.querySelectorAll('input[type="checkbox"]')[selectionIdx];
-          cb.checked = !cb.checked;
-          handleToggle(fullOptionsList[selectionIdx], cb.checked);
-        } else if (evt.key === 'Enter' || evt.key === 'Escape') {
-          evt.preventDefault();
-          trigger.removeEventListener('keydown', handlePanelKeys);
-          closePanel(); trigger.focus();
-        }
-      }
-  
+      // FEATURE 3: CELL TRIGGER GROUPS TRAP ENTER, SPACE, OR DOWNS TO EXPAND OVERLAYS
       trigger.addEventListener('keydown', (evt) => {
         if (!activePanel) {
-          if ((evt.key === 'ArrowDown' && evt.altKey) || evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 'Enter') {
-            evt.preventDefault();
+          if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
+            evt.preventDefault(); evt.stopPropagation();
             openPanel();
           }
         }
@@ -138,26 +185,12 @@ module.exports = {
       });
       trigger.addEventListener('blur', () => {
         setTimeout(() => {
-          if (activePanel && !activePanel.contains(document.activeElement)) {
-            trigger.removeEventListener('keydown', handlePanelKeys);
-            closePanel();
-          }
-        }, 150);
+          if (activePanel && !activePanel.contains(document.activeElement)) { closePanel(); }
+        }, 180);
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
       });
   
-      trigger.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
-        if (activePanel) closePanel(); else openPanel();
-      });
-  
-      document.addEventListener('mousedown', function closeHeaderMenu(e) {
-        if (activePanel && !trigger.contains(e.target) && !activePanel.contains(e.target)) {
-          trigger.removeEventListener('keydown', handlePanelKeys);
-          closePanel();
-        }
-      });
+      trigger.addEventListener('mousedown', (e) => { e.stopPropagation(); trigger.focus(); openPanel(); });
   
       th.appendChild(trigger);
       return th;

@@ -37,7 +37,6 @@ module.exports = {
         const launchers = row.launcherValues || {};
         const dates = row.folderDatesValues || {};
         
-        // FIX: MERGED TEMPORAL DRIVE ATTRIBUTES INTO ALL FIELDS DICTIONARY SWEEPS
         const allFields = { ...metadata, ...launchers, ...dates };
         const isRowVisible = row.element.style.display !== 'none';
 
@@ -82,11 +81,11 @@ module.exports = {
 
       const activeSortChain = window.ProjectGridActiveSortChainList || [];
 
-      // FIX: SCAN VIEWPORT FOR ALL ELIGIBLE ELEMENT TRIGGERS TO FORCE DOT INJECTIONS
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key || !headerIconsMap[key]) return;
 
+        // FIX 3: THE STRIP-AND-REWRITE ENGINE REMOVES ACCIDENTALLY RETAINED MARKERS ON COLUMNS DE-SELECTION
         let baseIcon = headerIconsMap[key];
         const chainIdx = activeSortChain.indexOf(key);
         
@@ -94,12 +93,10 @@ module.exports = {
         else if (chainIdx === 1) baseIcon = '🟡' + baseIcon;
         else if (chainIdx === 2) baseIcon = '🔴' + baseIcon;
 
-        // Custom label counting bypass values logic rules for non-dropdown headings fields
         let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
         let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
 
         if (key === 'tasks' || key === 'created' || key === 'updated') {
-          // Non-dropdown headers show total active visible rows match quantities natively
           nonNullVis = rowsArray.filter(r => r.element.style.display !== 'none').length;
           nonNullTot = rowsArray.length;
         }

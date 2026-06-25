@@ -92,79 +92,76 @@ module.exports = {
       if (existingIdx > -1) {
         this.activeSortChain.splice(existingIdx, 1);
       } else {
-        if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
-        else {
+        if (this.activeSortChain.length < 3) {
+          this.activeSortChain.push(key);
+        } else {
           this.activeSortChain.unshift(key);
           if (this.activeSortChain.length > 3) this.activeSortChain.pop();
         }
       }
+      // FIX 1: IMMEDIATELY TRIGGER RE-SORT MECHANICS ON ALTERATIONS TO CHAIN ARRAYS
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
       this.activeSortChain = [];
-      this.updateToolbarLabel();
-      const parentTableBody = rowsArray?.element?.parentElement;
-      if (parentTableBody) {
-        rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
-        rowsArray.forEach(row => parentTableBody.appendChild(row.element));
-      }
-      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+      this.executeDynamicSortChain(rowsArray); // Forces fallback logic automatically
     },
   
     executeDynamicSortChain(rowsArray) {
       this.updateToolbarLabel();
-      if (this.activeSortChain.length === 0) return;
-  
       const parentTableBody = rowsArray[0]?.element?.parentElement;
       if (!parentTableBody) return;
   
-      rowsArray.sort((rowA, rowB) => {
-        const valsA = rowA.yamlMetadataValues || {};
-        const valsB = rowB.yamlMetadataValues || {};
-        const datesA = rowA.folderDatesValues || {};
-        const datesB = rowB.folderDatesValues || {};
-        const launchersA = rowA.launcherValues || {};
-        const launchersB = rowB.launcherValues || {};
+      // FIX 2: IF SORT CHAIN IS NULL OR EMPTY, FALL BACK NATIVELY TO ALPHABETICAL DIRECTORY PATH SORT ORDER
+      if (this.activeSortChain.length === 0) {
+        rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
+      } else {
+        rowsArray.sort((rowA, rowB) => {
+          const valsA = rowA.yamlMetadataValues || {};
+          const valsB = rowB.yamlMetadataValues || {};
+          const datesA = rowA.folderDatesValues || {};
+          const datesB = rowB.folderDatesValues || {};
+          const launchersA = rowA.launcherValues || {};
+          const launchersB = rowB.launcherValues || {};
   
-        const mergedA = { ...valsA, ...datesA, ...launchersA };
-        const mergedB = { ...valsB, ...datesB, ...launchersB };
+          const mergedA = { ...valsA, ...datesA, ...launchersA };
+          const mergedB = { ...valsB, ...datesB, ...launchersB };
   
-        for (let i = 0; i < this.activeSortChain.length; i++) {
-          const currentKey = this.activeSortChain[i];
-          let valA = ''; let valB = '';
+          for (let i = 0; i < this.activeSortChain.length; i++) {
+            const currentKey = this.activeSortChain[i];
+            let valA = ''; let valB = '';
   
-          if (currentKey === 'created' || currentKey === 'updated') {
-            valA = String(datesA[currentKey] || '');
-            valB = String(datesB[currentKey] || '');
-          } else if (currentKey === 'tasks') {
-            const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
-            const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
-            valA = String(taskStrA[0] || '0').padStart(5, '0');
-            valB = String(taskStrB[0] || '0').padStart(5, '0');
-          } else if (currentKey === 'tagcount') {
-            const tagStrA = String(valsA['tags'] || '⬛');
-            const tagStrB = String(valsB['tags'] || '⬛');
-            const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
-            const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
-            valA = String(countA).padStart(5, '0');
-            valB = String(countB).padStart(5, '0');
-          } else {
-            valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
-            valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+            if (currentKey === 'created' || currentKey === 'updated') {
+              valA = String(datesA[currentKey] || '');
+              valB = String(datesB[currentKey] || '');
+            } else if (currentKey === 'tasks') {
+              const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
+              const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
+              valA = String(taskStrA[0] || '0').padStart(5, '0');
+              valB = String(taskStrB[0] || '0').padStart(5, '0');
+            } else if (currentKey === 'tagcount') {
+              const tagStrA = String(valsA['tags'] || '⬛');
+              const tagStrB = String(valsB['tags'] || '⬛');
+              const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
+              const countB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
+              valA = String(countA).padStart(5, '0');
+              valB = String(countB).padStart(5, '0');
+            } else {
+              valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
+              valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+            }
+  
+            if (valA !== valB) {
+              return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+            }
           }
-  
-          // FIX 1: REVERSED THE DIRECTION OF COMPARATOR FROM (valA, valB) TO (valB, valA) TO FORCE HIGH-TO-LOW SORTING
-          if (valA !== valB) {
-            return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
-          }
-        }
-        return 0;
-      });
+          return 0;
+        });
+      }
   
       rowsArray.forEach(row => parentTableBody.appendChild(row.element));
       
-      // Register global handle listener so rewrite cells can trigger sorting updates reactively
       window.ProjectGridActiveSortChainList = this.activeSortChain;
       window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
   
