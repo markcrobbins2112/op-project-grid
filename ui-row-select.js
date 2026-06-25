@@ -7,8 +7,8 @@ const UiRowSelectDom = require('./ui-row-select-dom');
 const UiRowSelectState = require('./ui-row-select-state');
 const UiRowSelectHandlers = require('./ui-row-select-handlers');
 const UiRowSelectKeys = require('./ui-row-select-keys');
-const TasksMarkdownSync = require('./tasks-markdown-sync');
-const TasksMarkdownWriter = require('./tasks-markdown-writer');
+const UiRowSelectActions = require('./ui-row-select-actions');
+const UiRowSelectJumper = require('./ui-row-select-jumper');
 
 module.exports = {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -32,8 +32,13 @@ module.exports = {
 
       const scrollingContainer = document.createElement('div');
       scrollingContainer.style.overflowY = 'auto'; scrollingContainer.style.flex = '1';
-      UiRowSelectDom.populateItemsList(scrollingContainer, state.optionsList, state.isMarkdownFileTarget, state.activeValuesArray);
-      activeDropdown.appendChild(scrollingContainer); document.body.appendChild(activeDropdown);
+      
+      const refreshDropdownListInterior = () => {
+        UiRowSelectDom.populateItemsList(scrollingContainer, state.optionsList, state.isMarkdownFileTarget, state.activeValuesArray, (val) => globalThis.UiRowSelectActions.executeItemDeletion(val, expectedNotePath, cfg, app, btn, state, ctx, refreshDropdownListInterior));
+        bindMouseClicks();
+      };
+
+      refreshDropdownListInterior(); activeDropdown.appendChild(scrollingContainer); document.body.appendChild(activeDropdown);
 
       ctx.updateVisualSelection = (forcedIdx = null) => {
         if (forcedIdx !== null) ctx.selectionIdx = forcedIdx;
@@ -49,7 +54,7 @@ module.exports = {
         if (state.isMarkdownFileTarget) {
           if (isInputNode && typedValue !== '') {
             await globalThis.TasksMarkdownWriter.appendAndRefreshVault(app, expectedNotePath, typedValue, btn, scrollingContainer, state.optionsList, state.activeValuesArray, ctx.updateVisualSelection);
-            customInput.value = ''; return;
+            refreshDropdownListInterior(); ctx.updateVisualSelection(); return;
           }
           const targetVal = state.optionsList[ctx.selectionIdx];
           if (state.activeValuesArray.includes(targetVal)) state.activeValuesArray = state.activeValuesArray.filter(v => v !== targetVal);
@@ -62,21 +67,23 @@ module.exports = {
         }
       };
 
-      UiRowSelectKeys.setupKeyboardRouting(ctx, state.optionsList, state.isMarkdownFileTarget, scrollingContainer, customInput, onKeyEnterCommit, () => { closeDropdown(); btn.focus(); });
+      const keyRoutingEngine = globalThis.UiRowSelectKeys.setupKeyboardRouting(ctx, state.isMarkdownFileTarget, scrollingContainer, customInput, onKeyEnterCommit, () => { closeDropdown(); btn.focus(); }, (val) => globalThis.UiRowSelectActions.executeItemDeletion(val, expectedNotePath, cfg, app, btn, state, ctx, refreshDropdownListInterior), (val) => globalThis.UiRowSelectJumper.jumpToSourceLineLocation(val, expectedNotePath, app, closeDropdown));
 
-      // FIXED: Bind mouse clicks linearly on initial panel opening pass. No MutationObserver infinite loops.
-      scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((item, idx) => {
-        item.addEventListener('click', async (e) => {
-          e.preventDefault(); e.stopPropagation(); ctx.selectionIdx = idx;
-          if (state.isMarkdownFileTarget) {
-            const targetVal = state.optionsList[idx];
-            if (state.activeValuesArray.includes(targetVal)) state.activeValuesArray = state.activeValuesArray.filter(v => v !== targetVal);
-            else state.activeValuesArray.push(targetVal);
-            const cb = item.querySelector('input[type="checkbox"]'); if (cb) cb.checked = state.activeValuesArray.includes(targetVal);
-            await commitSelection(state.activeValuesArray.join(', '), targetVal, state.activeValuesArray.includes(targetVal)); ctx.updateVisualSelection();
-          } else { commitSelection(state.optionsList[idx]); }
+      function bindMouseClicks() {
+        scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((item, idx) => {
+          const leftArea = item.firstChild; if (!leftArea) return;
+          leftArea.addEventListener('click', async (e) => {
+            e.preventDefault(); e.stopPropagation(); ctx.selectionIdx = idx;
+            if (state.isMarkdownFileTarget) {
+              const targetVal = state.optionsList[idx];
+              if (state.activeValuesArray.includes(targetVal)) state.activeValuesArray = state.activeValuesArray.filter(v => v !== targetVal);
+              else state.activeValuesArray.push(targetVal);
+              const cb = item.querySelector('input[type="checkbox"]'); if (cb) cb.checked = state.activeValuesArray.includes(targetVal);
+              await commitSelection(state.activeValuesArray.join(', '), targetVal, state.activeValuesArray.includes(targetVal)); ctx.updateVisualSelection();
+            } else { commitSelection(state.optionsList[idx]); }
+          });
         });
-      });
+      }
 
       if (customInput) requestAnimationFrame(() => customInput.focus());
       else { activeDropdown.tabIndex = 0; requestAnimationFrame(() => activeDropdown.focus()); }
