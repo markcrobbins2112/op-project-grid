@@ -2,490 +2,8 @@
 // START OF FILE: _main.js
 // ==========================================
 
-const { Plugin } = require('obsidian');
-
-const StylesManager = (function() {
-// ==========================================
-// START OF FILE: styles.js
-// ==========================================
-
-
-const StylesCore = (function() {
-// ==========================================
-// START OF FILE: styles-core.js
-// ==========================================
-
-return {
-    getCoreStyles() {
-      return `
-        .cm-embed-block:has(.projectgrid-matrix-table),
-        .block-language-projectgrid {
-          max-width: 100% !important;
-          width: 100% !important;
-          grid-column: 1 / -1 !important;
-        }
-        .projectgrid-matrix-table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-          margin-top: 6px !important;
-          margin-bottom: 12px !important;
-          font-size: 11px !important;
-          line-height: 1.4 !important;
-          position: relative !important;
-        }
-        .projectgrid-matrix-table th {
-          font-weight: 600 !important;
-          color: var(--text-muted, #888888) !important;
-          border-bottom: 2px solid rgba(255, 255, 255, 0.4) !important;
-          border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
-          padding: 4px 2px !important;
-          vertical-align: middle;
-          position: relative !important;
-          text-align: center !important;
-        }
-        .projectgrid-matrix-table th:first-child {
-          text-align: left !important;
-        }
-  
-        .projectgrid-timestamp-scaled-td {
-          font-size: 11px !important; 
-          text-align: center !important;
-          white-space: nowrap !important;
-          width: 90px !important; 
-          padding: 4px 2px !important;
-          color: var(--text-muted) !important;
-        }
-  
-        .projectgrid-uniform-yaml-th,
-        .projectgrid-uniform-yaml-td {
-          width: 50px !important;
-          min-width: 50px !important;
-          max-width: 50px !important;
-          text-align: center !important;
-          box-sizing: border-box !important;
-          padding: 2px 1px !important;
-        }
-  
-        .projectgrid-filter-wrapper {
-          position: relative !important;
-          display: flex !important;
-          align-items: center !important;
-          width: 100% !important;
-        }
-        .projectgrid-filter-input {
-          width: 100% !important;
-          padding: 4px 24px 4px 8px !important;
-          font-size: 11px !important;
-          border-radius: 4px !important;
-          border: 1px solid var(--background-modifier-border, #3a3a3a) !important;
-          background-color: var(--background-primary, #1e1e1e) !important;
-          color: var(--text-normal, #ffffff) !important;
-          height: 24px !important;
-          outline: none !important;
-          box-shadow: none !important;
-        }
-        
-        .projectgrid-clear-btn {
-          position: absolute !important;
-          right: 8px !important;
-          cursor: pointer !important;
-          color: var(--text-muted, #888888) !important;
-          font-size: 10px !important;
-          visibility: hidden;
-          user-select: none !important;
-        }
-        .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
-  
-        /* BRIGHTNESS: Boosted structural borders clarity by 15% across all mesh coordinates */
-        .projectgrid-matrix-cell { 
-          padding: 4px 2px !important; 
-          vertical-align: middle !important; 
-          border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
-        }
-        .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; max-width: 140px !important; overflow: hidden; text-overflow: ellipsis; }
-        .projectgrid-matrix-link { text-decoration: none !important; }
-        .action-icon-cell { text-align: center !important; width: 24px !important; }
-        .action-icon-cell a { text-decoration: none !important; }
-        .projectgrid-aip-icon-btn.is-vault-missing { opacity: 0.15 !important; }
-        .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
-        
-        .projectgrid-readonly-scanner-td {
-          font-size: 11px !important;
-          text-align: center !important;
-          width: 32px !important;
-          padding: 4px 2px !important;
-          user-select: none;
-        }
-
-        /* BRIGHTNESS: Boosted bottom line structural dividers opacity metrics */
-        .projectgrid-matrix-row {
-          border-bottom: 1px solid rgba(255, 255, 255, 0.28) !important;
-          position: relative !important;
-          box-sizing: border-box !important;
-        }
-      `;
-    }
-  };
-  
-  // ==========================================
-  // END OF FILE: styles-core.js
-  // ==========================================
-})();
-globalThis.StylesCore = StylesCore;
-
-const StylesAnimation = (function() {
-// ==========================================
-// START OF FILE: styles-animation.js
-// ==========================================
-
-return {
-    getAnimationStyles() {
-      return `
-        @keyframes projectgrid-master-hue-spin {
-          0% { border-color: #ff4757; filter: hue-rotate(0deg); }
-          100% { border-color: #ff4757; filter: hue-rotate(360deg); }
-        }
-  
-        /* STRICT LAYER OVERRIDES: FORCES THE ROW INDICATOR TO STAY AS THE LOWEST LAYER UNDER THE MENU PANELS */
-        .projectgrid-focus-overlay-portal,
-        .projectgrid-input-overlay-portal,
-        .projectgrid-row-overlay-portal {
-          position: fixed !important;
-          pointer-events: none !important;
-          box-sizing: border-box !important;
-          border: 2px solid #ff4757 !important;
-          border-radius: 4px !important;
-          display: none;
-          animation: projectgrid-master-hue-spin 3s linear infinite !important;
-        }
-        
-        /* Stacking Layer 1: Topmost overlay for all list selection tracking */
-        .projectgrid-focus-overlay-portal {
-          z-index: 999999 !important;
-        }
-        
-        /* Stacking Layer 2: Middle overlay for text fields and filter headers */
-        .projectgrid-input-overlay-portal {
-          z-index: 999998 !important;
-        }
-        
-        /* FIX: BASE LAYER SET TO LOWEST TRACKING STATE SO POPUPS FLOAT HIGHER NATIVELY */
-        .projectgrid-row-overlay-portal {
-          z-index: 10 !important; 
-        }
-  
-        .projectgrid-matrix-row {
-          border-bottom: 1px solid var(--background-modifier-border, #2a2a2a) !important;
-          position: relative !important;
-          box-sizing: border-box !important;
-        }
-        .projectgrid-matrix-row:hover { background-color: transparent !important; }
-      `;
-    }
-  };
-  
-  // ==========================================
-  // END OF FILE: styles-animation.js
-  // ==========================================
-})();
-globalThis.StylesAnimation = StylesAnimation;
-
-const StylesComponentsToolbar = (function() {
-// ==========================================
-// START OF FILE: styles-components-toolbar.js
-// ==========================================
-
-return {
-    getToolbarStyles() {
-      return `
-        /* INTERACTIVE BUTTON DASHBOARD TOOLBAR */
-        .projectgrid-toolbar {
-          display: flex !important;
-          align-items: center !important;
-          gap: 8px !important;
-          width: 100% !important;
-          background-color: var(--background-secondary, #1e1e1e) !important;
-          border: 1px solid var(--background-modifier-border, #2e2e2e) !important;
-          border-radius: 6px 6px 0 0 !important;
-          padding: 6px 8px !important;
-          box-sizing: border-box !important;
-        }
-        .projectgrid-toolbar-btn {
-          background: transparent !important;
-          border: none !important;
-          cursor: pointer !important;
-          font-size: 14px !important;
-          padding: 4px !important;
-          border-radius: 4px !important;
-          outline: none !important;
-          user-select: none !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-        }
-        .projectgrid-toolbar-btn:hover {
-          background-color: var(--background-modifier-hover, rgba(255,255,255,0.04)) !important;
-        }
-  
-        .projectgrid-header-dropup-trigger {
-          cursor: pointer !important;
-          display: inline-block !important;
-          padding: 4px 2px !important;
-          border-radius: 4px !important;
-          user-select: none !important;
-          font-size: 13px !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-          outline: none !important;
-          border: 2px solid transparent !important;
-        }
-        .projectgrid-header-dropup-trigger:hover { background-color: transparent !important; }
-      `;
-    }
-  };
-  
-  // ==========================================
-  // END OF FILE: styles-components-toolbar.js
-  // ==========================================
-})();
-globalThis.StylesComponentsToolbar = StylesComponentsToolbar;
-
-const StylesComponentsDropdown = (function() {
-// ==========================================
-// START OF FILE: styles-components-dropdown.js
-// ==========================================
-
-return {
-    getDropdownStyles() {
-      return `
-        /* MENU PANELS FLOAT HIGH ABOVE ALL ROW INDICATORS NATIVELY */
-        .projectgrid-dropup-panel {
-          display: flex !important;
-          flex-direction: column !important; 
-          background-color: var(--background-secondary, #1a1a1a) !important;
-          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
-          border-radius: 6px !important;
-          padding: 6px !important;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
-          min-width: 125px !important;
-          max-height: 260px !important;
-          overflow-y: auto !important;
-          box-sizing: border-box !important;
-          z-index: 600000 !important; 
-        }
-        
-        .projectgrid-dropup-header-title {
-          font-size: 10px !important;
-          font-weight: 700 !important;
-          text-transform: uppercase !important;
-          color: var(--text-accent, #70a1ff) !important;
-          padding: 4px 6px !important;
-          border-bottom: 1px dashed var(--background-modifier-border, #3d3d3d) !important;
-          margin-bottom: 4px !important;
-          user-select: none !important;
-          pointer-events: none !important;
-        }
-  
-        .projectgrid-dropup-option {
-          display: flex !important;
-          align-items: center !important;
-          gap: 6px !important;
-          padding: 4px 6px !important;
-          cursor: pointer !important;
-          user-select: none !important;
-          color: var(--text-normal, #ffffff) !important;
-          font-size: 11px !important;
-          box-sizing: border-box !important;
-          width: 100% !important;
-          border: 2px solid transparent !important;
-          background-color: transparent !important;
-        }
-        .projectgrid-dropup-option:hover { background-color: transparent !important; }
-        .projectgrid-dropup-option input[type="checkbox"] { margin: 0 !important; cursor: pointer !important; }
-  
-        .projectgrid-custom-select-btn {
-          background-color: var(--background-secondary, #252525) !important;
-          color: var(--text-normal, #dddddd) !important;
-          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
-          border-radius: 4px !important;
-          padding: 4px 2px !important;
-          font-size: 11px !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-          display: inline-block !important;
-          cursor: pointer !important;
-          position: relative !important;
-          user-select: none !important;
-          text-align: center !important;
-          text-overflow: ellipsis !important;
-          overflow: hidden !important;
-          white-space: nowrap !important;
-        }
-  
-        .projectgrid-custom-dropdown-list {
-          display: flex !important;
-          flex-direction: column !important;
-          background-color: var(--background-secondary, #202020) !important;
-          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
-          border-radius: 4px !important;
-          margin: 4px 0 0 0 !important;
-          padding: 4px 0 !important;
-          list-style: none !important;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
-          box-sizing: border-box !important;
-          z-index: 600000 !important; 
-        }
-        .projectgrid-custom-dropdown-item {
-          padding: 4px 4px !important;
-          cursor: pointer !important;
-          color: var(--text-normal) !important;
-          text-align: center !important;
-          font-size: 11px !important;
-          box-sizing: border-box !important;
-          width: 100% !important;
-          border: 2px solid transparent !important;
-          background-color: transparent !important;
-        }
-  
-        /* Renders high-contrast background configurations over active selected nodes */
-        .projectgrid-custom-dropdown-item.projectgrid-picker-highlight,
-        .projectgrid-custom-dropdown-item.projectgrid-row-focused,
-        .projectgrid-custom-dropdown-item:hover {
-          background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
-          color: var(--text-accent, #70a1ff) !important;
-          border-radius: 4px !important;
-        }
-      `;
-    }
-  };
-  
-  // ==========================================
-  // END OF FILE: styles-components-dropdown.js
-  // ==========================================
-})();
-globalThis.StylesComponentsDropdown = StylesComponentsDropdown;
-
-const StylesComponentsOverlays = (function() {
-// ==========================================
-// START OF FILE: styles-components-overlays.js
-// ==========================================
-
-return {
-    getOverlayStyles() {
-      return `
-        .projectgrid-command-picker {
-          position: fixed !important; 
-          background-color: var(--background-secondary, #1e1e1e) !important;
-          border: 1px solid #3d3d3d !important; 
-          border-radius: 6px !important;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-          padding: 6px !important;
-          min-width: 220px !important;
-          box-sizing: border-box !important;
-          z-index: 650000 !important; 
-        }
-        .projectgrid-picker-item {
-          padding: 6px 10px !important;
-          cursor: pointer !important;
-          border-radius: 4px !important;
-          color: var(--text-normal, #ffffff) !important;
-          font-size: 12px !important;
-          box-sizing: border-box !important;
-          border: 2px solid transparent !important; 
-          background-color: transparent !important; 
-        }
-        .projectgrid-picker-item.projectgrid-picker-highlight {
-          background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
-          color: var(--text-accent, #70a1ff) !important;
-        }
-  
-        .projectgrid-wide-tasks-portal {
-          display: flex !important;
-          flex-direction: column !important;
-          background-color: var(--background-secondary, #1a1a1a) !important;
-          border: 2px solid var(--text-accent, #70a1ff) !important;
-          border-radius: 6px !important;
-          padding: 8px !important;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-          z-index: 700000 !important;
-          box-sizing: border-box !important;
-        }
-        .projectgrid-tutor-tooltip-portal {
-          position: fixed !important;
-          background-color: #1a1a2e !important;
-          border: 2px solid var(--text-accent, #70a1ff) !important;
-          border-radius: 6px !important;
-          padding: 8px 12px !important;
-          box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75) !important;
-          z-index: 999999 !important;
-          pointer-events: none !important;
-          max-width: 280px !important;
-          display: none;
-          box-sizing: border-box !important;
-        }
-        .projectgrid-tutor-heading {
-          font-size: 10px !important;
-          font-weight: 700 !important;
-          text-transform: uppercase !important;
-          color: #ff4757 !important;
-          margin-bottom: 4px !important;
-          border-bottom: 1px dashed rgba(255,255,255,0.15) !important;
-          padding-bottom: 2px !important;
-        }
-        .projectgrid-tutor-shortcut {
-          font-size: 10px !important;
-          color: #ffffff !important;
-          line-height: 1.4 !important;
-          font-family: var(--font-monospace) !important;
-        }
-      `;
-    }
-  };
-  
-  // ==========================================
-  // END OF FILE: styles-components-overlays.js
-  // ==========================================
-})();
-globalThis.StylesComponentsOverlays = StylesComponentsOverlays;
-
-return {
-  injectStyles() {
-    let styleElement = document.getElementById('obsidian-projectgrid-styles');
-    if (!styleElement) {
-      styleElement = document.createElement('style');
-      styleElement.id = 'obsidian-projectgrid-styles';
-      document.head.appendChild(styleElement);
-    }
-
-    const compiledCss = `
-      ${StylesCore.getCoreStyles()}
-      ${StylesAnimation.getAnimationStyles()}
-      ${StylesComponentsToolbar.getToolbarStyles()}
-      ${StylesComponentsDropdown.getDropdownStyles()}
-      ${StylesComponentsOverlays.getOverlayStyles()}
-    `;
-
-    styleElement.textContent = compiledCss;
-  }
-};
-
-// ==========================================
-// END OF FILE: styles.js
-// ==========================================
-})();
-globalThis.StylesManager = StylesManager;
-
-const MainShortcuts = (function() {
-// ==========================================
-// START OF FILE: main-shortcuts.js
-// ==========================================
-
-
-const MenuState = (function() {
-// ==========================================
-// START OF FILE: menu-state.js
-// ==========================================
-
+// 1. Core Framework Dependencies
+const Obsidian = require('obsidian'); 
 
 const GridConfig = (function() {
 // ==========================================
@@ -550,9 +68,9 @@ const gridConfigModule = {
 })();
 globalThis.GridConfig = GridConfig;
 
-const MenuStateUtils = (function() {
+const UiBuilder = (function() {
 // ==========================================
-// START OF FILE: menu-state-utils.js
+// START OF FILE: ui.js
 // ==========================================
 
 
@@ -793,569 +311,6 @@ return uiDropdownModule;
 // ==========================================
 })();
 globalThis.UiDropdown = UiDropdown;
-
-return {
-  openHeaderDropup(key) {
-    const activePicker = document.querySelector('.projectgrid-command-picker');
-    if (activePicker) activePicker.remove();
-
-    const targetDropdownInstance = UiDropdown.activeDropdownInstances && UiDropdown.activeDropdownInstances[key];
-    
-    if (targetDropdownInstance && typeof targetDropdownInstance.open === 'function') {
-      requestAnimationFrame(() => {
-        if (targetDropdownInstance.triggerElement) {
-          targetDropdownInstance.triggerElement.focus();
-        }
-        targetDropdownInstance.open();
-      });
-    }
-  },
-
-  focusRowCell(rowObj, cellIndex) {
-    if (!rowObj || !rowObj.element) return alert('Highlight a row project using arrow keys first.');
-    const activePicker = document.querySelector('.projectgrid-command-picker');
-    if (activePicker) activePicker.remove();
-
-    const targetCell = rowObj.element.children[cellIndex];
-    const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
-    
-    if (interactive) {
-      requestAnimationFrame(() => {
-        interactive.focus();
-        // FIX: Programmatically trigger the local open handle to unpack dropdown lists instantly when requested from picker wheel menus
-        if (typeof interactive.openDropdown === 'function') {
-          interactive.openDropdown();
-        }
-      });
-    }
-  },
-
-  fireProtocol(rowObj, protocol) {
-    if (!rowObj || !rowObj.element) return alert('Highlight a row project using arrow keys first.');
-    const linkEl = rowObj.element.querySelector(`a[href^="aip://${protocol}"]`);
-    if (linkEl) window.location.href = linkEl.getAttribute('href');
-  },
-
-  clearAllSystemFilters(filterInput) {
-    filterInput.value = '';
-    document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
-    if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-    filterInput.focus();
-  },
-
-  reloadActiveAppWorkspace() {
-    const activeLeaf = window.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
-    if (activeLeaf) activeLeaf.previewMode?.rerender(true);
-  }
-};
-
-// ==========================================
-// END OF FILE: menu-state-utils.js
-// ==========================================
-})();
-globalThis.MenuStateUtils = MenuStateUtils;
-
-const MenuStateSort = (function() {
-// ==========================================
-// START OF FILE: menu-state-sort.js
-// ==========================================
-
-const menuStateSortModule = {
-    activeSortChain: [], // Array holds up to 3 active column keys
-  
-    executeDynamicSortChain(rowsArray) {
-      this.updateToolbarLabel();
-      window.ProjectGridActiveSortChainList = this.activeSortChain;
-  
-      const liveTableBody = document.querySelector('.projectgrid-matrix-table tbody');
-      if (!liveTableBody || !rowsArray || rowsArray.length === 0) {
-        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-        return;
-      }
-  
-      // Helper function to extract a true directory filename baseline string
-      const getRowDirName = (r) => (r.folder && r.folder.name ? String(r.folder.name) : '');
-  
-      if (this.activeSortChain.length === 0) {
-        // Fallback default: Sort strictly by folder directory name alphabetically
-        rowsArray.sort((rowA, rowB) => {
-          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
-        });
-      } else {
-        rowsArray.sort((rowA, rowB) => {
-          const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
-          const datesA = rowA.folderDatesValues || {}; const datesB = rowB.folderDatesValues || {};
-          const launchersA = rowA.launcherValues || {}; const launchersB = rowB.launcherValues || {};
-          
-          const mergedA = { ...valsA, ...datesA, ...launchersA }; 
-          const mergedB = { ...valsB, ...datesB, ...launchersB };
-  
-          for (let i = 0; i < this.activeSortChain.length; i++) {
-            const currentKey = this.activeSortChain[i];
-            
-            // Check if the current evaluation property is a numeric/count field
-            const isNumericField = ['tasks', 'tagcount', 'stars', 'value', 'size', 'depth', 'priority'].includes(currentKey);
-            
-            let valA = ''; let valB = '';
-  
-            if (currentKey === 'created' || currentKey === 'updated') {
-              valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
-            } else if (currentKey === 'tasks') {
-              // Parse ratios text tokens strings (e.g. "2/5")
-              const taskStrA = String(valsA['tasks'] || '0/0').split('/');
-              const taskStrB = String(valsB['tasks'] || '0/0').split('/');
-              // Extract completed item counts explicitly to run mathematical evaluations
-              valA = parseInt(taskStrA[0], 10) || 0;
-              valB = parseInt(taskStrB[0], 10) || 0;
-            } else if (currentKey === 'tagcount') {
-              const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
-              valA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
-              valB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
-            } else if (isNumericField) {
-              // Strip emojis and extract raw digits for numeric parameters columns
-              const cleanA = String(mergedA[currentKey] || '').replace(/[^\d]/g, '');
-              const cleanB = String(mergedB[currentKey] || '').replace(/[^\d]/g, '');
-              valA = cleanA !== '' ? parseInt(cleanA, 10) : -1; // Empty/⬛ drops to lowest value marker
-              valB = cleanB !== '' ? parseInt(cleanB, 10) : -1;
-            } else {
-              // Text field comparison path (Source Language, Build Target, etc.)
-              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
-              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
-              if (valA === '' || valA === '⬛') valA = 'zzzzz';
-              if (valB === '' || valB === '⬛') valB = 'zzzzz';
-            }
-  
-            if (valA !== valB) {
-              if (isNumericField) {
-                // FIXED NUMERIC TRACK: Enforces descending order directly (highest integers first)
-                return valB - valA;
-              } else {
-                // Default ascending text comparison path
-                return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
-              }
-            }
-          }
-          
-          // FIXED TIE-BREAKER PASSTHROUGH: If values match identically across tiers, sort alphabetically by folder directory name
-          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
-        });
-      }
-  
-      rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
-      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-    },
-  
-    updateToolbarLabel() {
-      const indicator = document.getElementById('projectgrid-sort-toolbar-label'); if (!indicator) return;
-      if (this.activeSortChain.length === 0) {
-        indicator.textContent = '📶 Default Directory Sort Order'; indicator.style.color = 'var(--text-muted)';
-      } else {
-        const formattedChain = this.activeSortChain.map((k, idx) => {
-          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; 
-          return `${symbol}${k.toUpperCase()}`;
-        }).join(' ➔ ');
-        indicator.textContent = `📶 Sort Chain: ${formattedChain}`; indicator.style.color = 'var(--text-accent)';
-      }
-    }
-  };
-  
-  globalThis.MenuStateSort = menuStateSortModule;
-  return menuStateSortModule;
-  
-  // ==========================================
-  // END OF FILE: menu-state-sort.js
-  // ==========================================
-})();
-globalThis.MenuStateSort = MenuStateSort;
-
-const menuStateModule = {
-  getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
-    const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
-    const config = globalThis.GridConfig || GridConfig || { columns: [] };
-    const columnsList = config.columns || [];
-    
-    const selectableColumns = columnsList.filter(c => c.type === 'yaml-select' || c.type === 'tags-cell');
-    const interactiveFocusColumns = columnsList
-      .map((col, idx) => ({ col, originalIdx: idx }))
-      .filter(item => item.col.type === 'yaml-select' || item.col.type === 'tags-cell');
-    const launcherColumns = columnsList.filter(c => c.type === 'launcher');
-    const sortableColumns = columnsList.filter(c => c.key !== 'title' && c.type !== 'launcher');
-
-    const activeSortEngine = globalThis.MenuStateSort || MenuStateSort;
-    const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
-    const rawDirPath = (activeRow && activeRow.folder && activeRow.folder.path) ? String(activeRow.folder.path) : 'No folder selected';
-
-    return [
-      {
-        name: 'Filters', // FIX: Plain-text key protects background string verification lookups
-        displayName: '<u>F</u>ilters',
-        acceleratorKey: 'f',
-        items: selectableColumns.map(f => ({ 
-          name: `${f.icon} ${f.label} Filter`, 
-          action: () => MenuStateUtils.openHeaderDropup(f.key) 
-        }))
-      },
-      {
-        name: 'Columns',
-        displayName: '<u>C</u>olumns',
-        acceleratorKey: 'c',
-        items: [
-          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
-          ...interactiveFocusColumns.map(item => ({ 
-            name: `${item.col.icon} ${item.col.label} Column`, 
-            action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) 
-          }))
-        ]
-      },
-      {
-        name: 'Launcher',
-        displayName: '<u>L</u>auncher',
-        acceleratorKey: 'l',
-        items: [
-          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
-          ...launcherColumns.map(l => ({ 
-            name: `${l.icon} Open in ${l.label}`, 
-            action: () => MenuStateUtils.fireProtocol(activeRow, l.key) 
-          }))
-        ]
-      },
-      {
-        name: 'Sort',
-        displayName: '<u>S</u>ort',
-        acceleratorKey: 's',
-        items: [
-          {
-            name: '❌ Clear Sort Chain Parameters',
-            action: () => {
-              if (activeSortEngine) {
-                activeSortEngine.activeSortChain = [];
-                activeSortEngine.executeDynamicSortChain(rowsArray);
-              }
-            }
-          },
-          ...sortableColumns.map(s => {
-            const chainIdx = currentChain.indexOf(s.key);
-            let statusIcon = '⚫';
-            if (chainIdx === 0) statusIcon = '🟢';
-            if (chainIdx === 1) statusIcon = '🟡';
-            if (chainIdx === 2) statusIcon = '🔴';
-
-            return {
-              name: `${statusIcon} ${s.icon} ${s.label}`,
-              action: () => {
-                if (activeSortEngine) {
-                  let chain = [...activeSortEngine.activeSortChain];
-                  const existingIdx = chain.indexOf(s.key);
-
-                  if (existingIdx > -1) {
-                    chain.splice(existingIdx, 1);
-                  } else {
-                    if (chain.length < 3) {
-                      chain.push(s.key);
-                    } else {
-                      chain.unshift(s.key);
-                      if (chain.length > 3) chain.pop();
-                    }
-                  }
-                  activeSortEngine.activeSortChain = chain;
-                  activeSortEngine.executeDynamicSortChain(rowsArray);
-                }
-              }
-            };
-          })
-        ]
-      }
-    ];
-  }
-};
-
-globalThis.MenuState = menuStateModule;
-return menuStateModule;
-
-// ==========================================
-// END OF FILE: menu-state.js
-// ==========================================
-})();
-globalThis.MenuState = MenuState;
-
-const MenuDom = (function() {
-// ==========================================
-// START OF FILE: menu-core.js
-// ==========================================
-
-
-
-
-return {
-  bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
-    let activeItems = [];
-    let activeIndex = 0;
-    let storedCategoryIndex = 0;
-    let activePickerEl = null;
-
-    const closeAllPickers = () => {
-      pickerLevel = 0;
-      MenuDom.destroyActivePickers(containerElement);
-      activePickerEl = null;
-      filterInput.focus();
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-    };
-
-    const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
-        activeIndex = idx;
-        executeSelection();
-      }, closeAllPickers);
-
-      setTimeout(() => {
-        const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
-        if (items.length > 0 && activeItems[activeIndex]?.isHeaderTitle) {
-          activeIndex = (activeIndex + 1) % activeItems.length;
-          renderMenu();
-          return;
-        }
-
-        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
-        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
-          window.ProjectGridUpdateFocusOverlay(activeItem);
-        }
-      }, 10);
-    };
-
-    const executeSelection = () => {
-      if (pickerLevel === 1) {
-        storedCategoryIndex = activeIndex;
-        // FIX: Extract plain-text string names context safely before swapping module array pointers
-        const targetCategoryName = activeItems[activeIndex].name;
-        activeItems = activeItems[activeIndex].items;
-        pickerLevel = 2;
-        activeIndex = (activeItems && activeItems[0]?.isHeaderTitle) ? 1 : 0;
-        renderMenu();
-      } else if (pickerLevel === 2) {
-        const selectedAction = activeItems[activeIndex].action;
-        if (selectedAction) {
-          selectedAction();
-          
-          // FIX: Use plain-text name parameters comparison tracking to match sort redraw actions
-          const currentCategoryText = (storedCategoryIndex === 3) ? 'Sort' : '';
-          if (currentCategoryText === 'Sort') {
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); 
-            return;
-          }
-        }
-        closeAllPickers();
-      }
-    };
-
-    window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
-      pickerLevel = 1;
-      activeIndex = 0;
-      activeItems = customActiveItems;
-      renderMenu();
-    };
-
-    window.addEventListener('keydown', (evt) => {
-      if (evt.key === 'ScrollLock') {
-        evt.preventDefault();
-        if (document.activeElement !== filterInput) {
-          filterInput.focus();
-          filterInput.select();
-        } else {
-          pickerLevel = 1;
-          activeIndex = 0;
-          const targetMenuStateInstance = globalThis.MenuState || MenuState;
-          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-          renderMenu();
-        }
-      }
-    });
-
-    filterInput.addEventListener('keydown', (evt) => {
-      const visibleRows = getVisibleRows();
-
-      if (pickerLevel > 0 && activePickerEl) {
-        if (pickerLevel === 1) {
-          const typedChar = evt.key.toLowerCase();
-          const matchedCategoryIdx = activeItems.findIndex(cat => cat.acceleratorKey === typedChar);
-          
-          if (matchedCategoryIdx > -1) {
-            evt.preventDefault(); evt.stopPropagation();
-            activeIndex = matchedCategoryIdx;
-            executeSelection();
-            return;
-          }
-        }
-
-        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-          evt.preventDefault();
-          let attempts = 0;
-          do {
-            activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
-            attempts++;
-          } while (activeItems[activeIndex]?.isHeaderTitle && attempts < activeItems.length);
-          
-          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item, .projectgrid-dropup-header-title');
-          items.forEach((item, idx) => {
-            if (idx === activeIndex && !activeItems[idx].isHeaderTitle) {
-              item.classList.add('projectgrid-picker-highlight');
-              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
-            } else {
-              item.classList.remove('projectgrid-picker-highlight');
-            }
-          });
-          return;
-        } else if (evt.key === 'Enter') {
-          evt.preventDefault();
-          executeSelection();
-          return;
-        } else if (evt.key === 'Escape') {
-          evt.preventDefault();
-          if (pickerLevel === 2) {
-            pickerLevel = 1;
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeIndex = storedCategoryIndex;
-            renderMenu();
-          } else {
-            closeAllPickers();
-          }
-          return;
-        }
-      }
-
-      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-        if (visibleRows.length === 0) return;
-        evt.preventDefault();
-        
-        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
-        let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
-
-        if (evt.key === 'ArrowDown') {
-          visibleIdx = (visibleIdx + 1) >= visibleRows.length ? 0 : visibleIdx + 1;
-        } else {
-          visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
-        }
-
-        updateFocusIndex(visibleIdx);
-        const targetRow = visibleRows[visibleIdx].element;
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
-        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    });
-  }
-};
-
-// ==========================================
-// END OF FILE: menu-core.js
-// ==========================================
-})();
-globalThis.MenuDom = MenuDom;
-
-return {
-  registerGlobalPluginScopes(pluginInstance) {
-    pluginInstance.app.workspace.on('layout-ready', () => {
-      if (!pluginInstance.scope) return;
-
-      // 1. UNIVERSAL PANEL ESCAPE OVERRIDE SHORTCUT
-      pluginInstance.scope.register([], 'Escape', (evt) => {
-        const widePanel = document.querySelector('.projectgrid-wide-tasks-portal');
-        if (widePanel) {
-          evt.preventDefault();
-          const activeTasksTrigger = document.querySelector('.projectgrid-tasks-trigger-btn:focus') || 
-                                     document.querySelector('.projectgrid-row-focused .projectgrid-tasks-trigger-btn') ||
-                                     document.querySelector('.projectgrid-tasks-trigger-btn');
-          widePanel.remove();
-          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-          if (activeTasksTrigger) requestAnimationFrame(() => { activeTasksTrigger.focus(); });
-          return false;
-        }
-
-        const activeNode = document.activeElement;
-        if (activeNode && activeNode.closest('.projectgrid-matrix-table')) {
-          evt.preventDefault();
-          const container = activeNode.closest('.block-language-projectgrid') || document;
-          const filterInput = container.querySelector('.projectgrid-filter-input');
-          if (filterInput) { filterInput.focus(); filterInput.select(); }
-          return false;
-        }
-        return true; 
-      });
-
-      // 2. BULLETPROOF SYSTEM COMMAND PICKER HOTKEY (Ctrl + Shift + Space)
-      pluginInstance.scope.register(['Ctrl', 'Shift'], ' ', (evt) => {
-        evt.preventDefault();
-
-        console.log(
-          '%c[ProjectGrid CAPTURE]%c Captured Ctrl+Shift+Space stroke. Active focus element:', 
-          'color: #00d2d3; font-weight: bold;', 
-          'color: default;', 
-          document.activeElement
-        );
-
-        const filterInput = document.querySelector('.projectgrid-filter-input');
-        const containerElement = document.querySelector('.block-language-projectgrid') || document.body;
-
-        if (!filterInput) {
-          console.error('%c[ProjectGrid ERROR]%c Could not find .projectgrid-filter-input bar on screen!', 'color: #ee5253; font-weight: bold;');
-          return true;
-        }
-
-        filterInput.focus();
-        filterInput.select();
-
-        const existingPicker = document.querySelector('.projectgrid-command-picker');
-        if (existingPicker) {
-          existingPicker.remove();
-          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-          return false;
-        }
-
-        const targetMenuStateInstance = globalThis.MenuState || MenuState;
-        
-        try {
-          const rowsArray = window.ProjectGridActiveRowsTrackingArrayRegistryPool || [];
-          const activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, () => {
-            MenuDom.destroyActivePickers(containerElement);
-            filterInput.focus();
-          });
-
-          console.log('%c[ProjectGrid]%c Packaging dynamic picker layout data map items:', 'color: #10ac84; font-weight: bold;', 'color: default;', activeItems);
-
-          if (window.ProjectGridTriggerMenuCorePickerSpawn) {
-            window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
-          }
-        } catch (err) {
-          console.error('%c[ProjectGrid EXCEPTION]%c Command Picker compilation crashed:', 'color: #ee5253; font-weight: bold;', 'color: default;', err.message);
-        }
-
-        return false; 
-      });
-    });
-  }
-};
-
-// ==========================================
-// END OF FILE: main-shortcuts.js
-// ==========================================
-})();
-globalThis.MainShortcuts = MainShortcuts;
-
-const MainRenderer = (function() {
-// ==========================================
-// START OF FILE: main-renderer.js
-// ==========================================
-
-
-const UiBuilder = (function() {
-// ==========================================
-// START OF FILE: ui.js
-// ==========================================
-
-
 
 const UiRow = (function() {
 // ==========================================
@@ -2849,9 +1804,6 @@ return {
 })();
 globalThis.MainScanner = MainScanner;
 
-
-
-
 const FilterManager = (function() {
 // ==========================================
 // START OF FILE: filter.js
@@ -2864,7 +1816,283 @@ const MenuCore = (function() {
 // ==========================================
 
 
+const MenuState = (function() {
+// ==========================================
+// START OF FILE: menu-state.js
+// ==========================================
 
+
+
+const MenuStateUtils = (function() {
+// ==========================================
+// START OF FILE: menu-state-utils.js
+// ==========================================
+
+
+
+return {
+  openHeaderDropup(key) {
+    const activePicker = document.querySelector('.projectgrid-command-picker');
+    if (activePicker) activePicker.remove();
+
+    const targetDropdownInstance = UiDropdown.activeDropdownInstances && UiDropdown.activeDropdownInstances[key];
+    
+    if (targetDropdownInstance && typeof targetDropdownInstance.open === 'function') {
+      requestAnimationFrame(() => {
+        if (targetDropdownInstance.triggerElement) {
+          targetDropdownInstance.triggerElement.focus();
+        }
+        targetDropdownInstance.open();
+      });
+    }
+  },
+
+  focusRowCell(rowObj, cellIndex) {
+    if (!rowObj || !rowObj.element) return alert('Highlight a row project using arrow keys first.');
+    const activePicker = document.querySelector('.projectgrid-command-picker');
+    if (activePicker) activePicker.remove();
+
+    const targetCell = rowObj.element.children[cellIndex];
+    const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
+    
+    if (interactive) {
+      requestAnimationFrame(() => {
+        interactive.focus();
+        // FIX: Programmatically trigger the local open handle to unpack dropdown lists instantly when requested from picker wheel menus
+        if (typeof interactive.openDropdown === 'function') {
+          interactive.openDropdown();
+        }
+      });
+    }
+  },
+
+  fireProtocol(rowObj, protocol) {
+    if (!rowObj || !rowObj.element) return alert('Highlight a row project using arrow keys first.');
+    const linkEl = rowObj.element.querySelector(`a[href^="aip://${protocol}"]`);
+    if (linkEl) window.location.href = linkEl.getAttribute('href');
+  },
+
+  clearAllSystemFilters(filterInput) {
+    filterInput.value = '';
+    document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
+    if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    filterInput.focus();
+  },
+
+  reloadActiveAppWorkspace() {
+    const activeLeaf = window.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
+    if (activeLeaf) activeLeaf.previewMode?.rerender(true);
+  }
+};
+
+// ==========================================
+// END OF FILE: menu-state-utils.js
+// ==========================================
+})();
+globalThis.MenuStateUtils = MenuStateUtils;
+
+const menuStateModule = {
+  getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
+    // 1. STABLE FOCUS TARGETING: Query via global window pointer first, fallback to DOM class, then baseline row
+    let focusedRowIdx = window.ProjectGridCurrentFocusedIndex !== undefined ? window.ProjectGridCurrentFocusedIndex : -1;
+    const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+    
+    let activeRow = null;
+    if (focusedRowIdx >= 0 && focusedRowIdx < visibleRows.length) {
+      activeRow = visibleRows[focusedRowIdx];
+    } else {
+      activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused')) || visibleRows[0] || rowsArray[0];
+    }
+
+    const config = globalThis.GridConfig || GridConfig || { columns: [] };
+    const columnsList = config.columns || [];
+    
+    const selectableColumns = columnsList.filter(c => c.type === 'yaml-select' || c.type === 'tags-cell');
+    const interactiveFocusColumns = columnsList
+      .map((col, idx) => ({ col, originalIdx: idx }))
+      .filter(item => item.col.type === 'yaml-select' || item.col.type === 'tags-cell');
+    const launcherColumns = columnsList.filter(c => c.type === 'launcher');
+    const sortableColumns = columnsList.filter(c => c.key !== 'title' && c.type !== 'launcher');
+
+    const activeSortEngine = globalThis.MenuStateSort || null;
+    const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
+    
+    const rawDirPath = (activeRow && activeRow.folder && activeRow.folder.path) ? String(activeRow.folder.path) : 'No folder selected';
+
+    return [
+      {
+        name: 'Filters', 
+        displayName: '<u>F</u>ilters',
+        icon: '📁', // RESTORED FIRST LEVEL ICON
+        acceleratorKey: 'f',
+        items: selectableColumns.map(f => ({ 
+          name: `${f.icon} ${f.label} Filter`, 
+          action: () => MenuStateUtils.openHeaderDropup(f.key) 
+        }))
+      },
+      {
+        name: 'Columns',
+        displayName: '<u>C</u>olumns',
+        icon: '📊', // RESTORED FIRST LEVEL ICON
+        acceleratorKey: 'c',
+        items: [
+          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          ...interactiveFocusColumns.map(item => ({ 
+            name: `${item.col.icon} ${item.col.label} Column`, 
+            action: () => MenuStateUtils.focusRowCell(activeRow, item.originalIdx) 
+          }))
+        ]
+      },
+      {
+        name: 'Launcher',
+        displayName: '<u>L</u>auncher',
+        icon: '🚀', // RESTORED FIRST LEVEL ICON
+        acceleratorKey: 'l',
+        items: [
+          { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
+          ...launcherColumns.map(l => ({ 
+            name: `${l.icon} Open in ${l.label}`, 
+            action: () => MenuStateUtils.fireProtocol(activeRow, l.key) 
+          }))
+        ]
+      },
+      {
+        name: 'Sort',
+        displayName: '<u>S</u>ort',
+        icon: '📶', // RESTORED FIRST LEVEL ICON
+        acceleratorKey: 's',
+        items: [
+          {
+            name: '❌ Clear Sort Chain Parameters',
+            action: () => {
+              if (activeSortEngine) {
+                activeSortEngine.activeSortChain = [];
+                activeSortEngine.executeDynamicSortChain(rowsArray);
+              }
+            }
+          },
+          ...sortableColumns.map(s => {
+            const chainIdx = currentChain.indexOf(s.key);
+            let statusIcon = '⚫';
+            if (chainIdx === 0) statusIcon = '🟢';
+            if (chainIdx === 1) statusIcon = '🟡';
+            if (chainIdx === 2) statusIcon = '🔴';
+
+            return {
+              name: `${statusIcon} ${s.icon} ${s.label}`,
+              action: () => {
+                if (activeSortEngine) {
+                  let chain = [...activeSortEngine.activeSortChain];
+                  const existingIdx = chain.indexOf(s.key);
+
+                  if (existingIdx > -1) {
+                    chain.splice(existingIdx, 1);
+                  } else {
+                    if (chain.length < 3) {
+                      chain.push(s.key);
+                    } else {
+                      chain.unshift(s.key);
+                      if (chain.length > 3) chain.pop();
+                    }
+                  }
+                  activeSortEngine.activeSortChain = chain;
+                  activeSortEngine.executeDynamicSortChain(rowsArray);
+                }
+              }
+            };
+          })
+        ]
+      }
+    ];
+  }
+};
+
+globalThis.MenuState = menuStateModule;
+return menuStateModule;
+
+// ==========================================
+// END OF FILE: menu-state.js
+// ==========================================
+})();
+globalThis.MenuState = MenuState;
+
+const MenuDom = (function() {
+// ==========================================
+// START OF FILE: menu-dom.js
+// ==========================================
+
+return {
+    renderPickerBox(filterInput, itemsList, selectedIndex, containerElement, onItemClick, onClose) {
+      this.destroyActivePickers(containerElement);
+  
+      const picker = document.createElement('div');
+      picker.className = 'projectgrid-command-picker';
+      
+      const rect = filterInput.getBoundingClientRect();
+      picker.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      picker.style.left = `${rect.left + window.scrollX}px`;
+  
+      itemsList.forEach((item, idx) => {
+        const el = document.createElement('div');
+        
+        if (item.isHeaderTitle) {
+          el.className = 'projectgrid-dropup-header-title';
+          el.style.borderBottom = '1px dashed var(--background-modifier-border, #3d3d3d)';
+          el.style.padding = '6px 10px';
+          el.style.fontSize = '10px';
+          el.style.color = 'var(--text-accent, #70a1ff)';
+          el.style.fontWeight = '700';
+          el.style.pointerEvents = 'none';
+        } else {
+          el.className = 'projectgrid-picker-item';
+          if (idx === selectedIndex) {
+            el.classList.add('projectgrid-picker-highlight');
+            el.classList.add('projectgrid-row-focused');
+          }
+          
+          el.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            onItemClick(idx);
+          });
+        }
+        
+        // UNIFIED VISUAL INJECTION: Combine restored emojis and mnemonic underline structures
+        if (item.icon && item.displayName) {
+          el.innerHTML = `${item.icon} ${item.displayName}`;
+        } else {
+          el.innerHTML = item.displayName || item.name;
+        }
+        
+        picker.appendChild(el);
+      });
+  
+      document.body.appendChild(picker); 
+  
+      const outsideClickListener = (e) => {
+        if (!picker.contains(e.target) && e.target !== filterInput) {
+          onClose();
+          document.removeEventListener('click', outsideClickListener);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', outsideClickListener), 10);
+  
+      return picker;
+    },
+  
+    destroyActivePickers(containerElement) {
+      const existing = document.querySelectorAll('.projectgrid-command-picker');
+      existing.forEach(p => p.remove());
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+    }
+  };
+  
+  globalThis.MenuDom = module.exports;
+  
+  // ==========================================
+  // END OF FILE: menu-dom.js
+  // ==========================================
+})();
+globalThis.MenuDom = MenuDom;
 
 return {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
@@ -2873,17 +2101,26 @@ return {
     let activeIndex = 0;
     let storedCategoryIndex = 0;
     let activePickerEl = null;
+    let fallbackRowTrackIdx = 0; // Keep track of current selected spreadsheet row index
+
+    const getActiveDomEngine = () => globalThis.MenuDom || MenuDom;
 
     const closeAllPickers = () => {
       pickerLevel = 0;
-      MenuDom.destroyActivePickers(containerElement);
+      const domEngine = getActiveDomEngine();
+      if (domEngine && typeof domEngine.destroyActivePickers === 'function') {
+        domEngine.destroyActivePickers(containerElement);
+      }
       activePickerEl = null;
       filterInput.focus();
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
     const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+      const domEngine = getActiveDomEngine();
+      if (!domEngine || typeof domEngine.renderPickerBox !== 'function') return;
+
+      activePickerEl = domEngine.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
         activeIndex = idx;
         executeSelection();
       }, closeAllPickers);
@@ -2906,9 +2143,11 @@ return {
     const executeSelection = () => {
       if (pickerLevel === 1) {
         storedCategoryIndex = activeIndex;
-        // FIX: Extract plain-text string names context safely before swapping module array pointers
-        const targetCategoryName = activeItems[activeIndex].name;
-        activeItems = activeItems[activeIndex].items;
+        // Inject current row lookup fallback tracks parameters explicitly
+        const targetMenuStateInstance = globalThis.MenuState || MenuState;
+        const schemaWithLivePaths = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
+        
+        activeItems = schemaWithLivePaths[activeIndex].items;
         pickerLevel = 2;
         activeIndex = (activeItems && activeItems[0]?.isHeaderTitle) ? 1 : 0;
         renderMenu();
@@ -2917,11 +2156,10 @@ return {
         if (selectedAction) {
           selectedAction();
           
-          // FIX: Use plain-text name parameters comparison tracking to match sort redraw actions
           const currentCategoryText = (storedCategoryIndex === 3) ? 'Sort' : '';
           if (currentCategoryText === 'Sort') {
             const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
             activeItems = masterSchema[storedCategoryIndex].items;
             renderMenu(); 
             return;
@@ -2932,9 +2170,7 @@ return {
     };
 
     window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
-      pickerLevel = 1;
-      activeIndex = 0;
-      activeItems = customActiveItems;
+      pickerLevel = 1; activeIndex = 0; activeItems = customActiveItems;
       renderMenu();
     };
 
@@ -2942,13 +2178,11 @@ return {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
         if (document.activeElement !== filterInput) {
-          filterInput.focus();
-          filterInput.select();
+          filterInput.focus(); filterInput.select();
         } else {
-          pickerLevel = 1;
-          activeIndex = 0;
+          pickerLevel = 1; activeIndex = 0;
           const targetMenuStateInstance = globalThis.MenuState || MenuState;
-          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
           renderMenu();
         }
       }
@@ -2958,15 +2192,27 @@ return {
       const visibleRows = getVisibleRows();
 
       if (pickerLevel > 0 && activePickerEl) {
+        // FIXED MNEMONIC BACKSPACE INTERCEPT: Redirects Backspace keys strokes straight into Escape handles loops
+        if (evt.key === 'Escape' || evt.key === 'Backspace') {
+          evt.preventDefault(); evt.stopPropagation();
+          if (pickerLevel === 2) {
+            pickerLevel = 1;
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
+            activeIndex = storedCategoryIndex;
+            renderMenu();
+          } else {
+            closeAllPickers();
+          }
+          return;
+        }
+
         if (pickerLevel === 1) {
           const typedChar = evt.key.toLowerCase();
           const matchedCategoryIdx = activeItems.findIndex(cat => cat.acceleratorKey === typedChar);
-          
           if (matchedCategoryIdx > -1) {
             evt.preventDefault(); evt.stopPropagation();
-            activeIndex = matchedCategoryIdx;
-            executeSelection();
-            return;
+            activeIndex = matchedCategoryIdx; executeSelection(); return;
           }
         }
 
@@ -2989,21 +2235,7 @@ return {
           });
           return;
         } else if (evt.key === 'Enter') {
-          evt.preventDefault();
-          executeSelection();
-          return;
-        } else if (evt.key === 'Escape') {
-          evt.preventDefault();
-          if (pickerLevel === 2) {
-            pickerLevel = 1;
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeIndex = storedCategoryIndex;
-            renderMenu();
-          } else {
-            closeAllPickers();
-          }
-          return;
+          evt.preventDefault(); executeSelection(); return;
         }
       }
 
@@ -3019,6 +2251,9 @@ return {
         } else {
           visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
         }
+
+        // Cache baseline index tracking to bridge variable voids
+        fallbackRowTrackIdx = rowsArray.indexOf(visibleRows[visibleIdx]);
 
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
@@ -3081,7 +2316,6 @@ return {
 
       const activeSortChain = window.ProjectGridActiveSortChainList || [];
 
-      // Update interactive filter headers triggers
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key || !headerIconsMap[key]) return;
@@ -3089,7 +2323,6 @@ return {
         let baseIcon = headerIconsMap[key];
         const chainIdx = activeSortChain.indexOf(key);
         
-        // Append micro-font rank badge strings next to active column headers
         if (chainIdx === 0) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🟢</span>' + baseIcon;
         else if (chainIdx === 1) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🟡</span>' + baseIcon;
         else if (chainIdx === 2) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🔴</span>' + baseIcon;
@@ -3105,7 +2338,6 @@ return {
         trigger.innerHTML = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
       });
 
-      // Update static read-only table headers elements
       document.querySelectorAll('.projectgrid-matrix-table th').forEach(th => {
         const contentStr = th.textContent.trim();
         let targetKey = '';
@@ -3131,11 +2363,17 @@ return {
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       if (visibleRows.length > 0) {
         if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
+        
+        // GLOBAL LOCK EXPOSURE: Expose running index to the shared window scope tracking registers
+        window.ProjectGridCurrentFocusedIndex = currentFocusedIndex;
+
         const finalTargetRow = visibleRows[currentFocusedIndex].element;
         if (finalTargetRow) {
           finalTargetRow.classList.add('projectgrid-row-focused');
           if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
         }
+      } else {
+        window.ProjectGridCurrentFocusedIndex = -1; // Clear on empty tables states
       }
     };
 
@@ -3145,6 +2383,8 @@ return {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
+      window.ProjectGridCurrentFocusedIndex = index; // Synchronize index shifts immediately
+      
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
       if (visibleRows[index] && visibleRows[index].element) {
@@ -3168,88 +2408,142 @@ return {
 })();
 globalThis.FilterManager = FilterManager;
 
-return {
-  renderProjectGridDashboard(pluginContext, sourceText, containerElement) {
-    const rootTarget = sourceText.trim() || "__";
-    const absoluteVaultRoot = pluginContext.app.vault.adapter.getBasePath();
+// 2. Menu Subsystems & Layout Generators
+// FIXED PASS: Load the DOM renderer FIRST so its methods are registered before core listeners execute
 
-    const headerSetup = UiBuilder.generateHeaderCell();
-    
-    // FIXED CORRECTION: Aligned callback handle directly to catch and trigger your floating picker overlay panel
-    const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
-      const targetMenuStateInstance = globalThis.MenuState || MenuState;
-      const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
-        MenuDom.destroyActivePickers(containerElement);
-        headerSetup.input.focus();
-      });
-      if (window.ProjectGridTriggerMenuCorePickerSpawn) {
-        headerSetup.input.focus();
-        window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
-      }
-    });
 
-    const tableElement = document.createElement('table');
-    tableElement.className = 'projectgrid-matrix-table';
-
-    const tableHeader = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    headerRow.appendChild(headerSetup.cell);
-    
-    const activeConfig = globalThis.GridConfig || GridConfig;
-    const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
-
-    if (columnsList.length > 0) {
-      columnsList.forEach(col => {
-        if (col.key === 'title') return;
-        
-        if (col.type === 'timestamp' || col.type === 'launcher') {
-          headerRow.insertAdjacentHTML('beforeend', `
-            <th style="width: ${col.width} !important; text-align: center;" title="${col.label}">${col.icon}</th>
-          `);
-        } else {
-          const innerRowsArray = [];
-          const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.defaults || ['⬛'], innerRowsArray);
-          dropupTh.style.width = col.width;
-          headerRow.appendChild(dropupTh);
-        }
-      });
-    }
-
-    const tableBody = document.createElement('tbody');
-    const rowsArray = [];
-    
-    window.ProjectGridActiveRowsTrackingArrayRegistryPool = rowsArray;
-
-    const universalTagsSet = MainScanner.scanVaultProjectsFolders(
-      pluginContext.app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, headerSetup.input
-    );
-
-    tableHeader.appendChild(headerRow);
-    tableElement.appendChild(tableHeader);
-    tableElement.appendChild(tableBody);
-    
-    FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
-
-    const hotkeyListener = (evt) => {
-      if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
-        evt.preventDefault();
-        toolbarSetup.handleTutorToggle();
-      }
-    };
-    window.removeEventListener('keydown', hotkeyListener);
-    window.addEventListener('keydown', hotkeyListener);
-
-    if (rowsArray.length > 0) {
-      containerElement.appendChild(tableElement);
-    }
-  }
-};
-
+const MenuStateSort = (function() {
 // ==========================================
-// END OF FILE: main-renderer.js
+// START OF FILE: menu-state-sort.js
 // ==========================================
+
+const menuStateSortModule = {
+    activeSortChain: [], // Array holds up to 3 active column keys
+  
+    executeDynamicSortChain(rowsArray) {
+      this.updateToolbarLabel();
+      window.ProjectGridActiveSortChainList = this.activeSortChain;
+  
+      const liveTableBody = document.querySelector('.projectgrid-matrix-table tbody');
+      if (!liveTableBody || !rowsArray || rowsArray.length === 0) {
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        return;
+      }
+  
+      // FIXED BASELINE EXTRACTION: Extracts the isolated trailing base directory name (e.g., "ce-idx" from "C:\_o\__\ce-idx")
+      const getRowBaseDirName = (r) => {
+        if (!r.folder || !r.folder.path) return '';
+        const cleanPath = String(r.folder.path).replace(/[/\\]+$/, ''); // Strip trailing slashes
+        const parts = cleanPath.split(/[/\\]+/);
+        return parts[parts.length - 1] || '';
+      };
+  
+      if (this.activeSortChain.length === 0) {
+        // FALLBACK BASELINE: Sorts rows strictly by isolated base directory name alphabetically
+        rowsArray.sort((rowA, rowB) => {
+          return getRowBaseDirName(rowA).localeCompare(getRowBaseDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+        });
+      } else {
+        rowsArray.sort((rowA, rowB) => {
+          const valsA = rowA.yamlMetadataValues || {}; const valsB = rowB.yamlMetadataValues || {};
+          const datesA = rowA.folderDatesValues || {}; const datesB = rowB.folderDatesValues || {};
+          const launchersA = rowA.launcherValues || {}; const launchersB = rowB.launcherValues || {};
+          
+          const mergedA = { ...valsA, ...datesA, ...launchersA }; 
+          const mergedB = { ...valsB, ...datesB, ...launchersB };
+  
+          for (let i = 0; i < this.activeSortChain.length; i++) {
+            const currentKey = this.activeSortChain[i];
+            const isNumericField = ['tasks', 'tagcount', 'stars', 'value', 'size', 'depth', 'priority'].includes(currentKey);
+            
+            let valA = ''; let valB = '';
+  
+            if (currentKey === 'created' || currentKey === 'updated') {
+              valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
+            } else if (currentKey === 'tasks') {
+              const taskStrA = String(valsA['tasks'] || '0/0').split('/');
+              const taskStrB = String(valsB['tasks'] || '0/0').split('/');
+              valA = parseInt(taskStrA[0], 10) || 0;
+              valB = parseInt(taskStrB[0], 10) || 0;
+            } else if (currentKey === 'tagcount') {
+              const tagStrA = String(valsA['tags'] || '⬛'); const tagStrB = String(valsB['tags'] || '⬛');
+              valA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
+              valB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
+            } else if (isNumericField) {
+              const cleanA = String(mergedA[currentKey] || '').replace(/[^\d]/g, '');
+              const cleanB = String(mergedB[currentKey] || '').replace(/[^\d]/g, '');
+              valA = cleanA !== '' ? parseInt(cleanA, 10) : -1;
+              valB = cleanB !== '' ? parseInt(cleanB, 10) : -1;
+            } else {
+              valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
+              valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
+              if (valA === '' || valA === '⬛') valA = 'zzzzz';
+              if (valB === '' || valB === '⬛') valB = 'zzzzz';
+            }
+  
+            if (valA !== valB) {
+              if (isNumericField) {
+                return valB - valA; // Descending math comparisons
+              } else {
+                return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+              }
+            }
+          }
+          
+          // ALIGNED TIE-BREAKER PASSTHROUGH: Uses isolated base directory name on sorting collisions
+          return getRowBaseDirName(rowA).localeCompare(getRowBaseDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+        });
+      }
+  
+      rowsArray.forEach(row => { if (row.element) liveTableBody.appendChild(row.element); });
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    },
+  
+    updateToolbarLabel() {
+      const indicator = document.getElementById('projectgrid-sort-toolbar-label'); if (!indicator) return;
+      if (this.activeSortChain.length === 0) {
+        indicator.textContent = '📶 Default Directory Sort Order'; indicator.style.color = 'var(--text-muted)';
+      } else {
+        const formattedChain = this.activeSortChain.map((k, idx) => {
+          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴'; 
+          return `${symbol}${k.toUpperCase()}`;
+        }).join(' ➔ ');
+        indicator.textContent = `📶 Sort Chain: ${formattedChain}`; indicator.style.color = 'var(--text-accent)';
+      }
+    }
+  };
+  
+  globalThis.MenuStateSort = menuStateSortModule;
+  return menuStateSortModule;
+  
+  // ==========================================
+  // END OF FILE: menu-state-sort.js
+  // ==========================================
 })();
-globalThis.MainRenderer = MainRenderer;
+globalThis.MenuStateSort = MenuStateSort;
+
+
+
+
+// 3. Grid Row UI Element Factories
+
+
+
+
+
+
+
+
+// 4. Custom Metadata Selector Micro-Modules
+
+
+
+
+
+
+
+
+// 5. Backend Filesystem Data Sync Hooks
 
 const TasksMarkdownSync = (function() {
 // ==========================================
@@ -3415,28 +2709,596 @@ const tasksMarkdownWriterModule = {
 })();
 globalThis.TasksMarkdownWriter = TasksMarkdownWriter;
 
-module.exports = class ProjectGridPlugin extends Plugin {
+
+class ProjectGridPlugin extends Obsidian.Plugin {
   async onload() {
-    console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
-    StylesManager.injectStyles();
+    console.log('🚀 Loading Project Matrix Grid Dashboard Engine...');
 
-    window.ProjectGridTutorModeActive = false;
+    
+const StylesAggregator = (function() {
+// ==========================================
+// START OF FILE: styles.js
+// ==========================================
 
-    // DELEGATE SHORTCUTS: Hook shortcuts array priorities securely via the dedicated manager module
-    MainShortcuts.registerGlobalPluginScopes(this);
 
-    this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
-      // DELEGATE RENDERING: Render grid elements cleanly via our isolated factory engine module
-      MainRenderer.renderProjectGridDashboard(this, sourceText, element);
+const StylesCore = (function() {
+// ==========================================
+// START OF FILE: styles-core.js
+// ==========================================
+
+return {
+    getCoreStyles() {
+      return `
+        .cm-embed-block:has(.projectgrid-matrix-table),
+        .block-language-projectgrid {
+          max-width: 100% !important;
+          width: 100% !important;
+          grid-column: 1 / -1 !important;
+        }
+        .projectgrid-matrix-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin-top: 6px !important;
+          margin-bottom: 12px !important;
+          font-size: 11px !important;
+          line-height: 1.4 !important;
+          position: relative !important;
+        }
+        .projectgrid-matrix-table th {
+          font-weight: 600 !important;
+          color: var(--text-muted, #888888) !important;
+          border-bottom: 2px solid rgba(255, 255, 255, 0.4) !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
+          padding: 4px 2px !important;
+          vertical-align: middle;
+          position: relative !important;
+          text-align: center !important;
+        }
+        .projectgrid-matrix-table th:first-child {
+          text-align: left !important;
+        }
+  
+        .projectgrid-timestamp-scaled-td {
+          font-size: 11px !important; 
+          text-align: center !important;
+          white-space: nowrap !important;
+          width: 90px !important; 
+          padding: 4px 2px !important;
+          color: var(--text-muted) !important;
+        }
+  
+        .projectgrid-uniform-yaml-th,
+        .projectgrid-uniform-yaml-td {
+          width: 50px !important;
+          min-width: 50px !important;
+          max-width: 50px !important;
+          text-align: center !important;
+          box-sizing: border-box !important;
+          padding: 2px 1px !important;
+        }
+  
+        .projectgrid-filter-wrapper {
+          position: relative !important;
+          display: flex !important;
+          align-items: center !important;
+          width: 100% !important;
+        }
+        .projectgrid-filter-input {
+          width: 100% !important;
+          padding: 4px 24px 4px 8px !important;
+          font-size: 11px !important;
+          border-radius: 4px !important;
+          border: 1px solid var(--background-modifier-border, #3a3a3a) !important;
+          background-color: var(--background-primary, #1e1e1e) !important;
+          color: var(--text-normal, #ffffff) !important;
+          height: 24px !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        
+        .projectgrid-clear-btn {
+          position: absolute !important;
+          right: 8px !important;
+          cursor: pointer !important;
+          color: var(--text-muted, #888888) !important;
+          font-size: 10px !important;
+          visibility: hidden;
+          user-select: none !important;
+        }
+        .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
+  
+        /* BRIGHTNESS: Boosted structural borders clarity by 15% across all mesh coordinates */
+        .projectgrid-matrix-cell { 
+          padding: 4px 2px !important; 
+          vertical-align: middle !important; 
+          border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
+        }
+        .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; max-width: 140px !important; overflow: hidden; text-overflow: ellipsis; }
+        .projectgrid-matrix-link { text-decoration: none !important; }
+        .action-icon-cell { text-align: center !important; width: 24px !important; }
+        .action-icon-cell a { text-decoration: none !important; }
+        .projectgrid-aip-icon-btn.is-vault-missing { opacity: 0.15 !important; }
+        .projectgrid-empty-warning-message { font-size: 12px !important; color: var(--text-muted, #888888) !important; font-style: italic !important; }
+        
+        .projectgrid-readonly-scanner-td {
+          font-size: 11px !important;
+          text-align: center !important;
+          width: 32px !important;
+          padding: 4px 2px !important;
+          user-select: none;
+        }
+
+        /* BRIGHTNESS: Boosted bottom line structural dividers opacity metrics */
+        .projectgrid-matrix-row {
+          border-bottom: 1px solid rgba(255, 255, 255, 0.28) !important;
+          position: relative !important;
+          box-sizing: border-box !important;
+        }
+      `;
+    }
+  };
+  
+  // ==========================================
+  // END OF FILE: styles-core.js
+  // ==========================================
+})();
+globalThis.StylesCore = StylesCore;
+
+const StylesAnimation = (function() {
+// ==========================================
+// START OF FILE: styles-animation.js
+// ==========================================
+
+return {
+    getAnimationStyles() {
+      return `
+        @keyframes projectgrid-master-hue-spin {
+          0% { border-color: #ff4757; filter: hue-rotate(0deg); }
+          100% { border-color: #ff4757; filter: hue-rotate(360deg); }
+        }
+  
+        /* STRICT LAYER OVERRIDES: FORCES THE ROW INDICATOR TO STAY AS THE LOWEST LAYER UNDER THE MENU PANELS */
+        .projectgrid-focus-overlay-portal,
+        .projectgrid-input-overlay-portal,
+        .projectgrid-row-overlay-portal {
+          position: fixed !important;
+          pointer-events: none !important;
+          box-sizing: border-box !important;
+          border: 2px solid #ff4757 !important;
+          border-radius: 4px !important;
+          display: none;
+          animation: projectgrid-master-hue-spin 3s linear infinite !important;
+        }
+        
+        /* Stacking Layer 1: Topmost overlay for all list selection tracking */
+        .projectgrid-focus-overlay-portal {
+          z-index: 999999 !important;
+        }
+        
+        /* Stacking Layer 2: Middle overlay for text fields and filter headers */
+        .projectgrid-input-overlay-portal {
+          z-index: 999998 !important;
+        }
+        
+        /* FIX: BASE LAYER SET TO LOWEST TRACKING STATE SO POPUPS FLOAT HIGHER NATIVELY */
+        .projectgrid-row-overlay-portal {
+          z-index: 10 !important; 
+        }
+  
+        .projectgrid-matrix-row {
+          border-bottom: 1px solid var(--background-modifier-border, #2a2a2a) !important;
+          position: relative !important;
+          box-sizing: border-box !important;
+        }
+        .projectgrid-matrix-row:hover { background-color: transparent !important; }
+      `;
+    }
+  };
+  
+  // ==========================================
+  // END OF FILE: styles-animation.js
+  // ==========================================
+})();
+globalThis.StylesAnimation = StylesAnimation;
+
+const StylesComponentsToolbar = (function() {
+// ==========================================
+// START OF FILE: styles-components-toolbar.js
+// ==========================================
+
+return {
+    getToolbarStyles() {
+      return `
+        /* INTERACTIVE BUTTON DASHBOARD TOOLBAR */
+        .projectgrid-toolbar {
+          display: flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          width: 100% !important;
+          background-color: var(--background-secondary, #1e1e1e) !important;
+          border: 1px solid var(--background-modifier-border, #2e2e2e) !important;
+          border-radius: 6px 6px 0 0 !important;
+          padding: 6px 8px !important;
+          box-sizing: border-box !important;
+        }
+        .projectgrid-toolbar-btn {
+          background: transparent !important;
+          border: none !important;
+          cursor: pointer !important;
+          font-size: 14px !important;
+          padding: 4px !important;
+          border-radius: 4px !important;
+          outline: none !important;
+          user-select: none !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        .projectgrid-toolbar-btn:hover {
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.04)) !important;
+        }
+  
+        .projectgrid-header-dropup-trigger {
+          cursor: pointer !important;
+          display: inline-block !important;
+          padding: 4px 2px !important;
+          border-radius: 4px !important;
+          user-select: none !important;
+          font-size: 13px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          outline: none !important;
+          border: 2px solid transparent !important;
+        }
+        .projectgrid-header-dropup-trigger:hover { background-color: transparent !important; }
+      `;
+    }
+  };
+  
+  // ==========================================
+  // END OF FILE: styles-components-toolbar.js
+  // ==========================================
+})();
+globalThis.StylesComponentsToolbar = StylesComponentsToolbar;
+
+const StylesComponentsDropdown = (function() {
+// ==========================================
+// START OF FILE: styles-components-dropdown.js
+// ==========================================
+
+return {
+    getDropdownStyles() {
+      return `
+        /* MENU PANELS FLOAT HIGH ABOVE ALL ROW INDICATORS NATIVELY */
+        .projectgrid-dropup-panel {
+          display: flex !important;
+          flex-direction: column !important; 
+          background-color: var(--background-secondary, #1a1a1a) !important;
+          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
+          border-radius: 6px !important;
+          padding: 6px !important;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+          min-width: 125px !important;
+          max-height: 260px !important;
+          overflow-y: auto !important;
+          box-sizing: border-box !important;
+          z-index: 600000 !important; 
+        }
+        
+        .projectgrid-dropup-header-title {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          color: var(--text-accent, #70a1ff) !important;
+          padding: 4px 6px !important;
+          border-bottom: 1px dashed var(--background-modifier-border, #3d3d3d) !important;
+          margin-bottom: 4px !important;
+          user-select: none !important;
+          pointer-events: none !important;
+        }
+  
+        .projectgrid-dropup-option {
+          display: flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          padding: 4px 6px !important;
+          cursor: pointer !important;
+          user-select: none !important;
+          color: var(--text-normal, #ffffff) !important;
+          font-size: 11px !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          border: 2px solid transparent !important;
+          background-color: transparent !important;
+        }
+        .projectgrid-dropup-option:hover { background-color: transparent !important; }
+        .projectgrid-dropup-option input[type="checkbox"] { margin: 0 !important; cursor: pointer !important; }
+  
+        .projectgrid-custom-select-btn {
+          background-color: var(--background-secondary, #252525) !important;
+          color: var(--text-normal, #dddddd) !important;
+          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
+          border-radius: 4px !important;
+          padding: 4px 2px !important;
+          font-size: 11px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+          display: inline-block !important;
+          cursor: pointer !important;
+          position: relative !important;
+          user-select: none !important;
+          text-align: center !important;
+          text-overflow: ellipsis !important;
+          overflow: hidden !important;
+          white-space: nowrap !important;
+        }
+  
+        .projectgrid-custom-dropdown-list {
+          display: flex !important;
+          flex-direction: column !important;
+          background-color: var(--background-secondary, #202020) !important;
+          border: 1px solid var(--background-modifier-border, #3d3d3d) !important;
+          border-radius: 4px !important;
+          margin: 4px 0 0 0 !important;
+          padding: 4px 0 !important;
+          list-style: none !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+          box-sizing: border-box !important;
+          z-index: 600000 !important; 
+        }
+        .projectgrid-custom-dropdown-item {
+          padding: 4px 4px !important;
+          cursor: pointer !important;
+          color: var(--text-normal) !important;
+          text-align: center !important;
+          font-size: 11px !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          border: 2px solid transparent !important;
+          background-color: transparent !important;
+        }
+  
+        /* Renders high-contrast background configurations over active selected nodes */
+        .projectgrid-custom-dropdown-item.projectgrid-picker-highlight,
+        .projectgrid-custom-dropdown-item.projectgrid-row-focused,
+        .projectgrid-custom-dropdown-item:hover {
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
+          color: var(--text-accent, #70a1ff) !important;
+          border-radius: 4px !important;
+        }
+      `;
+    }
+  };
+  
+  // ==========================================
+  // END OF FILE: styles-components-dropdown.js
+  // ==========================================
+})();
+globalThis.StylesComponentsDropdown = StylesComponentsDropdown;
+
+const StylesComponentsOverlays = (function() {
+// ==========================================
+// START OF FILE: styles-components-overlays.js
+// ==========================================
+
+return {
+    getOverlayStyles() {
+      return `
+        .projectgrid-command-picker {
+          position: fixed !important; 
+          background-color: var(--background-secondary, #1e1e1e) !important;
+          border: 1px solid #3d3d3d !important; 
+          border-radius: 6px !important;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+          padding: 6px !important;
+          min-width: 220px !important;
+          box-sizing: border-box !important;
+          z-index: 650000 !important; 
+        }
+        .projectgrid-picker-item {
+          padding: 6px 10px !important;
+          cursor: pointer !important;
+          border-radius: 4px !important;
+          color: var(--text-normal, #ffffff) !important;
+          font-size: 12px !important;
+          box-sizing: border-box !important;
+          border: 2px solid transparent !important; 
+          background-color: transparent !important; 
+        }
+        .projectgrid-picker-item.projectgrid-picker-highlight {
+          background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
+          color: var(--text-accent, #70a1ff) !important;
+        }
+  
+        .projectgrid-wide-tasks-portal {
+          display: flex !important;
+          flex-direction: column !important;
+          background-color: var(--background-secondary, #1a1a1a) !important;
+          border: 2px solid var(--text-accent, #70a1ff) !important;
+          border-radius: 6px !important;
+          padding: 8px !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+          z-index: 700000 !important;
+          box-sizing: border-box !important;
+        }
+        .projectgrid-tutor-tooltip-portal {
+          position: fixed !important;
+          background-color: #1a1a2e !important;
+          border: 2px solid var(--text-accent, #70a1ff) !important;
+          border-radius: 6px !important;
+          padding: 8px 12px !important;
+          box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75) !important;
+          z-index: 999999 !important;
+          pointer-events: none !important;
+          max-width: 280px !important;
+          display: none;
+          box-sizing: border-box !important;
+        }
+        .projectgrid-tutor-heading {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          color: #ff4757 !important;
+          margin-bottom: 4px !important;
+          border-bottom: 1px dashed rgba(255,255,255,0.15) !important;
+          padding-bottom: 2px !important;
+        }
+        .projectgrid-tutor-shortcut {
+          font-size: 10px !important;
+          color: #ffffff !important;
+          line-height: 1.4 !important;
+          font-family: var(--font-monospace) !important;
+        }
+      `;
+    }
+  };
+  
+  // ==========================================
+  // END OF FILE: styles-components-overlays.js
+  // ==========================================
+})();
+globalThis.StylesComponentsOverlays = StylesComponentsOverlays;
+
+return {
+  injectStyles() {
+    let styleElement = document.getElementById('obsidian-projectgrid-styles');
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'obsidian-projectgrid-styles';
+      document.head.appendChild(styleElement);
+    }
+
+    const compiledCss = `
+      ${StylesCore.getCoreStyles()}
+      ${StylesAnimation.getAnimationStyles()}
+      ${StylesComponentsToolbar.getToolbarStyles()}
+      ${StylesComponentsDropdown.getDropdownStyles()}
+      ${StylesComponentsOverlays.getOverlayStyles()}
+    `;
+
+    styleElement.textContent = compiledCss;
+  }
+};
+
+// ==========================================
+// END OF FILE: styles.js
+// ==========================================
+})();
+globalThis.StylesAggregator = StylesAggregator;
+    if (StylesAggregator && typeof StylesAggregator.injectStyles === 'function') {
+      StylesAggregator.injectStyles();
+    }
+
+    this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, el, ctx) => {
+      
+const MainRenderer = (function() {
+// ==========================================
+// START OF FILE: main-renderer.js
+// ==========================================
+
+
+
+
+
+
+
+
+
+return {
+  renderProjectGridDashboard(pluginContext, sourceText, containerElement) {
+    const rootTarget = sourceText.trim() || "__";
+    const absoluteVaultRoot = pluginContext.app.vault.adapter.getBasePath();
+
+    const headerSetup = UiBuilder.generateHeaderCell();
+    
+    // FIXED CORRECTION: Aligned callback handle directly to catch and trigger your floating picker overlay panel
+    const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
+      const targetMenuStateInstance = globalThis.MenuState || MenuState;
+      const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
+        MenuDom.destroyActivePickers(containerElement);
+        headerSetup.input.focus();
+      });
+      if (window.ProjectGridTriggerMenuCorePickerSpawn) {
+        headerSetup.input.focus();
+        window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
+      }
+    });
+
+    const tableElement = document.createElement('table');
+    tableElement.className = 'projectgrid-matrix-table';
+
+    const tableHeader = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    headerRow.appendChild(headerSetup.cell);
+    
+    const activeConfig = globalThis.GridConfig || GridConfig;
+    const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
+
+    if (columnsList.length > 0) {
+      columnsList.forEach(col => {
+        if (col.key === 'title') return;
+        
+        if (col.type === 'timestamp' || col.type === 'launcher') {
+          headerRow.insertAdjacentHTML('beforeend', `
+            <th style="width: ${col.width} !important; text-align: center;" title="${col.label}">${col.icon}</th>
+          `);
+        } else {
+          const innerRowsArray = [];
+          const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.defaults || ['⬛'], innerRowsArray);
+          dropupTh.style.width = col.width;
+          headerRow.appendChild(dropupTh);
+        }
+      });
+    }
+
+    const tableBody = document.createElement('tbody');
+    const rowsArray = [];
+    
+    window.ProjectGridActiveRowsTrackingArrayRegistryPool = rowsArray;
+
+    const universalTagsSet = MainScanner.scanVaultProjectsFolders(
+      pluginContext.app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, headerSetup.input
+    );
+
+    tableHeader.appendChild(headerRow);
+    tableElement.appendChild(tableHeader);
+    tableElement.appendChild(tableBody);
+    
+    FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
+
+    const hotkeyListener = (evt) => {
+      if (evt.ctrlKey && evt.altKey && evt.key.toLowerCase() === 't') {
+        evt.preventDefault();
+        toolbarSetup.handleTutorToggle();
+      }
+    };
+    window.removeEventListener('keydown', hotkeyListener);
+    window.addEventListener('keydown', hotkeyListener);
+
+    if (rowsArray.length > 0) {
+      containerElement.appendChild(tableElement);
+    }
+  }
+};
+
+// ==========================================
+// END OF FILE: main-renderer.js
+// ==========================================
+})();
+globalThis.MainRenderer = MainRenderer;
+      el.className += ' block-language-projectgrid';
+      MainRenderer.renderProjectGridDashboard(this, sourceText, el);
     });
   }
 
   onunload() {
-    const styleEl = document.getElementById('obsidian-projectgrid-styles');
-    if (styleEl) styleEl.remove();
-    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal, .projectgrid-tutor-tooltip-portal').forEach(el => el.remove());
+    console.log('🛑 Unloading Project Matrix Grid Dashboard Engine.');
+    const styleElement = document.getElementById('obsidian-projectgrid-styles');
+    if (styleElement) styleElement.remove();
   }
-};
+}
+
+module.exports = ProjectGridPlugin;
 
 // ==========================================
 // END OF FILE: _main.js

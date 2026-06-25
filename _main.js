@@ -2,35 +2,69 @@
 // START OF FILE: _main.js
 // ==========================================
 
-const { Plugin } = require('obsidian');
-const StylesManager = require('./styles');
-const MainShortcuts = require('./main-shortcuts');
-const MainRenderer = require('./main-renderer');
+// 1. Core Framework Dependencies
+const Obsidian = require('obsidian'); 
+const GridConfig = require('./grid-config');
+const UiBuilder = require('./ui');
+const MainToolbar = require('./main-toolbar');
+const MainScanner = require('./main-scanner');
+const FilterManager = require('./filter');
+
+// 2. Menu Subsystems & Layout Generators
+// FIXED PASS: Load the DOM renderer FIRST so its methods are registered before core listeners execute
+const MenuDom = require('./menu-dom');
+const MenuStateSort = require('./menu-state-sort');
+const MenuStateUtils = require('./menu-state-utils');
+const MenuState = require('./menu-state');
+const MenuCore = require('./menu-core');
+
+// 3. Grid Row UI Element Factories
+const UiColor = require('./ui-color');
+const UiRowKeys = require('./ui-row-keys');
+const UiRow = require('./ui-row');
+const UiRowDates = require('./ui-row-dates');
+const UiRowActions = require('./ui-row-actions');
+const UiRowTags = require('./ui-row-tags');
+const UiRowTagsDom = require('./ui-row-tags-dom');
+
+// 4. Custom Metadata Selector Micro-Modules
+const UiRowSelect = require('./ui-row-select');
+const UiRowSelectDom = require('./ui-row-select-dom');
+const UiRowSelectState = require('./ui-row-select-state');
+const UiRowSelectHandlers = require('./ui-row-select-handlers');
+const UiRowSelectKeys = require('./ui-row-select-keys');
+const UiRowSelectActions = require('./ui-row-select-actions');
+const UiRowSelectJumper = require('./ui-row-select-jumper');
+
+// 5. Backend Filesystem Data Sync Hooks
 const TasksMarkdownSync = require('./tasks-markdown-sync');
 const TasksMarkdownWriter = require('./tasks-markdown-writer');
+const TasksGitExtractor = require('./tasks-git-extractor');
 
-module.exports = class ProjectGridPlugin extends Plugin {
+class ProjectGridPlugin extends Obsidian.Plugin {
   async onload() {
-    console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
-    StylesManager.injectStyles();
+    console.log('🚀 Loading Project Matrix Grid Dashboard Engine...');
 
-    window.ProjectGridTutorModeActive = false;
+    const StylesAggregator = require('./styles');
+    if (StylesAggregator && typeof StylesAggregator.injectStyles === 'function') {
+      StylesAggregator.injectStyles();
+    }
 
-    // DELEGATE SHORTCUTS: Hook shortcuts array priorities securely via the dedicated manager module
-    MainShortcuts.registerGlobalPluginScopes(this);
-
-    this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
-      // DELEGATE RENDERING: Render grid elements cleanly via our isolated factory engine module
-      MainRenderer.renderProjectGridDashboard(this, sourceText, element);
+    this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, el, ctx) => {
+      const MainRenderer = require('./main-renderer');
+      el.className += ' block-language-projectgrid';
+      MainRenderer.renderProjectGridDashboard(this, sourceText, el);
     });
   }
 
   onunload() {
-    const styleEl = document.getElementById('obsidian-projectgrid-styles');
-    if (styleEl) styleEl.remove();
-    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal, .projectgrid-tutor-tooltip-portal').forEach(el => el.remove());
+    console.log('🛑 Unloading Project Matrix Grid Dashboard Engine.');
+    const styleElement = document.getElementById('obsidian-projectgrid-styles');
+    if (styleElement) styleElement.remove();
   }
-};
+}
+
+module.exports = ProjectGridPlugin;
 
 // ==========================================
 // END OF FILE: _main.js

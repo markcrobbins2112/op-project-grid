@@ -4,11 +4,20 @@
 
 const GridConfig = require('./grid-config');
 const MenuStateUtils = require('./menu-state-utils');
-const MenuStateSort = require('./menu-state-sort');
 
 const menuStateModule = {
   getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
-    const activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused'));
+    // 1. STABLE FOCUS TARGETING: Query via global window pointer first, fallback to DOM class, then baseline row
+    let focusedRowIdx = window.ProjectGridCurrentFocusedIndex !== undefined ? window.ProjectGridCurrentFocusedIndex : -1;
+    const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+    
+    let activeRow = null;
+    if (focusedRowIdx >= 0 && focusedRowIdx < visibleRows.length) {
+      activeRow = visibleRows[focusedRowIdx];
+    } else {
+      activeRow = rowsArray.find(row => row.element && row.element.classList.contains('projectgrid-row-focused')) || visibleRows[0] || rowsArray[0];
+    }
+
     const config = globalThis.GridConfig || GridConfig || { columns: [] };
     const columnsList = config.columns || [];
     
@@ -19,14 +28,16 @@ const menuStateModule = {
     const launcherColumns = columnsList.filter(c => c.type === 'launcher');
     const sortableColumns = columnsList.filter(c => c.key !== 'title' && c.type !== 'launcher');
 
-    const activeSortEngine = globalThis.MenuStateSort || MenuStateSort;
+    const activeSortEngine = globalThis.MenuStateSort || null;
     const currentChain = activeSortEngine ? activeSortEngine.activeSortChain || [] : [];
+    
     const rawDirPath = (activeRow && activeRow.folder && activeRow.folder.path) ? String(activeRow.folder.path) : 'No folder selected';
 
     return [
       {
-        name: 'Filters', // FIX: Plain-text key protects background string verification lookups
+        name: 'Filters', 
         displayName: '<u>F</u>ilters',
+        icon: '📁', // RESTORED FIRST LEVEL ICON
         acceleratorKey: 'f',
         items: selectableColumns.map(f => ({ 
           name: `${f.icon} ${f.label} Filter`, 
@@ -36,6 +47,7 @@ const menuStateModule = {
       {
         name: 'Columns',
         displayName: '<u>C</u>olumns',
+        icon: '📊', // RESTORED FIRST LEVEL ICON
         acceleratorKey: 'c',
         items: [
           { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
@@ -48,6 +60,7 @@ const menuStateModule = {
       {
         name: 'Launcher',
         displayName: '<u>L</u>auncher',
+        icon: '🚀', // RESTORED FIRST LEVEL ICON
         acceleratorKey: 'l',
         items: [
           { name: `📂 ${rawDirPath}`, isHeaderTitle: true },
@@ -60,6 +73,7 @@ const menuStateModule = {
       {
         name: 'Sort',
         displayName: '<u>S</u>ort',
+        icon: '📶', // RESTORED FIRST LEVEL ICON
         acceleratorKey: 's',
         items: [
           {

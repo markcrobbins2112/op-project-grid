@@ -12,17 +12,26 @@ module.exports = {
     let activeIndex = 0;
     let storedCategoryIndex = 0;
     let activePickerEl = null;
+    let fallbackRowTrackIdx = 0; // Keep track of current selected spreadsheet row index
+
+    const getActiveDomEngine = () => globalThis.MenuDom || MenuDom;
 
     const closeAllPickers = () => {
       pickerLevel = 0;
-      MenuDom.destroyActivePickers(containerElement);
+      const domEngine = getActiveDomEngine();
+      if (domEngine && typeof domEngine.destroyActivePickers === 'function') {
+        domEngine.destroyActivePickers(containerElement);
+      }
       activePickerEl = null;
       filterInput.focus();
       if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
     };
 
     const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+      const domEngine = getActiveDomEngine();
+      if (!domEngine || typeof domEngine.renderPickerBox !== 'function') return;
+
+      activePickerEl = domEngine.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
         activeIndex = idx;
         executeSelection();
       }, closeAllPickers);
@@ -45,9 +54,11 @@ module.exports = {
     const executeSelection = () => {
       if (pickerLevel === 1) {
         storedCategoryIndex = activeIndex;
-        // FIX: Extract plain-text string names context safely before swapping module array pointers
-        const targetCategoryName = activeItems[activeIndex].name;
-        activeItems = activeItems[activeIndex].items;
+        // Inject current row lookup fallback tracks parameters explicitly
+        const targetMenuStateInstance = globalThis.MenuState || MenuState;
+        const schemaWithLivePaths = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
+        
+        activeItems = schemaWithLivePaths[activeIndex].items;
         pickerLevel = 2;
         activeIndex = (activeItems && activeItems[0]?.isHeaderTitle) ? 1 : 0;
         renderMenu();
@@ -56,11 +67,10 @@ module.exports = {
         if (selectedAction) {
           selectedAction();
           
-          // FIX: Use plain-text name parameters comparison tracking to match sort redraw actions
           const currentCategoryText = (storedCategoryIndex === 3) ? 'Sort' : '';
           if (currentCategoryText === 'Sort') {
             const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
             activeItems = masterSchema[storedCategoryIndex].items;
             renderMenu(); 
             return;
@@ -71,9 +81,7 @@ module.exports = {
     };
 
     window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
-      pickerLevel = 1;
-      activeIndex = 0;
-      activeItems = customActiveItems;
+      pickerLevel = 1; activeIndex = 0; activeItems = customActiveItems;
       renderMenu();
     };
 
@@ -81,13 +89,11 @@ module.exports = {
       if (evt.key === 'ScrollLock') {
         evt.preventDefault();
         if (document.activeElement !== filterInput) {
-          filterInput.focus();
-          filterInput.select();
+          filterInput.focus(); filterInput.select();
         } else {
-          pickerLevel = 1;
-          activeIndex = 0;
+          pickerLevel = 1; activeIndex = 0;
           const targetMenuStateInstance = globalThis.MenuState || MenuState;
-          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
           renderMenu();
         }
       }
@@ -97,15 +103,27 @@ module.exports = {
       const visibleRows = getVisibleRows();
 
       if (pickerLevel > 0 && activePickerEl) {
+        // FIXED MNEMONIC BACKSPACE INTERCEPT: Redirects Backspace keys strokes straight into Escape handles loops
+        if (evt.key === 'Escape' || evt.key === 'Backspace') {
+          evt.preventDefault(); evt.stopPropagation();
+          if (pickerLevel === 2) {
+            pickerLevel = 1;
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers, fallbackRowTrackIdx);
+            activeIndex = storedCategoryIndex;
+            renderMenu();
+          } else {
+            closeAllPickers();
+          }
+          return;
+        }
+
         if (pickerLevel === 1) {
           const typedChar = evt.key.toLowerCase();
           const matchedCategoryIdx = activeItems.findIndex(cat => cat.acceleratorKey === typedChar);
-          
           if (matchedCategoryIdx > -1) {
             evt.preventDefault(); evt.stopPropagation();
-            activeIndex = matchedCategoryIdx;
-            executeSelection();
-            return;
+            activeIndex = matchedCategoryIdx; executeSelection(); return;
           }
         }
 
@@ -128,21 +146,7 @@ module.exports = {
           });
           return;
         } else if (evt.key === 'Enter') {
-          evt.preventDefault();
-          executeSelection();
-          return;
-        } else if (evt.key === 'Escape') {
-          evt.preventDefault();
-          if (pickerLevel === 2) {
-            pickerLevel = 1;
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeIndex = storedCategoryIndex;
-            renderMenu();
-          } else {
-            closeAllPickers();
-          }
-          return;
+          evt.preventDefault(); executeSelection(); return;
         }
       }
 
@@ -158,6 +162,9 @@ module.exports = {
         } else {
           visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
         }
+
+        // Cache baseline index tracking to bridge variable voids
+        fallbackRowTrackIdx = rowsArray.indexOf(visibleRows[visibleIdx]);
 
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;

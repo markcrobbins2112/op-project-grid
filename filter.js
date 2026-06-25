@@ -50,7 +50,6 @@ module.exports = {
 
       const activeSortChain = window.ProjectGridActiveSortChainList || [];
 
-      // Update interactive filter headers triggers
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key || !headerIconsMap[key]) return;
@@ -58,7 +57,6 @@ module.exports = {
         let baseIcon = headerIconsMap[key];
         const chainIdx = activeSortChain.indexOf(key);
         
-        // Append micro-font rank badge strings next to active column headers
         if (chainIdx === 0) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🟢</span>' + baseIcon;
         else if (chainIdx === 1) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🟡</span>' + baseIcon;
         else if (chainIdx === 2) baseIcon = '<span style="font-size:9px; vertical-align:middle;">🔴</span>' + baseIcon;
@@ -74,7 +72,6 @@ module.exports = {
         trigger.innerHTML = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
       });
 
-      // Update static read-only table headers elements
       document.querySelectorAll('.projectgrid-matrix-table th').forEach(th => {
         const contentStr = th.textContent.trim();
         let targetKey = '';
@@ -100,11 +97,17 @@ module.exports = {
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       if (visibleRows.length > 0) {
         if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
+        
+        // GLOBAL LOCK EXPOSURE: Expose running index to the shared window scope tracking registers
+        window.ProjectGridCurrentFocusedIndex = currentFocusedIndex;
+
         const finalTargetRow = visibleRows[currentFocusedIndex].element;
         if (finalTargetRow) {
           finalTargetRow.classList.add('projectgrid-row-focused');
           if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
         }
+      } else {
+        window.ProjectGridCurrentFocusedIndex = -1; // Clear on empty tables states
       }
     };
 
@@ -114,6 +117,8 @@ module.exports = {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
+      window.ProjectGridCurrentFocusedIndex = index; // Synchronize index shifts immediately
+      
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
       if (visibleRows[index] && visibleRows[index].element) {

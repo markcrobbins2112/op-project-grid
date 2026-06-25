@@ -17,7 +17,6 @@ let outDir = baseDir.replace(/^[^-]+-/, '');
 const destDir = path.join('c:\\_o\\.obsidian\\plugins', outDir);
 
 function bundle() {
-    // FIXED: Removed the self-referencing variable initialization bug
     const entryPath = path.join(SOURCE_DIR, ENTRY_FILE);
     
     if (!fs.existsSync(entryPath)) {
@@ -43,6 +42,11 @@ function bundle() {
             const moduleFileName = moduleName.endsWith('.js') ? moduleName : `${moduleName}.js`;
             const modulePath = path.join(SOURCE_DIR, moduleFileName);
 
+            // Skip bundling native obsidian or electron internal runtime dependencies
+            if (moduleName === 'obsidian' || moduleName === 'electron') {
+                continue;
+            }
+
             if (fs.existsSync(modulePath)) {
                 if (processedModules.has(moduleFileName)) {
                     updatedContent = updatedContent.replace(fullStatement, '');
@@ -57,7 +61,11 @@ function bundle() {
                 moduleContent = moduleContent.replace(/\/\/ ==========================================\s*[\r\n]+(?:START|END) OF FILE: [^\r\n]*/g, '');
                 moduleContent = resolveDependencies(moduleContent);
 
+                // FIXED PARITY COMPATIBILITY: Swapped target patterns to correctly map class assignments
                 let clearContent = moduleContent.replace(/module\.exports\s*=\s*/g, 'return ');
+                if (moduleFileName === '_main.js') {
+                    clearContent = moduleContent.replace(/module\.exports\s*=\s*ProjectGridPlugin;/, 'return ProjectGridPlugin;');
+                }
                 
                 const isolatedBlock = `
 const ${variableName} = (function() {

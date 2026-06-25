@@ -1,173 +1,75 @@
 // ==========================================
-// START OF FILE: menu-core.js
+// START OF FILE: menu-dom.js
 // ==========================================
-
-const MenuState = require('./menu-state');
-const MenuDom = require('./menu-dom');
 
 module.exports = {
-  bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
-    let activeItems = [];
-    let activeIndex = 0;
-    let storedCategoryIndex = 0;
-    let activePickerEl = null;
-
-    const closeAllPickers = () => {
-      pickerLevel = 0;
-      MenuDom.destroyActivePickers(containerElement);
-      activePickerEl = null;
-      filterInput.focus();
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-    };
-
-    const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
-        activeIndex = idx;
-        executeSelection();
-      }, closeAllPickers);
-
-      setTimeout(() => {
-        const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
-        if (items.length > 0 && activeItems[activeIndex]?.isHeaderTitle) {
-          activeIndex = (activeIndex + 1) % activeItems.length;
-          renderMenu();
-          return;
-        }
-
-        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
-        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
-          window.ProjectGridUpdateFocusOverlay(activeItem);
-        }
-      }, 10);
-    };
-
-    const executeSelection = () => {
-      if (pickerLevel === 1) {
-        storedCategoryIndex = activeIndex;
-        // FIX: Extract plain-text string names context safely before swapping module array pointers
-        const targetCategoryName = activeItems[activeIndex].name;
-        activeItems = activeItems[activeIndex].items;
-        pickerLevel = 2;
-        activeIndex = (activeItems && activeItems[0]?.isHeaderTitle) ? 1 : 0;
-        renderMenu();
-      } else if (pickerLevel === 2) {
-        const selectedAction = activeItems[activeIndex].action;
-        if (selectedAction) {
-          selectedAction();
-          
-          // FIX: Use plain-text name parameters comparison tracking to match sort redraw actions
-          const currentCategoryText = (storedCategoryIndex === 3) ? 'Sort' : '';
-          if (currentCategoryText === 'Sort') {
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); 
-            return;
-          }
-        }
-        closeAllPickers();
-      }
-    };
-
-    window.ProjectGridTriggerMenuCorePickerSpawn = (customActiveItems) => {
-      pickerLevel = 1;
-      activeIndex = 0;
-      activeItems = customActiveItems;
-      renderMenu();
-    };
-
-    window.addEventListener('keydown', (evt) => {
-      if (evt.key === 'ScrollLock') {
-        evt.preventDefault();
-        if (document.activeElement !== filterInput) {
-          filterInput.focus();
-          filterInput.select();
-        } else {
-          pickerLevel = 1;
-          activeIndex = 0;
-          const targetMenuStateInstance = globalThis.MenuState || MenuState;
-          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-          renderMenu();
-        }
-      }
-    });
-
-    filterInput.addEventListener('keydown', (evt) => {
-      const visibleRows = getVisibleRows();
-
-      if (pickerLevel > 0 && activePickerEl) {
-        if (pickerLevel === 1) {
-          const typedChar = evt.key.toLowerCase();
-          const matchedCategoryIdx = activeItems.findIndex(cat => cat.acceleratorKey === typedChar);
-          
-          if (matchedCategoryIdx > -1) {
-            evt.preventDefault(); evt.stopPropagation();
-            activeIndex = matchedCategoryIdx;
-            executeSelection();
-            return;
-          }
-        }
-
-        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-          evt.preventDefault();
-          let attempts = 0;
-          do {
-            activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
-            attempts++;
-          } while (activeItems[activeIndex]?.isHeaderTitle && attempts < activeItems.length);
-          
-          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item, .projectgrid-dropup-header-title');
-          items.forEach((item, idx) => {
-            if (idx === activeIndex && !activeItems[idx].isHeaderTitle) {
-              item.classList.add('projectgrid-picker-highlight');
-              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
-            } else {
-              item.classList.remove('projectgrid-picker-highlight');
-            }
-          });
-          return;
-        } else if (evt.key === 'Enter') {
-          evt.preventDefault();
-          executeSelection();
-          return;
-        } else if (evt.key === 'Escape') {
-          evt.preventDefault();
-          if (pickerLevel === 2) {
-            pickerLevel = 1;
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeIndex = storedCategoryIndex;
-            renderMenu();
-          } else {
-            closeAllPickers();
-          }
-          return;
-        }
-      }
-
-      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-        if (visibleRows.length === 0) return;
-        evt.preventDefault();
+    renderPickerBox(filterInput, itemsList, selectedIndex, containerElement, onItemClick, onClose) {
+      this.destroyActivePickers(containerElement);
+  
+      const picker = document.createElement('div');
+      picker.className = 'projectgrid-command-picker';
+      
+      const rect = filterInput.getBoundingClientRect();
+      picker.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      picker.style.left = `${rect.left + window.scrollX}px`;
+  
+      itemsList.forEach((item, idx) => {
+        const el = document.createElement('div');
         
-        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
-        let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
-
-        if (evt.key === 'ArrowDown') {
-          visibleIdx = (visibleIdx + 1) >= visibleRows.length ? 0 : visibleIdx + 1;
+        if (item.isHeaderTitle) {
+          el.className = 'projectgrid-dropup-header-title';
+          el.style.borderBottom = '1px dashed var(--background-modifier-border, #3d3d3d)';
+          el.style.padding = '6px 10px';
+          el.style.fontSize = '10px';
+          el.style.color = 'var(--text-accent, #70a1ff)';
+          el.style.fontWeight = '700';
+          el.style.pointerEvents = 'none';
         } else {
-          visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
+          el.className = 'projectgrid-picker-item';
+          if (idx === selectedIndex) {
+            el.classList.add('projectgrid-picker-highlight');
+            el.classList.add('projectgrid-row-focused');
+          }
+          
+          el.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            onItemClick(idx);
+          });
         }
-
-        updateFocusIndex(visibleIdx);
-        const targetRow = visibleRows[visibleIdx].element;
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
-        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-    });
-  }
-};
-
-// ==========================================
-// END OF FILE: menu-core.js
-// ==========================================
+        
+        // UNIFIED VISUAL INJECTION: Combine restored emojis and mnemonic underline structures
+        if (item.icon && item.displayName) {
+          el.innerHTML = `${item.icon} ${item.displayName}`;
+        } else {
+          el.innerHTML = item.displayName || item.name;
+        }
+        
+        picker.appendChild(el);
+      });
+  
+      document.body.appendChild(picker); 
+  
+      const outsideClickListener = (e) => {
+        if (!picker.contains(e.target) && e.target !== filterInput) {
+          onClose();
+          document.removeEventListener('click', outsideClickListener);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', outsideClickListener), 10);
+  
+      return picker;
+    },
+  
+    destroyActivePickers(containerElement) {
+      const existing = document.querySelectorAll('.projectgrid-command-picker');
+      existing.forEach(p => p.remove());
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+    }
+  };
+  
+  globalThis.MenuDom = module.exports;
+  
+  // ==========================================
+  // END OF FILE: menu-dom.js
+  // ==========================================
+  

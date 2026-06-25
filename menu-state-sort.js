@@ -15,13 +15,18 @@ const menuStateSortModule = {
         return;
       }
   
-      // Helper function to extract a true directory filename baseline string
-      const getRowDirName = (r) => (r.folder && r.folder.name ? String(r.folder.name) : '');
+      // FIXED BASELINE EXTRACTION: Extracts the isolated trailing base directory name (e.g., "ce-idx" from "C:\_o\__\ce-idx")
+      const getRowBaseDirName = (r) => {
+        if (!r.folder || !r.folder.path) return '';
+        const cleanPath = String(r.folder.path).replace(/[/\\]+$/, ''); // Strip trailing slashes
+        const parts = cleanPath.split(/[/\\]+/);
+        return parts[parts.length - 1] || '';
+      };
   
       if (this.activeSortChain.length === 0) {
-        // Fallback default: Sort strictly by folder directory name alphabetically
+        // FALLBACK BASELINE: Sorts rows strictly by isolated base directory name alphabetically
         rowsArray.sort((rowA, rowB) => {
-          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+          return getRowBaseDirName(rowA).localeCompare(getRowBaseDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
         });
       } else {
         rowsArray.sort((rowA, rowB) => {
@@ -34,8 +39,6 @@ const menuStateSortModule = {
   
           for (let i = 0; i < this.activeSortChain.length; i++) {
             const currentKey = this.activeSortChain[i];
-            
-            // Check if the current evaluation property is a numeric/count field
             const isNumericField = ['tasks', 'tagcount', 'stars', 'value', 'size', 'depth', 'priority'].includes(currentKey);
             
             let valA = ''; let valB = '';
@@ -43,10 +46,8 @@ const menuStateSortModule = {
             if (currentKey === 'created' || currentKey === 'updated') {
               valA = String(datesA[currentKey] || ''); valB = String(datesB[currentKey] || '');
             } else if (currentKey === 'tasks') {
-              // Parse ratios text tokens strings (e.g. "2/5")
               const taskStrA = String(valsA['tasks'] || '0/0').split('/');
               const taskStrB = String(valsB['tasks'] || '0/0').split('/');
-              // Extract completed item counts explicitly to run mathematical evaluations
               valA = parseInt(taskStrA[0], 10) || 0;
               valB = parseInt(taskStrB[0], 10) || 0;
             } else if (currentKey === 'tagcount') {
@@ -54,13 +55,11 @@ const menuStateSortModule = {
               valA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
               valB = (tagStrB === '⬛' || tagStrB.trim() === '') ? 0 : tagStrB.split(',').length;
             } else if (isNumericField) {
-              // Strip emojis and extract raw digits for numeric parameters columns
               const cleanA = String(mergedA[currentKey] || '').replace(/[^\d]/g, '');
               const cleanB = String(mergedB[currentKey] || '').replace(/[^\d]/g, '');
-              valA = cleanA !== '' ? parseInt(cleanA, 10) : -1; // Empty/⬛ drops to lowest value marker
+              valA = cleanA !== '' ? parseInt(cleanA, 10) : -1;
               valB = cleanB !== '' ? parseInt(cleanB, 10) : -1;
             } else {
-              // Text field comparison path (Source Language, Build Target, etc.)
               valA = String(mergedA[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
               valB = String(mergedB[currentKey] || '').replace(/[^\w]/g, '').toLowerCase();
               if (valA === '' || valA === '⬛') valA = 'zzzzz';
@@ -69,17 +68,15 @@ const menuStateSortModule = {
   
             if (valA !== valB) {
               if (isNumericField) {
-                // FIXED NUMERIC TRACK: Enforces descending order directly (highest integers first)
-                return valB - valA;
+                return valB - valA; // Descending math comparisons
               } else {
-                // Default ascending text comparison path
                 return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
               }
             }
           }
           
-          // FIXED TIE-BREAKER PASSTHROUGH: If values match identically across tiers, sort alphabetically by folder directory name
-          return getRowDirName(rowA).localeCompare(getRowDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
+          // ALIGNED TIE-BREAKER PASSTHROUGH: Uses isolated base directory name on sorting collisions
+          return getRowBaseDirName(rowA).localeCompare(getRowBaseDirName(rowB), undefined, { numeric: true, sensitivity: 'base' });
         });
       }
   
