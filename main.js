@@ -105,7 +105,7 @@ return {
           100% { border-color: #ff4757; filter: hue-rotate(360deg); }
         }
   
-        /* DEFINITIVE SYSTEM OVERLAY PORTALS MATRIX */
+        /* STRICT LAYER OVERRIDES: FORCES THE ROW INDICATOR TO STAY AS THE LOWEST LAYER UNDER THE MENU PANELS */
         .projectgrid-focus-overlay-portal,
         .projectgrid-input-overlay-portal,
         .projectgrid-row-overlay-portal {
@@ -118,7 +118,7 @@ return {
           animation: projectgrid-master-hue-spin 3s linear infinite !important;
         }
         
-        /* Stacking Layer 1: Topmost overlay for menus, dropdown items, and popup pickers */
+        /* Stacking Layer 1: Topmost overlay for all list selection tracking */
         .projectgrid-focus-overlay-portal {
           z-index: 999999 !important;
         }
@@ -128,9 +128,9 @@ return {
           z-index: 999998 !important;
         }
         
-        /* Stacking Layer 3: Base overlay following the highlighted project row */
+        /* FIX: BASE LAYER SET TO LOWEST TRACKING STATE SO POPUPS FLOAT HIGHER NATIVELY */
         .projectgrid-row-overlay-portal {
-          z-index: 999997 !important;
+          z-index: 10 !important; 
         }
   
         .projectgrid-matrix-row {
