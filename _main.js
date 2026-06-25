@@ -62,7 +62,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: REPLACED THE 10% WIDTHS WITH A COMPRESSED 6% MEASUREMENT RULE FOR AN ABSOLUTE 40% SAVINGS IN HORIZONTAL FOOTPRINT
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
       <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
@@ -71,7 +70,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
+    // FIX: ADDED TAGS FIELD SYMBOL BEFORE THE REST OF THE COLUMN DROPDOWNS ARRAYS
     const columnDropdowns = [
+      { icon: '🏷️', key: 'tags', options: ['⬛'] }, // Dynamically populated below during compilation scan
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
       { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
@@ -85,11 +86,20 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
+    // Track unique tags across all scanning sweeps to build the header dropup choices pipeline
+    const universalTagsSet = new Set();
+
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
         const fileCache = this.app.metadataCache.getCache(expectedNotePath);
         const frontmatter = fileCache ? fileCache.frontmatter : null;
+
+        // Parse frontmatter tags array for the header select options list mapping
+        if (frontmatter && frontmatter.tags) {
+          const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
+          rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
+        }
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
@@ -98,6 +108,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
         rowsArray.push(rowRef);
       }
     });
+
+    // Populate the tags choices array dynamically from discovered notes metadata
+    const tagsConfig = columnDropdowns.find(c => c.key === 'tags');
+    if (tagsConfig) {
+      Array.from(universalTagsSet).sort().forEach(t => tagsConfig.options.push(t));
+    }
 
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);

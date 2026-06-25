@@ -7,7 +7,7 @@ const MenuDom = require('./menu-dom');
 
 module.exports = {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
+    let pickerLevel = 0; 
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -42,10 +42,8 @@ module.exports = {
       if (pickerLevel > 0 && activePickerEl) {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
-          
           activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
           
-          // FIX: INLINE FOCUS UPDATE SWAPS CLASSES AND REPOSITION REGIONS WITHOUT ERASING THE MENU DOM
           const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
           items.forEach((item, idx) => {
             if (idx === activeIndex) {
@@ -90,6 +88,7 @@ module.exports = {
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
         
+        // FIX: SAVES TARGET SELECTION NODE TO RE-POSITION VIEWS ON CANVAS SCROLL TRIGGERS
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }

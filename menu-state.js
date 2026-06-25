@@ -12,6 +12,7 @@ module.exports = {
         {
           name: '📁 Filters',
           items: [
+            { name: '🏷️ Tags Filter', action: () => this.openHeaderDropup('tags') },
             { name: '⭐ Stars Filter', action: () => this.openHeaderDropup('stars') },
             { name: '💲 Value Filter', action: () => this.openHeaderDropup('value') },
             { name: '🐘 Size Filter', action: () => this.openHeaderDropup('size') },
@@ -23,16 +24,17 @@ module.exports = {
           ]
         },
         {
+          // FIX: ADVANCED ALL ENTRY CELL SHIFT INDICES BY +1 STEP TO MATCH NEW TABULAR GRID ALLOCATIONS
           name: '📊 Columns',
           items: [
-            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 6) },
-            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 7) },
-            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 8) },
-            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 9) },
-            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 10) },
-            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 11) },
-            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 12) },
-            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 13) }
+            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 7) },
+            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 8) },
+            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 9) },
+            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 10) },
+            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 11) },
+            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 12) },
+            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 13) },
+            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 14) }
           ]
         },
         {
@@ -46,7 +48,7 @@ module.exports = {
         {
           name: '📶 Sort',
           items: [
-            // FIX: INJECTED THE TWO FOLDER TIMESTAMP TARGET TRACKS STRAIGHT INTO THE SORT MENU CONTEXT
+            { name: '🏷️ Tags to Sort Chain', action: () => this.toggleSortChainKey('tags', rowsArray) },
             { name: '🆕 Created Date to Sort Chain', action: () => this.toggleSortChainKey('created', rowsArray) },
             { name: '🆙 Updated Date to Sort Chain', action: () => this.toggleSortChainKey('updated', rowsArray) },
             { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
@@ -103,24 +105,18 @@ module.exports = {
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
-        // Pull dynamic tracking nodes out of memory pools
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
-        
         const datesA = rowA.folderDatesValues || {};
         const datesB = rowB.folderDatesValues || {};
   
-        // Merge dataset namespaces together for single-track execution
         const mergedA = { ...valsA, ...datesA };
         const mergedB = { ...valsB, ...datesB };
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          
-          // Treat raw strings as alphabetical keys
           const valA = String(mergedA[currentKey] || '').replace(/[^\w.: ]/g, '');
           const valB = String(mergedB[currentKey] || '').replace(/[^\w.: ]/g, '');
-          
           if (valA !== valB) {
             return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
           }

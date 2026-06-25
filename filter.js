@@ -7,7 +7,7 @@ const MenuCore = require('./menu-core');
 module.exports = {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
-    let lastTrackedRowElement = null; // Remembers what row was active before the data changed
+    let lastTrackedRowElement = null;
 
     const clearRowHighlights = () => {
       rowsArray.forEach(row => {
@@ -53,7 +53,6 @@ module.exports = {
         }
       });
 
-      // Update cell counters text
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
@@ -71,7 +70,6 @@ module.exports = {
         });
       });
 
-      // Update header titles counters text
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key) return;
@@ -81,14 +79,12 @@ module.exports = {
         trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
       });
 
-      // --- FIX: CALC-SHIFT NEAREST VISIBLE NEIGHBOR COMPONENT ROW ---
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       
       if (visibleRows.length > 0) {
         let targetMatchIdx = 0;
 
         if (lastTrackedRowElement && !visibleRows.some(r => r.element === lastTrackedRowElement)) {
-          // Find closest horizontal index coordinate across structural array states
           let absoluteOldIdx = rowsArray.findIndex(r => r.element === lastTrackedRowElement);
           let minimumDistance = Infinity;
 
@@ -101,7 +97,6 @@ module.exports = {
             }
           });
         } else if (lastTrackedRowElement) {
-          // If the last tracked element is still on screen, keep its exact index track
           targetMatchIdx = visibleRows.findIndex(r => r.element === lastTrackedRowElement);
         }
 
@@ -119,6 +114,9 @@ module.exports = {
         lastTrackedRowElement = null;
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
       }
+
+      // FIX: Force immediate recalculation to snap position grids perfectly right after filtering data
+      if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc();
     };
 
     filterInput.addEventListener('input', applyFilter);

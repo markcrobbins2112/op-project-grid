@@ -344,6 +344,7 @@ return {
         {
           name: '📁 Filters',
           items: [
+            { name: '🏷️ Tags Filter', action: () => this.openHeaderDropup('tags') },
             { name: '⭐ Stars Filter', action: () => this.openHeaderDropup('stars') },
             { name: '💲 Value Filter', action: () => this.openHeaderDropup('value') },
             { name: '🐘 Size Filter', action: () => this.openHeaderDropup('size') },
@@ -355,16 +356,17 @@ return {
           ]
         },
         {
+          // FIX: ADVANCED ALL ENTRY CELL SHIFT INDICES BY +1 STEP TO MATCH NEW TABULAR GRID ALLOCATIONS
           name: '📊 Columns',
           items: [
-            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 6) },
-            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 7) },
-            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 8) },
-            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 9) },
-            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 10) },
-            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 11) },
-            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 12) },
-            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 13) }
+            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 7) },
+            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 8) },
+            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 9) },
+            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 10) },
+            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 11) },
+            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 12) },
+            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 13) },
+            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 14) }
           ]
         },
         {
@@ -378,7 +380,7 @@ return {
         {
           name: '📶 Sort',
           items: [
-            // FIX: INJECTED THE TWO FOLDER TIMESTAMP TARGET TRACKS STRAIGHT INTO THE SORT MENU CONTEXT
+            { name: '🏷️ Tags to Sort Chain', action: () => this.toggleSortChainKey('tags', rowsArray) },
             { name: '🆕 Created Date to Sort Chain', action: () => this.toggleSortChainKey('created', rowsArray) },
             { name: '🆙 Updated Date to Sort Chain', action: () => this.toggleSortChainKey('updated', rowsArray) },
             { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
@@ -435,24 +437,18 @@ return {
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
-        // Pull dynamic tracking nodes out of memory pools
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
-        
         const datesA = rowA.folderDatesValues || {};
         const datesB = rowB.folderDatesValues || {};
   
-        // Merge dataset namespaces together for single-track execution
         const mergedA = { ...valsA, ...datesA };
         const mergedB = { ...valsB, ...datesB };
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          
-          // Treat raw strings as alphabetical keys
           const valA = String(mergedA[currentKey] || '').replace(/[^\w.: ]/g, '');
           const valB = String(mergedB[currentKey] || '').replace(/[^\w.: ]/g, '');
-          
           if (valA !== valB) {
             return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
           }
@@ -569,7 +565,7 @@ return {
 
 return {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
+    let pickerLevel = 0; 
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -604,10 +600,8 @@ return {
       if (pickerLevel > 0 && activePickerEl) {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
-          
           activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
           
-          // FIX: INLINE FOCUS UPDATE SWAPS CLASSES AND REPOSITION REGIONS WITHOUT ERASING THE MENU DOM
           const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
           items.forEach((item, idx) => {
             if (idx === activeIndex) {
@@ -652,6 +646,7 @@ return {
         updateFocusIndex(visibleIdx);
         const targetRow = visibleRows[visibleIdx].element;
         
+        // FIX: SAVES TARGET SELECTION NODE TO RE-POSITION VIEWS ON CANVAS SCROLL TRIGGERS
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
@@ -691,7 +686,7 @@ return {
 return {
   initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
     let currentFocusedIndex = -1;
-    let lastTrackedRowElement = null; // Remembers what row was active before the data changed
+    let lastTrackedRowElement = null;
 
     const clearRowHighlights = () => {
       rowsArray.forEach(row => {
@@ -737,7 +732,6 @@ return {
         }
       });
 
-      // Update cell counters text
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
@@ -755,7 +749,6 @@ return {
         });
       });
 
-      // Update header titles counters text
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key) return;
@@ -765,14 +758,12 @@ return {
         trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
       });
 
-      // --- FIX: CALC-SHIFT NEAREST VISIBLE NEIGHBOR COMPONENT ROW ---
       const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       
       if (visibleRows.length > 0) {
         let targetMatchIdx = 0;
 
         if (lastTrackedRowElement && !visibleRows.some(r => r.element === lastTrackedRowElement)) {
-          // Find closest horizontal index coordinate across structural array states
           let absoluteOldIdx = rowsArray.findIndex(r => r.element === lastTrackedRowElement);
           let minimumDistance = Infinity;
 
@@ -785,7 +776,6 @@ return {
             }
           });
         } else if (lastTrackedRowElement) {
-          // If the last tracked element is still on screen, keep its exact index track
           targetMatchIdx = visibleRows.findIndex(r => r.element === lastTrackedRowElement);
         }
 
@@ -803,6 +793,9 @@ return {
         lastTrackedRowElement = null;
         if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
       }
+
+      // FIX: Force immediate recalculation to snap position grids perfectly right after filtering data
+      if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc();
     };
 
     filterInput.addEventListener('input', applyFilter);
@@ -996,8 +989,6 @@ return {
   };
 })();
 const UiRow = (function() {
-const fs = require('fs');
-const path = require('path');
 const UiColor = (function() {
 return {
     getColorForFirstCharacter(filename) {
@@ -1015,6 +1006,49 @@ return {
       return 'var(--text-normal)';
     }
   };
+})();
+const UiRowDates = (function() {
+const fs = require('fs');
+const path = require('path');
+
+return {
+  formatDateString(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return '0000.00.00 00';
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const hh = String(dateObj.getHours()).padStart(2, '0');
+    return `${yyyy}.${mm}.${dd} ${hh}`;
+  },
+
+  appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference) {
+    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
+    let createdDateStr = '0000.00.00 00';
+    let updatedDateStr = '0000.00.00 00';
+
+    try {
+      if (fs.existsSync(absoluteFolderDiskPath)) {
+        const directoryStats = fs.statSync(absoluteFolderDiskPath);
+        createdDateStr = this.formatDateString(directoryStats.birthtime);
+        updatedDateStr = this.formatDateString(directoryStats.mtime);
+      }
+    } catch (err) {
+      console.error(`[ProjectGrid] Timestamp fetch error:`, err.message);
+    }
+
+    rowTrackingReference.folderDatesValues = { created: createdDateStr, updated: updatedDateStr };
+
+    const createdCell = document.createElement('td');
+    createdCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
+    createdCell.textContent = createdDateStr;
+    tableRow.appendChild(createdCell);
+
+    const updatedCell = document.createElement('td');
+    updatedCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
+    updatedCell.textContent = updatedDateStr;
+    tableRow.appendChild(updatedCell);
+  }
+};
 })();
 const UiRowActions = (function() {
 // FIX: Pull in Node's native File System module to perform direct physical disk lookups
@@ -1056,6 +1090,192 @@ return {
     });
   }
 };
+})();
+const UiRowTags = (function() {
+return {
+    buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+      const tagsCell = document.createElement('td');
+      tagsCell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
+      
+      const tagsBtn = document.createElement('div');
+      tagsBtn.className = 'projectgrid-custom-select-btn projectgrid-tags-cell-btn';
+      tagsBtn.tabIndex = 0;
+  
+      let activeTagsArray = [];
+      if (frontmatter && frontmatter.tags) {
+        activeTagsArray = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
+        activeTagsArray = activeTagsArray.map(t => String(t).trim()).filter(t => t.length > 0);
+      }
+  
+      rowTrackingReference.yamlMetadataValues = rowTrackingReference.yamlMetadataValues || {};
+      rowTrackingReference.yamlMetadataValues['tags'] = activeTagsArray.length > 0 ? activeTagsArray.join(', ') : '⬛';
+      tagsBtn.textContent = activeTagsArray.length > 0 ? activeTagsArray.join(', ') : '⬛';
+  
+      let activeTagsDropdown = null;
+      let tagsSelectionIdx = 0;
+  
+      const closeTagsDropdown = () => {
+        if (activeTagsDropdown) { activeTagsDropdown.remove(); activeTagsDropdown = null; }
+        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      };
+  
+      const openTagsDropdown = () => {
+        closeTagsDropdown();
+        tagsSelectionIdx = 0;
+        activeTagsDropdown = document.createElement('div');
+        activeTagsDropdown.className = 'projectgrid-dropup-panel projectgrid-tags-portal-panel';
+  
+        const globalTagsSet = new Set();
+        document.querySelectorAll('.projectgrid-tags-cell-btn').forEach(b => {
+          if (b.textContent !== '⬛') {
+            b.textContent.split(', ').forEach(t => globalTagsSet.add(t.trim()));
+          }
+        });
+        const uniqueAvailableTags = Array.from(globalTagsSet).sort();
+  
+        const rect = tagsBtn.getBoundingClientRect();
+        Object.assign(activeTagsDropdown.style, {
+          position: 'fixed', top: `${rect.bottom + window.scrollY}px`,
+          left: `${rect.left + window.scrollX}px`, width: '160px',
+          zIndex: '250000', height: 'auto', maxHeight: '280px', display: 'flex', flexDirection: 'column'
+        });
+  
+        const label = document.createElement('div');
+        label.className = 'projectgrid-dropup-header-title';
+        label.textContent = '🏷️ Multi-Select Tags';
+        activeTagsDropdown.appendChild(label);
+  
+        const scrollingContainer = document.createElement('div');
+        scrollingContainer.style.overflowY = 'auto';
+        scrollingContainer.style.flex = '1';
+  
+        uniqueAvailableTags.forEach((tag, tIdx) => {
+          const itemWrapper = document.createElement('label');
+          itemWrapper.className = 'projectgrid-dropup-option';
+  
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = activeTagsArray.includes(tag);
+          cb.tabIndex = -1;
+  
+          cb.addEventListener('change', () => toggleTagValue(tag, cb.checked));
+  
+          itemWrapper.appendChild(cb);
+          itemWrapper.appendChild(document.createTextNode(tag));
+          scrollingContainer.appendChild(itemWrapper);
+        });
+        activeTagsDropdown.appendChild(scrollingContainer);
+  
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'projectgrid-tags-input-container';
+        
+        const customInput = document.createElement('input');
+        customInput.type = 'text';
+        customInput.className = 'projectgrid-tags-custom-entry-field';
+        customInput.placeholder = '+ Add Custom Tag...';
+        
+        customInput.addEventListener('keydown', async (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault(); e.stopPropagation();
+            const newTagText = customInput.value.trim().replace(/#/g, '');
+            if (newTagText && !activeTagsArray.includes(newTagText)) {
+              await toggleTagValue(newTagText, true);
+              closeTagsDropdown(); tagsBtn.focus();
+            }
+          } else if (e.key === 'Escape') {
+            e.preventDefault(); closeTagsDropdown(); tagsBtn.focus();
+          }
+        });
+        
+        inputWrapper.appendChild(customInput);
+        activeTagsDropdown.appendChild(inputWrapper);
+        document.body.appendChild(activeTagsDropdown);
+  
+        setTimeout(() => {
+          const firstOpt = scrollingContainer.querySelector('.projectgrid-dropup-option');
+          if (firstOpt && window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(firstOpt);
+        }, 10);
+      };
+  
+      const toggleTagValue = async (tag, isChecked) => {
+        const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
+        if (fileAbstract) {
+          await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
+            let currentTags = fm.tags ? (Array.isArray(fm.tags) ? [...fm.tags] : String(fm.tags).split(/[\s,]+/)) : [];
+            currentTags = currentTags.map(t => String(t).trim()).filter(t => t.length > 0);
+  
+            if (isChecked) { if (!currentTags.includes(tag)) currentTags.push(tag); } 
+            else { currentTags = currentTags.filter(t => t !== tag); }
+  
+            if (currentTags.length === 0) delete fm.tags;
+            else fm.tags = currentTags;
+            activeTagsArray = currentTags;
+          });
+  
+          const newLabel = activeTagsArray.length > 0 ? activeTagsArray.join(', ') : '⬛';
+          tagsBtn.textContent = newLabel; tagsBtn.title = newLabel;
+          rowTrackingReference.yamlMetadataValues['tags'] = newLabel;
+          if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        }
+      };
+  
+      function handleTagsKeys(evt) {
+        if (!activeTagsDropdown) return;
+        const options = activeTagsDropdown.querySelectorAll('.projectgrid-dropup-option');
+  
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+          evt.preventDefault(); evt.stopPropagation();
+          if (options.length === 0) return;
+          tagsSelectionIdx = evt.key === 'ArrowDown' ? ((tagsSelectionIdx + 1) % options.length) : ((tagsSelectionIdx - 1 + options.length) % options.length);
+  
+          options.forEach((lbl, lIdx) => {
+            if (lIdx === tagsSelectionIdx) {
+              lbl.classList.add('projectgrid-row-focused');
+              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
+            } else { lbl.classList.remove('projectgrid-row-focused'); }
+          });
+        } else if (evt.key === ' ' || evt.key === 'Spacebar') {
+          evt.preventDefault();
+          if (options[tagsSelectionIdx]) {
+            const cb = options[tagsSelectionIdx].querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+            toggleTagValue(options[tagsSelectionIdx].textContent.trim(), cb.checked);
+          }
+        } else if (evt.key === 'Enter') {
+          evt.preventDefault();
+          const customField = activeTagsDropdown.querySelector('.projectgrid-tags-custom-entry-field');
+          if (customField) customField.focus();
+        } else if (evt.key === 'Escape') {
+          evt.preventDefault(); closeTagsDropdown(); tagsBtn.focus();
+        }
+      }
+  
+      tagsBtn.addEventListener('focus', () => {
+        openTagsDropdown();
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(tagsBtn);
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
+      });
+  
+      tagsBtn.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (activeTagsDropdown && !activeTagsDropdown.contains(document.activeElement)) {
+            tagsBtn.removeEventListener('keydown', handleTagsKeys); closeTagsDropdown();
+          }
+        }, 150);
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
+      });
+  
+      tagsBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); tagsBtn.focus(); });
+      tagsBtn.addEventListener('keydown', (evt) => {
+        if (activeTagsDropdown) { handleTagsKeys(evt); return; }
+        if (!activeTagsDropdown && evt.key === 'ArrowDown' && evt.altKey) { evt.preventDefault(); openTagsDropdown(); }
+      });
+  
+      tagsCell.appendChild(tagsBtn);
+      tableRow.appendChild(tagsCell);
+    }
+  };
 })();
 const UiRowSelect = (function() {
 const UiRowKeys = (function() {
@@ -1215,15 +1435,6 @@ return {
 })();
 
 return {
-  formatDateString(dateObj) {
-    if (!dateObj || isNaN(dateObj.getTime())) return '0000.00.00 00';
-    const yyyy = dateObj.getFullYear();
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    const hh = String(dateObj.getHours()).padStart(2, '0');
-    return `${yyyy}.${mm}.${dd} ${hh}`;
-  },
-
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
@@ -1243,37 +1454,16 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
-    let createdDateStr = '0000.00.00 00';
-    let updatedDateStr = '0000.00.00 00';
+    // Columns 2 & 3: Directory dates check loops (Modularly parsed)
+    UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
 
-    try {
-      if (fs.existsSync(absoluteFolderDiskPath)) {
-        const directoryStats = fs.statSync(absoluteFolderDiskPath);
-        createdDateStr = this.formatDateString(directoryStats.birthtime);
-        updatedDateStr = this.formatDateString(directoryStats.mtime);
-      }
-    } catch (err) {
-      console.error(`[ProjectGrid] Timestamp fetch error:`, err.message);
-    }
-
-    // FIX: ATTACH COPIED VALUES TO REFERENCE ARRAYS POOL FOR THE SORT ENGINE CHECKS
-    rowTrackingReference.folderDatesValues = { created: createdDateStr, updated: updatedDateStr };
-
-    // Column 2: Created Date Cell
-    const createdCell = document.createElement('td');
-    createdCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    createdCell.textContent = createdDateStr;
-    tableRow.appendChild(createdCell);
-
-    // Column 3: Updated Date Cell
-    const updatedCell = document.createElement('td');
-    updatedCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    updatedCell.textContent = updatedDateStr;
-    tableRow.appendChild(updatedCell);
-
+    // Columns 4, 5, 6: Launcher Button Links (Appended modularly)
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
+    // Column 7: Interactive extensible Tags column segment (Appended modularly)
+    UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+
+    // Columns 8 through 15: Structural field configuration metadata tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -1284,8 +1474,6 @@ return {
       { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], isExtendable: true },
       { key: 'target', defaults: ['ce', 'op', 'app', 'link'], isExtendable: true }
     ];
-
-    rowTrackingReference.yamlMetadataValues = {};
 
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
@@ -1300,6 +1488,11 @@ return {
 })();
 
 return {
+  activeInputTarget: null,
+  activeRowTarget: null,
+  activeFocusTarget: null,
+  observerRef: null,
+
   generateHeaderCell() {
     this.ensureThreePortalsExist();
 
@@ -1323,20 +1516,26 @@ return {
     noteHeaderCell.appendChild(filterContainer);
 
     filterInput.addEventListener('focus', () => {
+      this.activeInputTarget = filterInput;
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(filterInput);
     });
     filterInput.addEventListener('blur', () => {
+      this.activeInputTarget = null;
       if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
     });
+
+    // FIX: Dynamically wire up parent container scroller hooks right as the dashboard renders
+    setTimeout(() => this.bindInteriorScrollListeners(filterInput), 50);
 
     return { cell: noteHeaderCell, input: filterInput, clearBtn: clearButton };
   },
 
   ensureThreePortalsExist() {
+    const self = this;
     const portals = [
-      { id: 'projectgrid-global-focus-overlay', class: 'projectgrid-focus-overlay-portal', winFunc: 'ProjectGridUpdateFocusOverlay' },
-      { id: 'projectgrid-global-input-overlay', class: 'projectgrid-input-overlay-portal', winFunc: 'ProjectGridUpdateInputOverlay' },
-      { id: 'projectgrid-global-row-overlay', class: 'projectgrid-row-overlay-portal', winFunc: 'ProjectGridUpdateRowOverlay' }
+      { id: 'projectgrid-global-focus-overlay', class: 'projectgrid-focus-overlay-portal', winFunc: 'ProjectGridUpdateFocusOverlay', targetRef: 'activeFocusTarget' },
+      { id: 'projectgrid-global-input-overlay', class: 'projectgrid-input-overlay-portal', winFunc: 'ProjectGridUpdateInputOverlay', targetRef: 'activeInputTarget' },
+      { id: 'projectgrid-global-row-overlay', class: 'projectgrid-row-overlay-portal', winFunc: 'ProjectGridUpdateRowOverlay', targetRef: 'activeRowTarget' }
     ];
 
     portals.forEach(p => {
@@ -1349,17 +1548,54 @@ return {
       }
 
       window[p.winFunc] = (targetElement) => {
+        self[p.targetRef] = targetElement;
         if (!targetElement) { el.style.display = 'none'; return; }
         const rect = targetElement.getBoundingClientRect();
         Object.assign(el.style, {
-          display: 'block',
-          top: `${rect.top + window.scrollY}px`,
-          left: `${rect.left + window.scrollX}px`,
-          width: `${rect.width}px`,
-          height: `${rect.height}px`
+          display: 'block', top: `${rect.top}px`, left: `${rect.left}px`,
+          width: `${rect.width}px`, height: `${rect.height}px`
         });
       };
     });
+
+    window.ProjectGridForceOverlayRecalc = () => {
+      portals.forEach(p => {
+        const liveTarget = self[p.targetRef];
+        let el = document.getElementById(p.id);
+        if (liveTarget && el && el.style.display === 'block') {
+          const rect = liveTarget.getBoundingClientRect();
+          el.style.top = `${rect.top}px`;
+          el.style.left = `${rect.left}px`;
+          el.style.width = `${rect.width}px`;
+          el.style.height = `${rect.height}px`;
+        }
+      });
+    };
+  },
+
+  // FIX: TRACK OBSIDIAN INTERNAL SCROLL CONTAINERS DIRECTLY VIA DOM HEURISTICS
+  bindInteriorScrollListeners(elementContext) {
+    if (!elementContext) return;
+    
+    // Climb up the DOM tree to find Obsidian note preview scroll parents (.cm-scroller or markdown view panels)
+    const obsidianScroller = elementContext.closest('.cm-scroller') || 
+                             elementContext.closest('.markdown-preview-view') || 
+                             elementContext.closest('.markdown-rendered');
+
+    if (obsidianScroller) {
+      // Bind live reposition rules to the exact panel handling your scroll wheels
+      obsidianScroller.removeEventListener('scroll', window.ProjectGridForceOverlayRecalc);
+      obsidianScroller.addEventListener('scroll', window.ProjectGridForceOverlayRecalc, { passive: true });
+    }
+
+    // Attach a backup ResizeObserver to handle pane splitting, dragging, or structural folding jumps safely
+    if (this.observerRef) this.observerRef.disconnect();
+    this.observerRef = new ResizeObserver(() => {
+      if (window.ProjectGridForceOverlayRecalc) window.ProjectGridForceOverlayRecalc();
+    });
+    
+    const tableParent = elementContext.closest('table') || elementContext.parentElement;
+    if (tableParent) this.observerRef.observe(tableParent);
   },
 
   buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
@@ -1427,7 +1663,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: REPLACED THE 10% WIDTHS WITH A COMPRESSED 6% MEASUREMENT RULE FOR AN ABSOLUTE 40% SAVINGS IN HORIZONTAL FOOTPRINT
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
       <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
@@ -1436,7 +1671,9 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
+    // FIX: ADDED TAGS FIELD SYMBOL BEFORE THE REST OF THE COLUMN DROPDOWNS ARRAYS
     const columnDropdowns = [
+      { icon: '🏷️', key: 'tags', options: ['⬛'] }, // Dynamically populated below during compilation scan
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
       { icon: '🐘', key: 'size', options: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'] },
@@ -1450,11 +1687,20 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
 
+    // Track unique tags across all scanning sweeps to build the header dropup choices pipeline
+    const universalTagsSet = new Set();
+
     targetFolders.forEach(folder => {
       const expectedNotePath = `${folder.path}/+${folder.name}.md`;
       if (this.app.vault.getAbstractFileByPath(expectedNotePath)) {
         const fileCache = this.app.metadataCache.getCache(expectedNotePath);
         const frontmatter = fileCache ? fileCache.frontmatter : null;
+
+        // Parse frontmatter tags array for the header select options list mapping
+        if (frontmatter && frontmatter.tags) {
+          const rawTags = Array.isArray(frontmatter.tags) ? frontmatter.tags : String(frontmatter.tags).split(/[\s,]+/);
+          rawTags.forEach(t => { if(t) universalTagsSet.add(String(t).trim()); });
+        }
 
         const rowRef = { element: null, searchText: `+${folder.name}.md`.toLowerCase() };
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, this.app, frontmatter, rowRef, headerSetup.input);
@@ -1463,6 +1709,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
         rowsArray.push(rowRef);
       }
     });
+
+    // Populate the tags choices array dynamically from discovered notes metadata
+    const tagsConfig = columnDropdowns.find(c => c.key === 'tags');
+    if (tagsConfig) {
+      Array.from(universalTagsSet).sort().forEach(t => tagsConfig.options.push(t));
+    }
 
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);

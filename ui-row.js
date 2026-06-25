@@ -2,22 +2,13 @@
 // START OF FILE: ui-row.js
 // ==========================================
 
-const fs = require('fs');
-const path = require('path');
 const UiColor = require('./ui-color');
+const UiRowDates = require('./ui-row-dates');
 const UiRowActions = require('./ui-row-actions');
+const UiRowTags = require('./ui-row-tags');
 const UiRowSelect = require('./ui-row-select');
 
 module.exports = {
-  formatDateString(dateObj) {
-    if (!dateObj || isNaN(dateObj.getTime())) return '0000.00.00 00';
-    const yyyy = dateObj.getFullYear();
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    const hh = String(dateObj.getHours()).padStart(2, '0');
-    return `${yyyy}.${mm}.${dd} ${hh}`;
-  },
-
   buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
@@ -37,37 +28,16 @@ module.exports = {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
-    let createdDateStr = '0000.00.00 00';
-    let updatedDateStr = '0000.00.00 00';
+    // Columns 2 & 3: Directory dates check loops (Modularly parsed)
+    UiRowDates.appendDirectoryTimestamps(tableRow, folder, absoluteVaultRoot, rowTrackingReference);
 
-    try {
-      if (fs.existsSync(absoluteFolderDiskPath)) {
-        const directoryStats = fs.statSync(absoluteFolderDiskPath);
-        createdDateStr = this.formatDateString(directoryStats.birthtime);
-        updatedDateStr = this.formatDateString(directoryStats.mtime);
-      }
-    } catch (err) {
-      console.error(`[ProjectGrid] Timestamp fetch error:`, err.message);
-    }
-
-    // FIX: ATTACH COPIED VALUES TO REFERENCE ARRAYS POOL FOR THE SORT ENGINE CHECKS
-    rowTrackingReference.folderDatesValues = { created: createdDateStr, updated: updatedDateStr };
-
-    // Column 2: Created Date Cell
-    const createdCell = document.createElement('td');
-    createdCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    createdCell.textContent = createdDateStr;
-    tableRow.appendChild(createdCell);
-
-    // Column 3: Updated Date Cell
-    const updatedCell = document.createElement('td');
-    updatedCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
-    updatedCell.textContent = updatedDateStr;
-    tableRow.appendChild(updatedCell);
-
+    // Columns 4, 5, 6: Launcher Button Links (Appended modularly)
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
+    // Column 7: Interactive extensible Tags column segment (Appended modularly)
+    UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+
+    // Columns 8 through 15: Structural field configuration metadata tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -78,8 +48,6 @@ module.exports = {
       { key: 'lang', defaults: ['js', 'ts', 'au3', 'ahk'], isExtendable: true },
       { key: 'target', defaults: ['ce', 'op', 'app', 'link'], isExtendable: true }
     ];
-
-    rowTrackingReference.yamlMetadataValues = {};
 
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
