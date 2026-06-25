@@ -62,10 +62,10 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: INSERT THE TWO NEW DATE COLUMN HEADER CELL DESCRIPTIONS IMMEDIATELY AFTER FILE COLUMN (COL 1)
+    // FIX: REPLACED THE 10% WIDTHS WITH A COMPRESSED 6% MEASUREMENT RULE FOR AN ABSOLUTE 40% SAVINGS IN HORIZONTAL FOOTPRINT
     headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 10%; text-align: center;" title="Folder Created Date">🆕</th>
-      <th style="width: 10%; text-align: center;" title="Folder Updated Date">🆙</th>
+      <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
+      <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>

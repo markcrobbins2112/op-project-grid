@@ -23,7 +23,6 @@ module.exports = {
           ]
         },
         {
-          // FIX: CELLS FOCUS SELECTION MARGINS UPDATED TO ACCOUNT FOR THE 2 NEW INTERMEDIATE FIELDS (+2 OFFSETS)
           name: '📊 Columns',
           items: [
             { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 6) },
@@ -47,6 +46,9 @@ module.exports = {
         {
           name: '📶 Sort',
           items: [
+            // FIX: INJECTED THE TWO FOLDER TIMESTAMP TARGET TRACKS STRAIGHT INTO THE SORT MENU CONTEXT
+            { name: '🆕 Created Date to Sort Chain', action: () => this.toggleSortChainKey('created', rowsArray) },
+            { name: '🆙 Updated Date to Sort Chain', action: () => this.toggleSortChainKey('updated', rowsArray) },
             { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
             { name: '💲 Value to Sort Chain', action: () => this.toggleSortChainKey('value', rowsArray) },
             { name: '🐘 Size to Sort Chain', action: () => this.toggleSortChainKey('size', rowsArray) },
@@ -101,15 +103,26 @@ module.exports = {
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
+        // Pull dynamic tracking nodes out of memory pools
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
+        
+        const datesA = rowA.folderDatesValues || {};
+        const datesB = rowB.folderDatesValues || {};
+  
+        // Merge dataset namespaces together for single-track execution
+        const mergedA = { ...valsA, ...datesA };
+        const mergedB = { ...valsB, ...datesB };
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          const valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
-          const valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+          
+          // Treat raw strings as alphabetical keys
+          const valA = String(mergedA[currentKey] || '').replace(/[^\w.: ]/g, '');
+          const valB = String(mergedB[currentKey] || '').replace(/[^\w.: ]/g, '');
+          
           if (valA !== valB) {
-            return valA.localeCompare(valB, undefined, { numeric: true });
+            return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
           }
         }
         return 0;

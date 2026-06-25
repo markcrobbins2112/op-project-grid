@@ -36,6 +36,16 @@ return {
           text-align: left !important;
         }
   
+        /* FIX: CELL PADDING REDUCED BY 40% TO FORCE ABSOLUTE COMPRESSION TO DATE COLUMNS BOUNDARIES */
+        .projectgrid-timestamp-scaled-td {
+          font-size: 8px !important; 
+          text-align: center !important;
+          white-space: nowrap !important;
+          width: 1% !important; 
+          padding: 6px 2px !important; /* Horizontally squashes track borders tighter around text values */
+          color: var(--text-muted) !important;
+        }
+  
         .projectgrid-uniform-yaml-th,
         .projectgrid-uniform-yaml-td {
           width: 62px !important;
@@ -51,8 +61,6 @@ return {
           align-items: center !important;
           width: 100% !important;
         }
-        
-        /* FIX: FORCE GREY FOCUS BOX INDICATORS TO DROP COMPLETELY OUT */
         .projectgrid-filter-input {
           width: 100% !important;
           padding: 4px 24px 4px 8px !important;
@@ -347,7 +355,6 @@ return {
           ]
         },
         {
-          // FIX: CELLS FOCUS SELECTION MARGINS UPDATED TO ACCOUNT FOR THE 2 NEW INTERMEDIATE FIELDS (+2 OFFSETS)
           name: '📊 Columns',
           items: [
             { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 6) },
@@ -371,6 +378,9 @@ return {
         {
           name: '📶 Sort',
           items: [
+            // FIX: INJECTED THE TWO FOLDER TIMESTAMP TARGET TRACKS STRAIGHT INTO THE SORT MENU CONTEXT
+            { name: '🆕 Created Date to Sort Chain', action: () => this.toggleSortChainKey('created', rowsArray) },
+            { name: '🆙 Updated Date to Sort Chain', action: () => this.toggleSortChainKey('updated', rowsArray) },
             { name: '⭐ Stars to Sort Chain', action: () => this.toggleSortChainKey('stars', rowsArray) },
             { name: '💲 Value to Sort Chain', action: () => this.toggleSortChainKey('value', rowsArray) },
             { name: '🐘 Size to Sort Chain', action: () => this.toggleSortChainKey('size', rowsArray) },
@@ -425,15 +435,26 @@ return {
       if (!parentTableBody) return;
   
       rowsArray.sort((rowA, rowB) => {
+        // Pull dynamic tracking nodes out of memory pools
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
+        
+        const datesA = rowA.folderDatesValues || {};
+        const datesB = rowB.folderDatesValues || {};
+  
+        // Merge dataset namespaces together for single-track execution
+        const mergedA = { ...valsA, ...datesA };
+        const mergedB = { ...valsB, ...datesB };
   
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          const valA = String(valsA[currentKey] || '').replace(/[^\w]/g, '');
-          const valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
+          
+          // Treat raw strings as alphabetical keys
+          const valA = String(mergedA[currentKey] || '').replace(/[^\w.: ]/g, '');
+          const valB = String(mergedB[currentKey] || '').replace(/[^\w.: ]/g, '');
+          
           if (valA !== valB) {
-            return valA.localeCompare(valB, undefined, { numeric: true });
+            return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
           }
         }
         return 0;
@@ -1194,13 +1215,12 @@ return {
 })();
 
 return {
-  // Pure JavaScript Date formatting tool matching: yyyy.mm.dd hh (24-hour format)
   formatDateString(dateObj) {
     if (!dateObj || isNaN(dateObj.getTime())) return '0000.00.00 00';
     const yyyy = dateObj.getFullYear();
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const dd = String(dateObj.getDate()).padStart(2, '0');
-    const hh = String(dateObj.getHours()).padStart(2, '0'); // Explicit 24-hour hour string extraction
+    const hh = String(dateObj.getHours()).padStart(2, '0');
     return `${yyyy}.${mm}.${dd} ${hh}`;
   },
 
@@ -1208,7 +1228,6 @@ return {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
-    // Column 1: Core dynamic Note hyperlink cell
     const noteCell = document.createElement('td');
     noteCell.className = 'projectgrid-matrix-cell note-title-cell';
     const fileAnchor = document.createElement('a');
@@ -1224,7 +1243,6 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // --- FIX: READ DIRECT DISK METADATA STATS OUT OF CONTAINING FOLDER DIRECTORY ---
     const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
     let createdDateStr = '0000.00.00 00';
     let updatedDateStr = '0000.00.00 00';
@@ -1232,34 +1250,30 @@ return {
     try {
       if (fs.existsSync(absoluteFolderDiskPath)) {
         const directoryStats = fs.statSync(absoluteFolderDiskPath);
-        createdDateStr = this.formatDateString(directoryStats.birthtime); // Folder created timestamp
-        updatedDateStr = this.formatDateString(directoryStats.mtime);     // Folder modified timestamp
+        createdDateStr = this.formatDateString(directoryStats.birthtime);
+        updatedDateStr = this.formatDateString(directoryStats.mtime);
       }
     } catch (err) {
-      console.error(`[ProjectGrid] Timestamp fetch error on drive target ${absoluteFolderDiskPath}:`, err.message);
+      console.error(`[ProjectGrid] Timestamp fetch error:`, err.message);
     }
+
+    // FIX: ATTACH COPIED VALUES TO REFERENCE ARRAYS POOL FOR THE SORT ENGINE CHECKS
+    rowTrackingReference.folderDatesValues = { created: createdDateStr, updated: updatedDateStr };
 
     // Column 2: Created Date Cell
     const createdCell = document.createElement('td');
-    createdCell.className = 'projectgrid-matrix-cell timestamp-td-cell';
-    createdCell.style.textAlign = 'center';
-    createdCell.style.color = 'var(--text-muted)';
+    createdCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
     createdCell.textContent = createdDateStr;
     tableRow.appendChild(createdCell);
 
     // Column 3: Updated Date Cell
     const updatedCell = document.createElement('td');
-    updatedCell.className = 'projectgrid-matrix-cell timestamp-td-cell';
-    updatedCell.style.textAlign = 'center';
-    updatedCell.style.color = 'var(--text-muted)';
+    updatedCell.className = 'projectgrid-matrix-cell projectgrid-timestamp-scaled-td';
     updatedCell.textContent = updatedDateStr;
     tableRow.appendChild(updatedCell);
-    // -------------------------------------------------------------------------------
 
-    // Columns 4, 5, 6: Launcher Button Links (Appended modularly)
     UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
-    // Columns 7 through 14: Define the 8 interactive field dropdown tracks
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -1276,9 +1290,7 @@ return {
     fieldsConfig.forEach((cfg, fieldIdx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
-      
       UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
-      
       tableRow.appendChild(cell);
     });
 
@@ -1415,10 +1427,10 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: INSERT THE TWO NEW DATE COLUMN HEADER CELL DESCRIPTIONS IMMEDIATELY AFTER FILE COLUMN (COL 1)
+    // FIX: REPLACED THE 10% WIDTHS WITH A COMPRESSED 6% MEASUREMENT RULE FOR AN ABSOLUTE 40% SAVINGS IN HORIZONTAL FOOTPRINT
     headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 10%; text-align: center;" title="Folder Created Date">🆕</th>
-      <th style="width: 10%; text-align: center;" title="Folder Updated Date">🆙</th>
+      <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
+      <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>

@@ -33,6 +33,16 @@ module.exports = {
           text-align: left !important;
         }
   
+        /* FIX: CELL PADDING REDUCED BY 40% TO FORCE ABSOLUTE COMPRESSION TO DATE COLUMNS BOUNDARIES */
+        .projectgrid-timestamp-scaled-td {
+          font-size: 8px !important; 
+          text-align: center !important;
+          white-space: nowrap !important;
+          width: 1% !important; 
+          padding: 6px 2px !important; /* Horizontally squashes track borders tighter around text values */
+          color: var(--text-muted) !important;
+        }
+  
         .projectgrid-uniform-yaml-th,
         .projectgrid-uniform-yaml-td {
           width: 62px !important;
@@ -48,8 +58,6 @@ module.exports = {
           align-items: center !important;
           width: 100% !important;
         }
-        
-        /* FIX: FORCE GREY FOCUS BOX INDICATORS TO DROP COMPLETELY OUT */
         .projectgrid-filter-input {
           width: 100% !important;
           padding: 4px 24px 4px 8px !important;
