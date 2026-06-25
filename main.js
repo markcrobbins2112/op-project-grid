@@ -494,57 +494,17 @@ const GridConfig = (function() {
 
 const gridConfigModule = {
     columns: [
-      {
-        key: 'title',
-        icon: '📝',
-        label: 'Project Note Title',
-        type: 'static',
-        width: '25%'
-      },
-      {
-        key: 'created',
-        icon: '🆕',
-        label: 'Created Date',
-        type: 'timestamp',
-        width: '6%'
-      },
-      {
-        key: 'updated',
-        icon: '🆙',
-        label: 'Updated Date',
-        type: 'timestamp',
-        width: '6%'
-      },
-      {
-        key: 'dopus',
-        icon: '📁',
-        label: 'Directory Opus',
-        type: 'launcher',
-        protocol: 'dopus',
-        width: '4%'
-      },
-      {
-        key: 'cursor',
-        icon: '💻',
-        label: 'Cursor Workspace',
-        type: 'launcher',
-        protocol: 'cursor',
-        width: '4%'
-      },
-      {
-        key: 'obsidian',
-        icon: '💜',
-        label: 'Obsidian Vault',
-        type: 'launcher',
-        protocol: 'obsidian',
-        width: '4%'
-      },
+      { key: 'title', icon: '📝', label: 'Project Note Title', type: 'static', width: '25%' },
+      { key: 'created', icon: '🆕', label: 'Created Date', type: 'timestamp', width: '6%' },
+      { key: 'updated', icon: '🆙', label: 'Updated Date', type: 'timestamp', width: '6%' },
+      { key: 'dopus', icon: '📁', label: 'Directory Opus', type: 'launcher', protocol: 'dopus', width: '4%' },
+      { key: 'cursor', icon: '💻', label: 'Cursor Workspace', type: 'launcher', protocol: 'cursor', width: '4%' },
+      { key: 'obsidian', icon: '💜', label: 'Obsidian Vault', type: 'launcher', protocol: 'obsidian', width: '4%' },
       {
         key: 'tasks',
         icon: '🔧',
         label: 'Tasks Todo',
         type: 'yaml-select',
-        // DUMMY DATA ADDITION: Populated exactly 5 standard mock task completion metric choices
         defaults: ['0/5', '1/5', '2/5', '3/5', '4/5', '5/5'],
         isExtendable: true,
         tutorKeys: '• Click: Focus tasks dropdown cell<br>• ArrowUp/Down: Shift vertical grid rows<br>• Escape: Focus main search input field',
@@ -560,106 +520,27 @@ const gridConfigModule = {
         tutorKeys: '• Type text: Filter or add custom tag values<br>• Enter: Toggle checkmark item state<br>• Escape: Close dropdown menu panel',
         width: '6%'
       },
-      {
-        key: 'stars',
-        icon: '⭐',
-        label: 'Stars Rating',
-        type: 'yaml-select',
-        defaults: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'],
-        isExtendable: false,
-        tutorKeys: '• Arrows Up/Down: Cycle value selection options<br>• Enter/Spacebar: Commit frontline choices<br>• Escape: Dismiss context container view panel',
-        width: '5%'
-      },
-      {
-        key: 'value',
-        icon: '💲',
-        label: 'Project Value',
-        type: 'yaml-select',
-        defaults: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'],
-        isExtendable: false,
-        tutorKeys: '• Arrows Up/Down: Change numeric parameter settings<br>• Tab/Shift+Tab: Horizontal navigation tracking',
-        width: '5%'
-      },
-      {
-        key: 'size',
-        icon: '🐘',
-        label: 'Folder Size',
-        type: 'yaml-select',
-        defaults: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'],
-        isExtendable: false,
-        tutorKeys: '• Highlight items using arrow hotkey channels<br>• Escape: Focus main search filter field',
-        width: '5%'
-      },
-      {
-        key: 'depth',
-        icon: '🎱',
-        label: 'Nesting Depth',
-        type: 'yaml-select',
-        defaults: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'],
-        isExtendable: false,
-        tutorKeys: '• Cycle cells frame focus parameters cleanly',
-        width: '5%'
-      },
-      {
-        key: 'priority',
-        icon: '🏅',
-        label: 'Priority Tier',
-        type: 'yaml-select',
-        defaults: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'],
-        isExtendable: false,
-        tutorKeys: '• Toggle priority weights instantly via keyboard items',
-        width: '5%'
-      },
-      {
-        key: 'status',
-        icon: '🚦',
-        label: 'Deployment Status',
-        type: 'yaml-select',
-        defaults: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'],
-        isExtendable: false,
-        tutorKeys: '• Modify status metadata tags dynamically',
-        width: '6%'
-      },
-      {
-        key: 'lang',
-        icon: '🔤',
-        label: 'Source Language',
-        type: 'yaml-select',
-        defaults: ['js', 'ts', 'au3', 'ahk'],
-        isExtendable: true,
-        tutorKeys: '• Type text: Append extensible text elements<br>• Escape: Shift cursor straight to main filter bar',
-        width: '5%'
-      },
-      {
-        key: 'target',
-        icon: '🎯',
-        label: 'Build Target',
-        type: 'yaml-select',
-        defaults: ['ce', 'op', 'app', 'link'],
-        isExtendable: true,
-        tutorKeys: '• Add custom compilation environment strings directly',
-        width: '5%'
-      },
-      {
-        key: 'git',
-        icon: '💿',
-        label: 'Git Repository',
-        type: 'scanner-check',
-        targetFile: '.git',
-        width: '4%'
-      },
+      { key: 'stars', icon: '⭐', label: 'Stars Rating', type: 'yaml-select', defaults: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false, width: '5%' },
+      { key: 'value', icon: '💲', label: 'Project Value', type: 'yaml-select', defaults: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false, width: '5%' },
+      { key: 'size', icon: '🐘', label: 'Folder Size', type: 'yaml-select', defaults: ['⬛','0🐘','1🐘','2🐘','3🐘','4🐘','5🐘'], isExtendable: false, width: '5%' },
+      { key: 'depth', icon: '🎱', label: 'Nesting Depth', type: 'yaml-select', defaults: ['⬛','0🎱','1🎱','2🎱','3🎱','4🎱','5🎱'], isExtendable: false, width: '5%' },
+      { key: 'priority', icon: '🏅', label: 'Priority Tier', type: 'yaml-select', defaults: ['⬛','0🏅','1🏅','2🏅','3🏅','4🏅','5🏅'], isExtendable: false, width: '5%' },
+      { key: 'status', icon: '🚦', label: 'Deployment Status', type: 'yaml-select', defaults: ['⬛','hold🛑', 'plan🌐', 'dev🛠', 'test🧪', 'ship📦'], isExtendable: false, width: '6%' },
+      { key: 'lang', icon: '🔤', label: 'Source Language', type: 'yaml-select', defaults: ['js', 'ts', 'au3', 'ahk'], isExtendable: true, width: '5%' },
+      { key: 'target', icon: '🎯', label: 'Build Target', type: 'yaml-select', defaults: ['ce', 'op', 'app', 'link'], isExtendable: true, width: '5%' },
+      { key: 'git', icon: '💿', label: 'Git Repository', type: 'scanner-check', targetFile: '.git', width: '4%' },
+      // DYNAMIC REMAPPING: Configured AI Agents column type parameters to support launcher routing rules
       {
         key: 'agents',
         icon: '🤖',
         label: 'Agent Matrix File',
-        type: 'scanner-check',
+        type: 'scanner-check', // Keeps scanner check loop active
         targetFile: 'AGENTS.md',
         width: '4%'
       }
     ]
   };
   
-  // FIX: Expose directly on the global scope to pass through custom IIFE bundler restrictions
   globalThis.GridConfig = gridConfigModule;
   return gridConfigModule;
   
@@ -2198,18 +2079,14 @@ return {
       } 
       else if (col.type === 'yaml-select' || col.key === 'tasks') {
         cell.className += ' select-cell projectgrid-uniform-yaml-td';
-        
-        // DATA REALIGNMENT PASSTHROUGH: Swap placeholder indexes with real data strings dynamically
         let targetColumnSchema = col;
         if (col.key === 'tasks') {
           const liveDiscoveredTasks = window.ProjectGridDiscoveredActualTasksList || [];
           targetColumnSchema = {
             ...col,
-            // Re-map column option array records dynamically on the fly to match note content strings
             defaults: liveDiscoveredTasks.length > 0 ? liveDiscoveredTasks : ['No tasks found']
           };
         }
-
         UiRowSelect.buildSelectButton(cell, tableRow, idx, targetColumnSchema, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
         tableRow.appendChild(cell);
       } 
@@ -2217,11 +2094,52 @@ return {
         const absoluteFolderDiskPath = path.join(absoluteVaultRoot, folder.path);
         const checkPath = path.join(absoluteFolderDiskPath, col.targetFile);
         const hasFile = fs.existsSync(checkPath);
-        const marker = hasFile ? '✅' : '❌';
         
-        rowTrackingReference.yamlMetadataValues[col.key] = marker;
         cell.className += ' projectgrid-readonly-scanner-td projectgrid-uniform-yaml-td';
-        cell.textContent = marker;
+
+        if (col.key === 'agents' && !hasFile) {
+          const absoluteLocalPath = absoluteFolderDiskPath.replace(/[/\\]+/g, '\\');
+          const fileAnchor = document.createElement('a');
+          
+          fileAnchor.href = `aip://aimd/_ ${absoluteLocalPath}`;
+          fileAnchor.className = 'projectgrid-aip-icon-btn';
+          fileAnchor.textContent = '❌';
+          fileAnchor.title = `AGENTS.md missing! Click to initialize framework layout via aip://aimd/ using the "_" default template.`;
+          fileAnchor.style.textDecoration = 'none';
+          fileAnchor.style.cursor = 'pointer';
+
+          // AUTOMATED POST-LAUNCH EVENT RE-SCAN TRIGGER
+          fileAnchor.addEventListener('click', () => {
+            let totalPollAttempts = 0;
+            const maxPollAttemptsLimit = 15; // Capped tightly at 15 tries (approx 3 seconds total execution boundary window)
+
+            const liveFileWatcherInterval = setInterval(() => {
+              totalPollAttempts++;
+              const isFileNowPresentOnDisk = fs.existsSync(checkPath);
+
+              // 1. If file appears, tear down polling interval parameters and trigger grid redraw cascade
+              if (isFileNowPresentOnDisk || totalPollAttempts >= maxPollAttemptsLimit) {
+                clearInterval(liveFileWatcherInterval);
+
+                if (isFileNowPresentOnDisk && window.ProjectGridTriggerFilterUpdate) {
+                  // Programmatically swap out text nodes icons safely without tearing down global rows state pools
+                  rowTrackingReference.yamlMetadataValues[col.key] = '✅';
+                  cell.innerHTML = '✅';
+                  
+                  // Run full filter aggregator calculation loop pass to refresh header counts strings metrics cleanly
+                  window.ProjectGridTriggerFilterUpdate();
+                }
+              }
+            }, 200); // Poll disk mesh nodes every 200ms
+          });
+
+          rowTrackingReference.yamlMetadataValues[col.key] = '❌';
+          cell.appendChild(fileAnchor);
+        } else {
+          const marker = hasFile ? '✅' : '❌';
+          rowTrackingReference.yamlMetadataValues[col.key] = marker;
+          cell.textContent = marker;
+        }
         tableRow.appendChild(cell);
       }
     });
@@ -2580,7 +2498,7 @@ return {
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowRef, filterInputElement);
         
         // =========================================================================
-        // GIT REMOTE URL EXTRACTION HOOK
+        // GIT REMOTE URL EXTRACTION & CLICK RUNNER HOOK
         // =========================================================================
         const gitCell = rowRef.element.querySelector('.projectgrid-readonly-scanner-td');
         if (gitCell && gitCell.textContent === '✅') {
@@ -2589,10 +2507,30 @@ return {
           const remoteUrl = globalGitExtractorInstance.extractRemoteUrl(absoluteFolderDiskPath);
           
           if (remoteUrl) {
-            // Apply the URL onto the row data cache object and inject a clean HTML tooltip title hover
             rowRef.gitRemoteUrl = remoteUrl;
-            gitCell.title = `Remote Origin: ${remoteUrl}`;
-            gitCell.style.cursor = 'help';
+            gitCell.title = `🔗 Click to open Remote Origin:\n${remoteUrl}`;
+            
+            // Apply clickable link characteristics natively via style properties
+            gitCell.style.cursor = 'pointer';
+            gitCell.style.color = 'var(--text-accent, #70a1ff)';
+            gitCell.style.fontWeight = 'bold';
+            
+            // LAUNCH EXTERNAL BROWSER: Open the link directly using electron/browser capabilities
+            gitCell.addEventListener('click', (e) => {
+              e.preventDefault(); e.stopPropagation();
+              
+              // Map standard SSH origin markers cleanly into clear web address structures if required
+              let cleanWebUrl = remoteUrl.trim();
+              if (cleanWebUrl.startsWith('git@')) {
+                cleanWebUrl = 'https://' + cleanWebUrl.replace(':', '/').replace('git@', '');
+              }
+              if (cleanWebUrl.endsWith('.git')) {
+                cleanWebUrl = cleanWebUrl.substring(0, cleanWebUrl.length - 4);
+              }
+
+              // Use window.open to safely invoke your default operating system browser frame
+              window.open(cleanWebUrl, '_blank');
+            });
           }
         }
         // =========================================================================

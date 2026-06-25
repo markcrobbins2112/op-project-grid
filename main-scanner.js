@@ -84,7 +84,7 @@ module.exports = {
         rowRef.element = UiBuilder.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowRef, filterInputElement);
         
         // =========================================================================
-        // GIT REMOTE URL EXTRACTION HOOK
+        // GIT REMOTE URL EXTRACTION & CLICK RUNNER HOOK
         // =========================================================================
         const gitCell = rowRef.element.querySelector('.projectgrid-readonly-scanner-td');
         if (gitCell && gitCell.textContent === '✅') {
@@ -93,10 +93,30 @@ module.exports = {
           const remoteUrl = globalGitExtractorInstance.extractRemoteUrl(absoluteFolderDiskPath);
           
           if (remoteUrl) {
-            // Apply the URL onto the row data cache object and inject a clean HTML tooltip title hover
             rowRef.gitRemoteUrl = remoteUrl;
-            gitCell.title = `Remote Origin: ${remoteUrl}`;
-            gitCell.style.cursor = 'help';
+            gitCell.title = `🔗 Click to open Remote Origin:\n${remoteUrl}`;
+            
+            // Apply clickable link characteristics natively via style properties
+            gitCell.style.cursor = 'pointer';
+            gitCell.style.color = 'var(--text-accent, #70a1ff)';
+            gitCell.style.fontWeight = 'bold';
+            
+            // LAUNCH EXTERNAL BROWSER: Open the link directly using electron/browser capabilities
+            gitCell.addEventListener('click', (e) => {
+              e.preventDefault(); e.stopPropagation();
+              
+              // Map standard SSH origin markers cleanly into clear web address structures if required
+              let cleanWebUrl = remoteUrl.trim();
+              if (cleanWebUrl.startsWith('git@')) {
+                cleanWebUrl = 'https://' + cleanWebUrl.replace(':', '/').replace('git@', '');
+              }
+              if (cleanWebUrl.endsWith('.git')) {
+                cleanWebUrl = cleanWebUrl.substring(0, cleanWebUrl.length - 4);
+              }
+
+              // Use window.open to safely invoke your default operating system browser frame
+              window.open(cleanWebUrl, '_blank');
+            });
           }
         }
         // =========================================================================
