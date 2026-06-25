@@ -6,6 +6,8 @@ const { Plugin } = require('obsidian');
 const StylesManager = require('./styles');
 const MainShortcuts = require('./main-shortcuts');
 const MainRenderer = require('./main-renderer');
+const TasksMarkdownSync = require('./tasks-markdown-sync');
+const TasksMarkdownWriter = require('./tasks-markdown-writer');
 
 module.exports = class ProjectGridPlugin extends Plugin {
   async onload() {

@@ -5,14 +5,6 @@
 const UiRowKeys = require('./ui-row-keys');
 const UiRowSelectDom = require('./ui-row-select-dom');
 
-// FIXED: Use a clean fallback layout token string lookup wrapper to prevent resolution errors after bundling
-let TasksMarkdownSync;
-try {
-  TasksMarkdownSync = require('./tasks-markdown-sync');
-} catch (e) {
-  TasksMarkdownSync = globalThis.TasksMarkdownSync || null;
-}
-
 module.exports = {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const btn = document.createElement('div');
@@ -28,8 +20,7 @@ module.exports = {
       btn.textContent = `${activeValuesArray.length}/${totalCount}`;
       rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
     } else {
-      btn.textContent = rawVal || '⬛';
-      rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+      btn.textContent = rawVal || '⬛'; rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
     }
 
     let optionsList = isMarkdownFileTarget ? cfg.defaults.filter(d => d !== '⬛') : ['⬛', ...cfg.defaults.filter(d => d !== '⬛')];
@@ -68,7 +59,15 @@ module.exports = {
           updateVisualSelection();
         } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
           e.preventDefault(); e.stopPropagation();
+          const val = isInputNode ? customInput.value.trim() : '';
+          
           if (isMarkdownFileTarget) {
+            // RESOLVE VIA GLOBAL SCOPE: Look up writer engine fallback variables directly from global context
+            const activeWriter = globalThis.TasksMarkdownWriter;
+            if (isInputNode && val !== '' && activeWriter) {
+              await activeWriter.appendAndRefreshVault(app, expectedNotePath, val, btn);
+              closeDropdown(); openDropdown(); return;
+            }
             const targetVal = optionsList[selectionIdx];
             if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
             else activeValuesArray.push(targetVal);
@@ -76,7 +75,6 @@ module.exports = {
             if (cb) cb.checked = activeValuesArray.includes(targetVal);
             await commitSelection(activeValuesArray.join(', '), targetVal, activeValuesArray.includes(targetVal));
           } else {
-            const val = isInputNode ? customInput.value.trim() : '';
             if (isInputNode && val !== '') commitSelection(val); else commitSelection(optionsList[selectionIdx]);
           }
         } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); closeDropdown(); btn.focus(); }
@@ -105,9 +103,11 @@ module.exports = {
     const commitSelection = async (value, targetString = '', isChecked = false) => {
       const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
       if (fileAbstract) {
-        if (isMarkdownFileTarget && targetString && TasksMarkdownSync) {
+        // RESOLVE VIA GLOBAL SCOPE: Look up sync engine fallback variables directly from global context
+        const activeSyncEngine = globalThis.TasksMarkdownSync;
+        if (isMarkdownFileTarget && targetString && activeSyncEngine) {
           const rawContent = await app.vault.read(fileAbstract);
-          const updatedText = TasksMarkdownSync.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
+          const updatedText = activeSyncEngine.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
           await app.vault.modify(fileAbstract, updatedText);
         } else {
           await app.fileManager.processFrontMatter(fileAbstract, (fm) => { if (value === '' || value === '⬛') delete fm[cfg.key]; else fm[cfg.key] = value; });

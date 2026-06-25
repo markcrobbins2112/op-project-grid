@@ -1715,14 +1715,6 @@ return {
 })();
 globalThis.UiRowSelectDom = UiRowSelectDom;
 
-// FIXED: Use a clean fallback layout token string lookup wrapper to prevent resolution errors after bundling
-let TasksMarkdownSync;
-try {
-  TasksMarkdownSync = require('./tasks-markdown-sync');
-} catch (e) {
-  TasksMarkdownSync = globalThis.TasksMarkdownSync || null;
-}
-
 return {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const btn = document.createElement('div');
@@ -1738,8 +1730,7 @@ return {
       btn.textContent = `${activeValuesArray.length}/${totalCount}`;
       rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
     } else {
-      btn.textContent = rawVal || '⬛';
-      rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+      btn.textContent = rawVal || '⬛'; rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
     }
 
     let optionsList = isMarkdownFileTarget ? cfg.defaults.filter(d => d !== '⬛') : ['⬛', ...cfg.defaults.filter(d => d !== '⬛')];
@@ -1778,7 +1769,15 @@ return {
           updateVisualSelection();
         } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
           e.preventDefault(); e.stopPropagation();
+          const val = isInputNode ? customInput.value.trim() : '';
+          
           if (isMarkdownFileTarget) {
+            // RESOLVE VIA GLOBAL SCOPE: Look up writer engine fallback variables directly from global context
+            const activeWriter = globalThis.TasksMarkdownWriter;
+            if (isInputNode && val !== '' && activeWriter) {
+              await activeWriter.appendAndRefreshVault(app, expectedNotePath, val, btn);
+              closeDropdown(); openDropdown(); return;
+            }
             const targetVal = optionsList[selectionIdx];
             if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
             else activeValuesArray.push(targetVal);
@@ -1786,7 +1785,6 @@ return {
             if (cb) cb.checked = activeValuesArray.includes(targetVal);
             await commitSelection(activeValuesArray.join(', '), targetVal, activeValuesArray.includes(targetVal));
           } else {
-            const val = isInputNode ? customInput.value.trim() : '';
             if (isInputNode && val !== '') commitSelection(val); else commitSelection(optionsList[selectionIdx]);
           }
         } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); closeDropdown(); btn.focus(); }
@@ -1815,9 +1813,11 @@ return {
     const commitSelection = async (value, targetString = '', isChecked = false) => {
       const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
       if (fileAbstract) {
-        if (isMarkdownFileTarget && targetString && TasksMarkdownSync) {
+        // RESOLVE VIA GLOBAL SCOPE: Look up sync engine fallback variables directly from global context
+        const activeSyncEngine = globalThis.TasksMarkdownSync;
+        if (isMarkdownFileTarget && targetString && activeSyncEngine) {
           const rawContent = await app.vault.read(fileAbstract);
-          const updatedText = TasksMarkdownSync.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
+          const updatedText = activeSyncEngine.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
           await app.vault.modify(fileAbstract, updatedText);
         } else {
           await app.fileManager.processFrontMatter(fileAbstract, (fm) => { if (value === '' || value === '⬛') delete fm[cfg.key]; else fm[cfg.key] = value; });
@@ -2594,6 +2594,121 @@ return {
 // ==========================================
 })();
 globalThis.MainRenderer = MainRenderer;
+
+const TasksMarkdownSync = (function() {
+// ==========================================
+// START OF FILE: tasks-markdown-sync.js
+// ==========================================
+
+const tasksMarkdownSyncModule = {
+    getInitialCheckedList(linesArray) {
+      let insideTasksHeaderZone = false;
+      const checkedTasksList = [];
+  
+      for (let i = 0; i < linesArray.length; i++) {
+        const currentLineText = linesArray[i];
+        if (currentLineText.trim().startsWith('## Incoming Tasks')) { insideTasksHeaderZone = true; continue; }
+        if (insideTasksHeaderZone && currentLineText.trim().startsWith('##')) { break; }
+        
+        if (insideTasksHeaderZone) {
+          const checkboxMatchSignature = currentLineText.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+          if (checkboxMatchSignature) {
+            const isChecked = checkboxMatchSignature[1].toLowerCase() === 'x';
+            const taskTextString = checkboxMatchSignature[2].trim();
+            if (isChecked && taskTextString) {
+              checkedTasksList.push(taskTextString);
+            }
+          }
+        }
+      }
+      return checkedTasksList;
+    },
+  
+    mutateMarkdownCheckboxes(linesArray, targetTaskString, isNowCheckedState) {
+      let insideTasks = false;
+      for (let i = 0; i < linesArray.length; i++) {
+        const line = linesArray[i];
+        if (line.trim().startsWith('## Incoming Tasks')) { insideTasks = true; continue; }
+        if (insideTasks && line.trim().startsWith('##')) { break; }
+        
+        if (insideTasks) {
+          const match = line.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+          if (match && match[2].trim() === targetTaskString) {
+            const checkedTokenMarker = isNowCheckedState ? 'x' : ' ';
+            linesArray[i] = line.replace(/-\s*\[[ xX]\]/, `- [${checkedTokenMarker}]`);
+            break;
+          }
+        }
+      }
+      return linesArray.join('\n');
+    }
+  };
+  
+  // GLOBAL REGISTRY LOCK: Bypasses hidden IIFE closure walls safely
+  globalThis.TasksMarkdownSync = tasksMarkdownSyncModule;
+  return tasksMarkdownSyncModule;
+  
+  // ==========================================
+  // END OF FILE: tasks-markdown-sync.js
+  // ==========================================
+})();
+globalThis.TasksMarkdownSync = TasksMarkdownSync;
+
+const TasksMarkdownWriter = (function() {
+// ==========================================
+// START OF FILE: tasks-markdown-writer.js
+// ==========================================
+
+const tasksMarkdownWriterModule = {
+    async appendAndRefreshVault(app, expectedNotePath, taskText, btnElement) {
+      const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
+      if (!fileAbstract) return;
+  
+      const rawContent = await app.vault.read(fileAbstract);
+      const lines = rawContent.split('\n');
+      
+      let headingIndex = lines.findIndex(l => l.trim().startsWith('## Incoming Tasks'));
+      const newTaskLineStr = `- [ ] ${taskText}`;
+  
+      if (headingIndex === -1) {
+        lines.push('\n## Incoming Tasks');
+        lines.push(newTaskLineStr);
+      } else {
+        lines.splice(headingIndex + 1, 0, newTaskLineStr);
+      }
+  
+      await app.vault.modify(fileAbstract, lines.join('\n'));
+      
+      if (window.ProjectGridTriggerFilterUpdate) {
+        const liveContainer = btnElement.closest('.block-language-projectgrid');
+        const mainTableBody = liveContainer ? liveContainer.querySelector('tbody') : null;
+        const mainInput = liveContainer ? liveContainer.querySelector('.projectgrid-filter-input') : null;
+        
+        if (mainTableBody && mainInput && window.ProjectGridActiveRowsTrackingArrayRegistryPool) {
+          mainTableBody.innerHTML = '';
+          window.ProjectGridActiveRowsTrackingArrayRegistryPool.length = 0;
+          
+          
+          const absoluteVaultRoot = app.vault.adapter.getBasePath();
+          const rootTarget = liveContainer.closest('.cm-embed-block')?.textContent?.trim() || "__";
+          
+          MainScanner.scanVaultProjectsFolders(
+            app, rootTarget, absoluteVaultRoot, mainTableBody, window.ProjectGridActiveRowsTrackingArrayRegistryPool, mainInput
+          );
+        }
+      }
+    }
+  };
+  
+  // GLOBAL REGISTRY LOCK: Bypasses hidden IIFE closure walls safely
+  globalThis.TasksMarkdownWriter = tasksMarkdownWriterModule;
+  return tasksMarkdownWriterModule;
+  
+  // ==========================================
+  // END OF FILE: tasks-markdown-writer.js
+  // ==========================================
+})();
+globalThis.TasksMarkdownWriter = TasksMarkdownWriter;
 
 module.exports = class ProjectGridPlugin extends Plugin {
   async onload() {
