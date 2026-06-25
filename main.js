@@ -430,7 +430,6 @@ return {
           ]
         },
         {
-          // FIX: INJECT BOTH TASKS AND TAGS JUMP LOCATIONS INTO SYSTEM COLUMNS SELECTION
           name: '📊 Columns',
           items: [
             { name: '🔧 Tasks Column', action: () => this.focusRowCell(activeRow, 1) },
@@ -462,6 +461,25 @@ return {
           ]
         }
       ];
+    },
+  
+    // FIX: ROUTER FORCES ACTIVE KEYBOARD FOCUS TO SHIFT DIRECTLY INTO THE NEWLY DEPLOYED PORTAL CONTAINER PANEL
+    openHeaderDropup(key) {
+      const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
+      if (trigger) {
+        // Dispatch mousedown to trigger panel build operations natively
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        trigger.dispatchEvent(mousedownEvent);
+        
+        // Delay focus shift slightly to allow the DOM node to finish mounting
+        setTimeout(() => {
+          const activePanel = document.querySelector('.projectgrid-dropup-panel');
+          if (activePanel) {
+            activePanel.tabIndex = 0; // Enforce explicit keyboard target capability
+            activePanel.focus();      // Instantly trap arrow key inputs inside list
+          }
+        }, 50);
+      }
     },
   
     handleSortChainClick(key, rowsArray) {
@@ -538,6 +556,18 @@ return {
       const targetCell = rowObj.element.children[cellIndex];
       const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, .projectgrid-tags-cell-btn, .projectgrid-tasks-trigger-btn, a, input') : null;
       if (interactive) interactive.focus();
+    },
+  
+    clearAllSystemFilters(filterInput) {
+      filterInput.value = '';
+      document.querySelectorAll('.projectgrid-dropup-panel input[type="checkbox"]').forEach(cb => cb.checked = true);
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+      filterInput.focus();
+    },
+  
+    reloadActiveAppWorkspace() {
+      const activeLeaf = window.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
+      if (activeLeaf) activeLeaf.previewMode?.rerender(true);
     }
   };
 })();
