@@ -62,7 +62,16 @@ module.exports = {
           else { fm[cfg.key] = finalVal; rowTrackingReference.yamlMetadataValues[cfg.key] = finalVal; }
         });
         btn.textContent = value; closeDropdown();
-        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+        
+        // --- FIX 2: TRIGGER IMMEDIATE AUTOMATED RE-SORT RUN ON SELECTION VALUE MUTATIONS ---
+        const activeChain = window.ProjectGridActiveSortChainList || [];
+        if (activeChain.includes(cfg.key) && window.ProjectGridTriggerSortReRun) {
+          window.ProjectGridTriggerSortReRun();
+        } else if (window.ProjectGridTriggerFilterUpdate) {
+          window.ProjectGridTriggerFilterUpdate();
+        }
+        // ----------------------------------------------------------------------------------
+
         const siblingButtons = tableRow.querySelectorAll('.projectgrid-custom-select-btn');
         if (fieldIdx + 1 < siblingButtons.length) siblingButtons[fieldIdx + 1].focus();
         else filterInput.focus();
@@ -88,7 +97,6 @@ module.exports = {
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
           evt.preventDefault();
           selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-          
           const items = activeDropdown.querySelectorAll('.projectgrid-custom-dropdown-item');
           if (items[selectionIdx] && window.ProjectGridUpdateFocusOverlay) {
             window.ProjectGridUpdateFocusOverlay(items[selectionIdx]);

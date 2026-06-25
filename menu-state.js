@@ -3,12 +3,11 @@
 // ==========================================
 
 module.exports = {
-    activeSortChain: [], // Tracks up to 3 active sorting keys: string elements
+    activeSortChain: [], 
   
     getMenuSchema(filterInput, rowsArray, containerElement, closeMenuCallback) {
       const activeRow = rowsArray.find(row => row.element.classList.contains('projectgrid-row-focused'));
   
-      // Baseline definitions of all available sortable parameters
       const sortingFields = [
         { key: 'tasks', label: 'Tasks Todo', icon: '🔧' },
         { key: 'created', label: 'Created Date', icon: '🆕' },
@@ -24,7 +23,6 @@ module.exports = {
         { key: 'target', label: 'Target', icon: '🎯' }
       ];
   
-      // Build the dynamic items array for the Sort sub-menu block
       const sortMenuItems = [
         { name: '✕ Clear All Sort Chains', action: () => this.clearSortPipeline(rowsArray) }
       ];
@@ -32,7 +30,6 @@ module.exports = {
       sortingFields.forEach(field => {
         const chainIndex = this.activeSortChain.indexOf(field.key);
         let prefix = '⚫ ';
-        
         if (chainIndex === 0) prefix = '🟢 ';
         else if (chainIndex === 1) prefix = '🟡 ';
         else if (chainIndex === 2) prefix = '🔴 ';
@@ -79,10 +76,7 @@ module.exports = {
             { name: '💜 Obsidian Vault', action: () => this.fireProtocol(activeRow, 'obsidian') }
           ]
         },
-        {
-          name: '📶 Sort',
-          items: sortMenuItems
-        },
+        { name: '📶 Sort', items: sortMenuItems },
         {
           name: '⚙️ System',
           items: [
@@ -95,30 +89,22 @@ module.exports = {
   
     handleSortChainClick(key, rowsArray) {
       const existingIdx = this.activeSortChain.indexOf(key);
-  
       if (existingIdx > -1) {
-        // Member exists: remove it, and other remaining items slide up in rank
         this.activeSortChain.splice(existingIdx, 1);
       } else {
-        // Member doesn't exist: append if space allows, otherwise inject at index 0
-        if (this.activeSortChain.length < 3) {
-          this.activeSortChain.push(key);
-        } else {
+        if (this.activeSortChain.length < 3) this.activeSortChain.push(key);
+        else {
           this.activeSortChain.unshift(key);
-          if (this.activeSortChain.length > 3) {
-            this.activeSortChain.pop(); // Remove old trailing key to stay inside 3 elements max
-          }
+          if (this.activeSortChain.length > 3) this.activeSortChain.pop();
         }
       }
-  
-      // Execute sorting computation immediately on user input
       this.executeDynamicSortChain(rowsArray);
     },
   
     clearSortPipeline(rowsArray) {
       this.activeSortChain = [];
       this.updateToolbarLabel();
-      const parentTableBody = rowsArray[0]?.element?.parentElement;
+      const parentTableBody = rowsArray?.element?.parentElement;
       if (parentTableBody) {
         rowsArray.sort((a, b) => String(a.searchText).localeCompare(String(b.searchText)));
         rowsArray.forEach(row => parentTableBody.appendChild(row.element));
@@ -141,22 +127,22 @@ module.exports = {
         const launchersA = rowA.launcherValues || {};
         const launchersB = rowB.launcherValues || {};
   
+        const mergedA = { ...valsA, ...datesA, ...launchersA };
+        const mergedB = { ...valsB, ...datesB, ...launchersB };
+  
         for (let i = 0; i < this.activeSortChain.length; i++) {
           const currentKey = this.activeSortChain[i];
-          let valA = '';
-          let valB = '';
+          let valA = ''; let valB = '';
   
           if (currentKey === 'created' || currentKey === 'updated') {
             valA = String(datesA[currentKey] || '');
             valB = String(datesB[currentKey] || '');
           } else if (currentKey === 'tasks') {
-            // Extracts the raw incomplete task count integer from the fraction string "X/Y"
-            const taskStrA = String(launchersA['tasks'] || '0/0').split('/')[0];
-            const taskStrB = String(launchersB['tasks'] || '0/0').split('/')[0];
-            valA = String(taskStrA).padStart(5, '0');
-            valB = String(taskStrB).padStart(5, '0');
+            const taskStrA = String(launchersA['tasks'] || '0/0').split('/');
+            const taskStrB = String(launchersB['tasks'] || '0/0').split('/');
+            valA = String(taskStrA[0] || '0').padStart(5, '0');
+            valB = String(taskStrB[0] || '0').padStart(5, '0');
           } else if (currentKey === 'tagcount') {
-            // Counts the array slice elements inside comma-delimited strings
             const tagStrA = String(valsA['tags'] || '⬛');
             const tagStrB = String(valsB['tags'] || '⬛');
             const countA = (tagStrA === '⬛' || tagStrA.trim() === '') ? 0 : tagStrA.split(',').length;
@@ -168,14 +154,20 @@ module.exports = {
             valB = String(valsB[currentKey] || '').replace(/[^\w]/g, '');
           }
   
+          // FIX 1: REVERSED THE DIRECTION OF COMPARATOR FROM (valA, valB) TO (valB, valA) TO FORCE HIGH-TO-LOW SORTING
           if (valA !== valB) {
-            return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+            return valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
           }
         }
         return 0;
       });
   
       rowsArray.forEach(row => parentTableBody.appendChild(row.element));
+      
+      // Register global handle listener so rewrite cells can trigger sorting updates reactively
+      window.ProjectGridActiveSortChainList = this.activeSortChain;
+      window.ProjectGridTriggerSortReRun = () => this.executeDynamicSortChain(rowsArray);
+  
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
   
@@ -188,9 +180,7 @@ module.exports = {
         indicator.style.color = 'var(--text-muted)';
       } else {
         const formattedChain = this.activeSortChain.map((k, idx) => {
-          let symbol = '🟢';
-          if (idx === 1) symbol = '🟡';
-          if (idx === 2) symbol = '🔴';
+          let symbol = '🟢'; if (idx === 1) symbol = '🟡'; if (idx === 2) symbol = '🔴';
           return `${symbol}${k.toUpperCase()}`;
         }).join(' ➔ ');
         indicator.textContent = `📶 Sort Chain: ${formattedChain}`;

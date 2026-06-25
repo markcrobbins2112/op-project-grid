@@ -20,7 +20,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
   onunload() {
     const styleEl = document.getElementById('obsidian-projectgrid-styles');
     if (styleEl) styleEl.remove();
-    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal').forEach(el => el.remove());
+    const overlay = document.getElementById('projectgrid-global-focus-overlay');
+    if (overlay) overlay.remove();
+    const iOverlay = document.getElementById('projectgrid-global-input-overlay');
+    if (iOverlay) iOverlay.remove();
+    const rOverlay = document.getElementById('projectgrid-global-row-overlay');
+    if (rOverlay) rOverlay.remove();
   }
 
   renderProjectGridDashboard(sourceText, containerElement) {
@@ -56,11 +61,11 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // FIX: ADD THE INTERACTIVE TASKS HEADER SLOT DIRECTLY AFTER NOTE FILE COLUMN (COL 1)
+    // FIX: ADDED CLASS DEFINITIONS AND DATA-KEYS DIRECTLY INTO THE INTERMEDIATE HEADERS SKELETON
     headerRow.insertAdjacentHTML('beforeend', `
-      <th style="width: 7% !important; text-align: center;" title="Incoming Checkbox Tasks Hierarchy">🔧</th>
-      <th style="width: 6% !important; text-align: center;" title="Folder Created Date">🆕</th>
-      <th style="width: 6% !important; text-align: center;" title="Folder Updated Date">🆙</th>
+      <th style="width: 7% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="tasks" title="Tasks Todo">🔧</div></th>
+      <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="created" title="Folder Created Date">🆕</div></th>
+      <th style="width: 6% !important; text-align: center;"><div class="projectgrid-header-dropup-trigger" data-key="updated" title="Folder Updated Date">🆙</div></th>
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
