@@ -12,14 +12,28 @@ module.exports = {
     btn.tabIndex = 0;
     btn.setAttribute('data-field-index', fieldIdx);
 
+    const isMultiSelect = (cfg.type === 'multi-select' || cfg.key === 'tasks');
     const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-    if (rowTrackingReference && rowTrackingReference.yamlMetadataValues) {
+    
+    // Process initial values array state parameters
+    let activeValuesArray = [];
+    if (isMultiSelect && rawVal && rawVal !== '⬛') {
+      activeValuesArray = rawVal.split(',').map(v => v.trim()).filter(v => v.length > 0);
+    }
+
+    // Set fallback values metrics text representations
+    if (isMultiSelect) {
+      const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
+      btn.textContent = `${activeValuesArray.length}/${totalCount}`;
+      rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
+    } else {
+      btn.textContent = rawVal || '⬛';
       rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
     }
-    btn.textContent = rawVal || '⬛';
 
-    let optionsList = ['⬛', ...cfg.defaults];
-    if (rawVal && !optionsList.includes(rawVal)) optionsList.push(rawVal);
+    let optionsList = cfg.defaults.filter(d => d !== '⬛');
+    if (!isMultiSelect) optionsList = ['⬛', ...optionsList];
+    if (rawVal && !isMultiSelect && !optionsList.includes(rawVal)) optionsList.push(rawVal);
 
     let activeDropdown = null;
     let isOpening = false;
@@ -34,10 +48,7 @@ module.exports = {
       isOpening = true;
       
       document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
-
-      const cleanBtnText = btn.textContent.trim().split(' ');
-      let selectionIdx = optionsList.indexOf(cleanBtnText);
-      if (selectionIdx === -1) selectionIdx = 0;
+      let selectionIdx = 0;
 
       activeDropdown = UiRowSelectDom.createDropdownContainer(btn, cfg.key);
 
@@ -50,7 +61,7 @@ module.exports = {
       scrollingContainer.style.overflowY = 'auto';
       scrollingContainer.style.flex = '1';
 
-      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList);
+      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList, isMultiSelect, activeValuesArray);
       activeDropdown.appendChild(scrollingContainer);
       document.body.appendChild(activeDropdown);
 
@@ -58,33 +69,54 @@ module.exports = {
       
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
-          li.classList.toggle('projectgrid-picker-highlight', lIdx === selectionIdx);
-          li.classList.toggle('projectgrid-row-focused', lIdx === selectionIdx);
-          if (lIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
+          const isHighlighted = (lIdx === selectionIdx);
+          li.classList.toggle('projectgrid-picker-highlight', isHighlighted);
+          li.classList.toggle('projectgrid-row-focused', isHighlighted);
+          if (isHighlighted && window.ProjectGridUpdateFocusOverlay) {
             window.ProjectGridUpdateFocusOverlay(li);
             li.scrollIntoView({ block: 'nearest' });
           }
         });
       };
 
-      const handleKeyRouting = (e, isInputNode) => {
+      const handleKeyRouting = async (e, isInputNode) => {
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
           e.preventDefault(); e.stopPropagation();
           selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
           updateVisualSelection();
-        } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
+        } 
+        else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
           e.preventDefault(); e.stopPropagation();
-          const val = isInputNode ? customInput.value.trim() : '';
-          if (isInputNode && val !== '') commitSelection(val);
-          else commitSelection(optionsList[selectionIdx]);
-        } else if (e.key === 'Escape') { 
+          
+          if (isMultiSelect) {
+            const targetVal = optionsList[selectionIdx];
+            if (activeValuesArray.includes(targetVal)) {
+              activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
+            } else {
+              activeValuesArray.push(targetVal);
+            }
+            
+            // Re-render item checklist indicators on demand
+            const cb = items[selectionIdx].querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = activeValuesArray.includes(targetVal);
+            
+            // Immediately commit value strings back to frontmatter
+            await commitSelection(activeValuesArray.join(', '));
+          } else {
+            const val = isInputNode ? customInput.value.trim() : '';
+            if (isInputNode && val !== '') commitSelection(val);
+            else commitSelection(optionsList[selectionIdx]);
+          }
+        } 
+        else if (e.key === 'Escape') { 
           e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-          closeDropdown(); btn.focus(); 
+          closeDropdown(); 
+          btn.focus(); 
         }
       };
 
       if (customInput) {
-        customInput.focus();
+        requestAnimationFrame(() => { customInput.focus(); });
         customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true));
       } else {
         activeDropdown.tabIndex = 0;
@@ -92,20 +124,48 @@ module.exports = {
         activeDropdown.addEventListener('keydown', (e) => handleKeyRouting(e, false));
       }
 
+      // Mouse click handlers for item selections
+      items.forEach((item, idx) => {
+        item.addEventListener('click', async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          selectionIdx = idx;
+          if (isMultiSelect) {
+            const targetVal = optionsList[idx];
+            if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
+            else activeValuesArray.push(targetVal);
+            const cb = item.querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = activeValuesArray.includes(targetVal);
+            await commitSelection(activeValuesArray.join(', '));
+            updateVisualSelection();
+          } else {
+            commitSelection(optionsList[idx]);
+          }
+        });
+      });
+
       setTimeout(() => { updateVisualSelection(); isOpening = false; }, 20);
     };
 
     const commitSelection = async (value) => {
       const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
-      const finalVal = value === '⬛' ? '' : value;
       if (fileAbstract) {
         await app.fileManager.processFrontMatter(fileAbstract, (fm) => {
-          if (finalVal === '') delete fm[cfg.key];
-          else fm[cfg.key] = finalVal;
+          if (value === '' || value === '⬛') delete fm[cfg.key];
+          else fm[cfg.key] = value;
         });
-        btn.textContent = value; closeDropdown();
-        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-        btn.focus();
+
+        if (isMultiSelect) {
+          const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
+          btn.textContent = `${activeValuesArray.length}/${totalCount}`;
+          rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
+        } else {
+          btn.textContent = value;
+          rowTrackingReference.yamlMetadataValues[cfg.key] = value;
+        }
+
+        const activeChain = window.ProjectGridActiveSortChainList || [];
+        if (activeChain.includes(cfg.key) && window.ProjectGridTriggerSortReRun) window.ProjectGridTriggerSortReRun();
+        else if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       }
     };
 

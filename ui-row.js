@@ -20,8 +20,11 @@ module.exports = {
     rowTrackingReference.launcherValues = {};
     rowTrackingReference.folderDatesValues = {};
 
+    const activeConfig = globalThis.GridConfig || GridConfig;
+    const columnsList = (activeConfig && activeConfig.columns) ? activeConfig.columns : [];
+
     // CONSOLIDATED INJECTION PARSING LOOP: Evaluates and appends exact horizontal coordinates fields matching core array order
-    GridConfig.columns.forEach((col, idx) => {
+    columnsList.forEach((col, idx) => {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell';
 
@@ -37,7 +40,6 @@ module.exports = {
         tableRow.appendChild(cell);
       } 
       else if (col.type === 'timestamp') {
-        // Appends the specific timestamp row cell targets (created vs updated)
         UiRowDates.appendSingleTimestampCell(tableRow, folder, absoluteVaultRoot, col.key, rowTrackingReference);
       } 
       else if (col.type === 'launcher') {
@@ -46,7 +48,8 @@ module.exports = {
       else if (col.type === 'tags-cell') {
         UiRowTags.buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
       } 
-      else if (col.type === 'yaml-select') {
+      // PARITY INTEGRATION: Capture both regular metadata selects and the multi-select tasks configuration track uniformly
+      else if (col.type === 'yaml-select' || col.key === 'tasks') {
         cell.className += ' select-cell projectgrid-uniform-yaml-td';
         UiRowSelect.buildSelectButton(cell, tableRow, idx, col, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
         tableRow.appendChild(cell);

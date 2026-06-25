@@ -42,11 +42,31 @@ module.exports = {
       return customInput;
     },
   
-    populateItemsList(scrollingContainer, optionsList) {
+    populateItemsList(scrollingContainer, optionsList, isMultiSelect, activeValuesArray) {
       optionsList.forEach((opt) => {
         const li = document.createElement('div');
         li.className = 'projectgrid-custom-dropdown-item';
-        li.textContent = opt;
+        
+        if (isMultiSelect) {
+          // MULTI-SELECT TECHNIQUE: Inject structure matching your exact tags column behavior
+          li.style.display = 'flex';
+          li.style.alignItems = 'center';
+          li.style.gap = '6px';
+          li.style.textAlign = 'left';
+  
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.tabIndex = -1;
+          cb.checked = activeValuesArray.includes(opt);
+          cb.style.margin = '0';
+          cb.style.cursor = 'pointer';
+  
+          li.appendChild(cb);
+          li.appendChild(document.createTextNode(opt));
+        } else {
+          li.textContent = opt;
+        }
+        
         scrollingContainer.appendChild(li);
       });
     }

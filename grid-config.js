@@ -54,7 +54,8 @@ const gridConfigModule = {
         icon: '🔧',
         label: 'Tasks Todo',
         type: 'yaml-select',
-        defaults: ['0/0', '0/1', '1/1', '0/2', '1/2', '2/2'],
+        // DUMMY DATA ADDITION: Populated exactly 5 standard mock task completion metric choices
+        defaults: ['0/5', '1/5', '2/5', '3/5', '4/5', '5/5'],
         isExtendable: true,
         tutorKeys: '• Click: Focus tasks dropdown cell<br>• ArrowUp/Down: Shift vertical grid rows<br>• Escape: Focus main search input field',
         width: '5%'
