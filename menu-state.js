@@ -21,11 +21,17 @@ module.exports = {
           ]
         },
         {
+          // FIX: Removed "Focus on" verbiage and mapped exactly to the same 8 columns as the filters
           name: '📊 Columns',
           items: [
-            { name: 'Focus Note Cell', action: () => this.focusRowCell(activeRow, 0) },
-            { name: 'Focus Stars Field', action: () => this.focusRowCell(activeRow, 4) },
-            { name: 'Focus Status Field', action: () => this.focusRowCell(activeRow, 9) }
+            { name: '⭐ Stars Column', action: () => this.focusRowCell(activeRow, 4) },
+            { name: '💲 Value Column', action: () => this.focusRowCell(activeRow, 5) },
+            { name: '🐘 Size Column', action: () => this.focusRowCell(activeRow, 6) },
+            { name: '🎱 Depth Column', action: () => this.focusRowCell(activeRow, 7) },
+            { name: '🏅 Priority Column', action: () => this.focusRowCell(activeRow, 8) },
+            { name: '🚦 Status Column', action: () => this.focusRowCell(activeRow, 9) },
+            { name: '🔤 Lang Column', action: () => this.focusRowCell(activeRow, 10) },
+            { name: '🎯 Target Column', action: () => this.focusRowCell(activeRow, 11) }
           ]
         },
         {
@@ -39,7 +45,6 @@ module.exports = {
         {
           name: '⚙️ System',
           items: [
-            // --- FIX: INTEGRATE ADVANCED 3-COLUMN SORT CHAIN PICKER ACTION MATRICES ---
             { name: '📶 Sort: Status ➔ Stars ➔ Priority', action: () => this.executeThreeColumnSortChain(rowsArray, ['status', 'stars', 'priority']) },
             { name: '📶 Sort: Priority ➔ Value ➔ Size', action: () => this.executeThreeColumnSortChain(rowsArray, ['priority', 'value', 'size']) },
             { name: '📶 Sort: Lang ➔ Target ➔ Stars', action: () => this.executeThreeColumnSortChain(rowsArray, ['lang', 'target', 'stars']) },
@@ -50,7 +55,6 @@ module.exports = {
       ];
     },
   
-    // FIX: STABLE THREE COLUMN TIER SORT CHAIN COMPUTATION ENGINE
     executeThreeColumnSortChain(rowsArray, keysArray) {
       const parentTableBody = rowsArray[0]?.element?.parentElement;
       if (!parentTableBody) return;
@@ -59,23 +63,19 @@ module.exports = {
         const valsA = rowA.yamlMetadataValues || {};
         const valsB = rowB.yamlMetadataValues || {};
   
-        // Layer 1 Check: First target key sorting comparison rules
         const valA1 = String(valsA[keysArray[0]] || '').replace(/[^\w]/g, '');
         const valB1 = String(valsB[keysArray[0]] || '').replace(/[^\w]/g, '');
         if (valA1 !== valB1) return valA1.localeCompare(valB1, undefined, { numeric: true });
   
-        // Layer 2 Check: Tie breaker falls back to second target key
         const valA2 = String(valsA[keysArray[1]] || '').replace(/[^\w]/g, '');
         const valB2 = String(valsB[keysArray[1]] || '').replace(/[^\w]/g, '');
         if (valA2 !== valB2) return valA2.localeCompare(valB2, undefined, { numeric: true });
   
-        // Layer 3 Check: Final tie breaker falls back onto third target key sorting parameters
         const valA3 = String(valsA[keysArray[2]] || '').replace(/[^\w]/g, '');
         const valB3 = String(valsB[keysArray[2]] || '').replace(/[^\w]/g, '');
         return valA3.localeCompare(valB3, undefined, { numeric: true });
       });
   
-      // Re-append DOM node structures inside parent container canvas to reflect changes
       rowsArray.forEach(row => parentTableBody.appendChild(row.element));
       if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
     },
@@ -93,7 +93,9 @@ module.exports = {
       if (!rowObj) return alert('Highlight a row project using arrow keys first.');
       const targetCell = rowObj.element.children[cellIndex];
       const interactive = targetCell ? targetCell.querySelector('.projectgrid-custom-select-btn, a, input') : null;
-      if (interactive) interactive.focus();
+      if (interactive) {
+        interactive.focus();
+      }
     },
   
     fireProtocol(rowObj, protocol) {

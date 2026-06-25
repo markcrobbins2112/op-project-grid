@@ -34,16 +34,16 @@ module.exports = {
         activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
         activePanel.style.left = `${rect.left + window.scrollX}px`;
   
+        // FIX: Changed label prefix to match requested layout structure "Columns / Filters" cleanly
         const labelHeader = document.createElement('div');
         labelHeader.className = 'projectgrid-dropup-header-title';
-        labelHeader.textContent = `📋 Column: ${key.toUpperCase()}`;
+        labelHeader.textContent = `📋 Columns: ${key.toUpperCase()}`;
         activePanel.appendChild(labelHeader);
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
           
-          // FIX: ROUTE THE DROPDOWN LIST TARGET HIGHLIGHTS EXCLUSIVELY TO YOUR TOPMOST FOCUS OVERLAY PORTAL
           if (oIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
             setTimeout(() => window.ProjectGridUpdateFocusOverlay(wrapper), 10);
           }
@@ -134,7 +134,6 @@ module.exports = {
         }
       });
   
-      // FIX: HEADER FILTER FIELD CONNECTS TO THE MIDDLE INPUT OVERLAY PORTAL
       trigger.addEventListener('focus', () => {
         if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
       });
