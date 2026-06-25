@@ -7,11 +7,10 @@ const UiRowActions = require('./ui-row-actions');
 const UiRowSelect = require('./ui-row-select');
 
 module.exports = {
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
-    // Column 1: Core Note link cell
     const noteCell = document.createElement('td');
     noteCell.className = 'projectgrid-matrix-cell note-title-cell';
     const fileAnchor = document.createElement('a');
@@ -27,10 +26,9 @@ module.exports = {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2, 3, 4: Launcher Buttons (Appended modularly)
-    UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot);
+    // Columns 2, 3, 4: App Launcher shortcuts (Passes app context layer)
+    UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
-    // Columns 5 through 12: Define the 8 metadata keys
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -48,8 +46,8 @@ module.exports = {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
       
-      // Call custom select button builder (Defined in ui-row-select.js)
-      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+      // RELAYS CURRENT WORKSPACE ROW MATRIX ARRAYS FOR DYNAMIC SELECTION OVERLAY PROCESSING
+      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray);
       
       tableRow.appendChild(cell);
     });

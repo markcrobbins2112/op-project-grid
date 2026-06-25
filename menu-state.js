@@ -39,6 +39,10 @@ module.exports = {
         {
           name: '⚙️ System',
           items: [
+            // FIX: SYSTEM CONTROLLER MENU APPENDS MULTI-CHAIN COLUMN SORTING DISPATCH OPTIONS
+            { name: '🔀 Sort Chain: Status > Priority > Stars', action: () => this.executeMultiColumnSort(rowsArray, ['status', 'priority', 'stars']) },
+            { name: '🔀 Sort Chain: Stars > Value > Size', action: () => this.executeMultiColumnSort(rowsArray, ['stars', 'value', 'size']) },
+            { name: '🔀 Sort Chain: Lang > Target > Status', action: () => this.executeMultiColumnSort(rowsArray, ['lang', 'target', 'status']) },
             { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
             { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
           ]
@@ -46,22 +50,38 @@ module.exports = {
       ];
     },
   
-    // FIX: ROUTER FORCES ACTIVE FOCUS TO SHIFT FROM COMPLETED SELECTION DIRECTLY INTO PANEL NODES
+    // FIX: ADVANCED TRIPLE-TIER DATA MATRIX CHRONOLOGICAL MULTI-COLUMN SORT ENGINE
+    executeMultiColumnSort(rowsArray, sortKeysChain) {
+      const parentTableBody = rowsArray[0].element.parentElement;
+      
+      rowsArray.sort((rowA, rowB) => {
+        // Isolate chain layer variables explicitly
+        const k1 = sortKeysChain[0], k2 = sortKeysChain[1], k3 = sortKeysChain[2];
+        
+        const vA1 = String(rowA.yamlMetadataValues[k1] || '⬛'), vB1 = String(rowB.yamlMetadataValues[k1] || '⬛');
+        const vA2 = String(rowA.yamlMetadataValues[k2] || '⬛'), vB2 = String(rowB.yamlMetadataValues[k2] || '⬛');
+        const vA3 = String(rowA.yamlMetadataValues[k3] || '⬛'), vB3 = String(rowB.yamlMetadataValues[k3] || '⬛');
+  
+        // Tier 1 Compare Evaluation
+        if (vA1 !== vB1) return vA1.localeCompare(vB1);
+        // Tier 2 Compare Evaluation
+        if (vA2 !== vB2) return vA2.localeCompare(vB2);
+        // Tier 3 Compare Evaluation
+        return vA3.localeCompare(vB3);
+      });
+  
+      // Detach and re-append sorted row elements onto the master parent body layout track
+      rowsArray.forEach(rowObj => {
+        parentTableBody.appendChild(rowObj.element);
+      });
+    },
+  
     openHeaderDropup(key) {
       const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
       if (trigger) {
-        // Simulate click down to build and mount the portal panel layout
         const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
         trigger.dispatchEvent(mousedownEvent);
-        
-        // Delay execution a fraction of a millisecond to let portal finish spawning
-        setTimeout(() => {
-          const activePanel = document.querySelector('.projectgrid-dropup-panel');
-          if (activePanel) {
-            // Put focus inside the newly deployed filter container box
-            trigger.focus();
-          }
-        }, 50);
+        setTimeout(() => { trigger.focus(); }, 50);
       }
     },
   

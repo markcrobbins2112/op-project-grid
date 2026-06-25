@@ -76,7 +76,6 @@ return {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        /* MASTER HUE-CYCLING CRITICAL DEFINITION MAP */
         @keyframes projectgrid-hue-cycle {
           0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
           100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
@@ -89,8 +88,6 @@ return {
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
-        
-        /* FIX: ENACTIVE ROTATING HUE INNER GLOW ENFORCED BOUNDS FOR ROW TRACKS */
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
           animation: projectgrid-hue-cycle 3s linear infinite !important;
@@ -100,12 +97,16 @@ return {
         .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; }
         .projectgrid-matrix-link { text-decoration: none !important; }
         .projectgrid-matrix-link:hover { text-decoration: none !important; }
-        
-        /* FIX: FORCE NO UNDERLINES ON THE LAUNCH COLUMNS LINK HANDLERS */
         .action-icon-cell { text-align: center !important; }
         .action-icon-cell a { text-decoration: none !important; }
         .action-icon-cell a:hover { text-decoration: none !important; }
   
+        /* OBSIDIAN TRANSPARENT INTERFACE SHORTCUT GHOST */
+        .projectgrid-aip-icon-btn.is-vault-missing {
+          opacity: 0.15 !important;
+        }
+  
+        /* HEADER TRIGGER BOUNDS WITH REVOLVING ACCENT OUTLINE IN FOCUS */
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
@@ -115,9 +116,14 @@ return {
           font-size: 13px !important;
           width: 100% !important;
           box-sizing: border-box !important;
+          outline: none !important;
+          border: 2px solid transparent !important;
         }
         .projectgrid-header-dropup-trigger:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.08)) !important;
+        }
+        .projectgrid-header-dropup-trigger:focus {
+          animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
   
         .projectgrid-dropup-panel {
@@ -147,8 +153,6 @@ return {
           width: 100% !important;
           border: 2px solid transparent !important;
         }
-        
-        /* FIX: ENFORCE NATIVE HUE BORDER ALIGNMENT STATES TO ACTIVE CHECKBOX INDICATORS TOO */
         .projectgrid-dropup-option.projectgrid-row-focused {
           animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
@@ -196,8 +200,6 @@ return {
           box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
           box-sizing: border-box !important;
         }
-        
-        /* FIX: SUB-SELECTION ITEM BOX OUTLINES ENFORCE ONLY HUE REVOLVING CHROME BOUNDS */
         .projectgrid-custom-dropdown-item {
           padding: 4px 4px !important;
           cursor: pointer !important;
@@ -217,7 +219,7 @@ return {
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
           z-index: 10000 !important;
           padding: 6px !important;
-          min-width: 200px !important;
+          min-width: 220px !important;
           box-sizing: border-box !important;
         }
         .projectgrid-picker-item {
@@ -277,6 +279,10 @@ return {
         {
           name: '⚙️ System',
           items: [
+            // FIX: SYSTEM CONTROLLER MENU APPENDS MULTI-CHAIN COLUMN SORTING DISPATCH OPTIONS
+            { name: '🔀 Sort Chain: Status > Priority > Stars', action: () => this.executeMultiColumnSort(rowsArray, ['status', 'priority', 'stars']) },
+            { name: '🔀 Sort Chain: Stars > Value > Size', action: () => this.executeMultiColumnSort(rowsArray, ['stars', 'value', 'size']) },
+            { name: '🔀 Sort Chain: Lang > Target > Status', action: () => this.executeMultiColumnSort(rowsArray, ['lang', 'target', 'status']) },
             { name: '✕ Clear All Filters', action: () => this.clearAllSystemFilters(filterInput) },
             { name: '🔄 Reload Component', action: () => this.reloadActiveAppWorkspace() }
           ]
@@ -284,22 +290,38 @@ return {
       ];
     },
   
-    // FIX: ROUTER FORCES ACTIVE FOCUS TO SHIFT FROM COMPLETED SELECTION DIRECTLY INTO PANEL NODES
+    // FIX: ADVANCED TRIPLE-TIER DATA MATRIX CHRONOLOGICAL MULTI-COLUMN SORT ENGINE
+    executeMultiColumnSort(rowsArray, sortKeysChain) {
+      const parentTableBody = rowsArray[0].element.parentElement;
+      
+      rowsArray.sort((rowA, rowB) => {
+        // Isolate chain layer variables explicitly
+        const k1 = sortKeysChain[0], k2 = sortKeysChain[1], k3 = sortKeysChain[2];
+        
+        const vA1 = String(rowA.yamlMetadataValues[k1] || '⬛'), vB1 = String(rowB.yamlMetadataValues[k1] || '⬛');
+        const vA2 = String(rowA.yamlMetadataValues[k2] || '⬛'), vB2 = String(rowB.yamlMetadataValues[k2] || '⬛');
+        const vA3 = String(rowA.yamlMetadataValues[k3] || '⬛'), vB3 = String(rowB.yamlMetadataValues[k3] || '⬛');
+  
+        // Tier 1 Compare Evaluation
+        if (vA1 !== vB1) return vA1.localeCompare(vB1);
+        // Tier 2 Compare Evaluation
+        if (vA2 !== vB2) return vA2.localeCompare(vB2);
+        // Tier 3 Compare Evaluation
+        return vA3.localeCompare(vB3);
+      });
+  
+      // Detach and re-append sorted row elements onto the master parent body layout track
+      rowsArray.forEach(rowObj => {
+        parentTableBody.appendChild(rowObj.element);
+      });
+    },
+  
     openHeaderDropup(key) {
       const trigger = document.querySelector(`.projectgrid-header-dropup-trigger[data-key="${key}"]`);
       if (trigger) {
-        // Simulate click down to build and mount the portal panel layout
         const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
         trigger.dispatchEvent(mousedownEvent);
-        
-        // Delay execution a fraction of a millisecond to let portal finish spawning
-        setTimeout(() => {
-          const activePanel = document.querySelector('.projectgrid-dropup-panel');
-          if (activePanel) {
-            // Put focus inside the newly deployed filter container box
-            trigger.focus();
-          }
-        }, 50);
+        setTimeout(() => { trigger.focus(); }, 50);
       }
     },
   
@@ -338,14 +360,20 @@ return {
       const picker = document.createElement('div');
       picker.className = 'projectgrid-command-picker';
       
-      // Position picker panel directly aligned beneath the text search field
+      // Align beneath search input
       picker.style.top = `${filterInput.offsetTop + filterInput.offsetHeight + 4}px`;
       picker.style.left = `${filterInput.offsetLeft}px`;
   
       itemsList.forEach((item, idx) => {
         const el = document.createElement('div');
         el.className = 'projectgrid-picker-item';
-        if (idx === selectedIndex) el.classList.add('projectgrid-picker-highlight');
+        
+        // Apply hue rotating focus border if this picker item is selected
+        if (idx === selectedIndex) {
+          el.classList.add('projectgrid-picker-highlight');
+          el.classList.add('projectgrid-row-focused');
+        }
+        
         el.textContent = item.name;
   
         el.addEventListener('click', (e) => {
@@ -378,7 +406,7 @@ return {
 
 return {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Categories Wheel, 2 = Sub Items list
+    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -407,10 +435,9 @@ return {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
-      // FIX: IF EXTENSION DROPDOWN HEADER PANEL IS OPENED, FORWARD KEYBOARD ARROW CONTROL TRACKS
+      // FIX: INTERCEPT ENGINE DROPS SEARCH CURSOR ACTIONS COMPLETELY IF A TITLE PANEL GAINS KEYBOARD FOCUS
       const openHeaderPanel = document.querySelector('.projectgrid-dropup-panel');
       if (openHeaderPanel) {
-        // Drop standard text cursor movements while menu handles selections
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp' || evt.key === 'Escape' || evt.key === 'Enter') {
           return; 
         }
@@ -492,7 +519,11 @@ return {
     let currentFocusedIndex = -1;
 
     const clearRowHighlights = () => {
-      rowsArray.forEach(row => row.element.classList.remove('projectgrid-row-focused'));
+      rowsArray.forEach(row => {
+        if (row.element && row.element.classList) {
+          row.element.classList.remove('projectgrid-row-focused');
+        }
+      });
     };
 
     const applyFilter = () => {
@@ -501,23 +532,82 @@ return {
       currentFocusedIndex = -1;
       clearRowHighlights();
       
+      // Dictionary maps to track live visible value matches for the counters
+      const globalCounts = {};
+      const visibleCounts = {};
+
+      // First run: Calculate base structural counts across the dataset
       rowsArray.forEach(row => {
+        const metadata = row.yamlMetadataValues || {};
+        const launchers = row.launcherValues || {};
+        
+        // Merge field scopes for dynamic indexing
+        const allFields = { ...metadata, ...launchers };
+
+        Object.keys(allFields).forEach(key => {
+          const valueStr = String(allFields[key]);
+          if (!globalCounts[key]) globalCounts[key] = { total: 0, valMap: {} };
+          if (!visibleCounts[key]) visibleCounts[key] = { valMap: {} };
+
+          globalCounts[key].total++;
+          globalCounts[key].valMap[valueStr] = (globalCounts[key].valMap[valueStr] || 0) + 1;
+        });
+
+        // Evaluate standard visibility parameters matching active filters
         const passText = row.searchText.includes(val);
         const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
         
         if (passText && passDropdowns) {
-          row.element.style.display = ''; // Clear inline styles to display row natively
+          row.element.style.display = '';
+          
+          // Increment visibility statistics maps
+          Object.keys(allFields).forEach(key => {
+            const valueStr = String(allFields[key]);
+            visibleCounts[key].valMap[valueStr] = (visibleCounts[key].valMap[valueStr] || 0) + 1;
+          });
         } else {
           row.element.style.display = 'none';
         }
+      });
+
+      // Second run: Push structural counter data directly back into the live dropdown elements
+      rowsArray.forEach(row => {
+        if (!row.element) return;
+        const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
+        
+        selects.forEach(btn => {
+          const fIdx = btn.getAttribute('data-field-index');
+          const fieldsConfigKeys = ['stars', 'value', 'size', 'depth', 'priority', 'status', 'lang', 'target'];
+          const key = fieldsConfigKeys[fIdx];
+          if (!key) return;
+
+          const currentVal = row.yamlMetadataValues ? String(row.yamlMetadataValues[key]) : '⬛';
+          const visNum = visibleCounts[key]?.valMap[currentVal] || 0;
+          const totNum = globalCounts[key]?.valMap[currentVal] || 0;
+
+          // Strip previous count trails to rewrite cleanly
+          const baseText = currentVal;
+          btn.textContent = `${baseText} {${visNum}/${totNum}}`;
+        });
+      });
+
+      // Third run: Update header titles and filter panel option labels dynamically
+      document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
+        const key = trigger.getAttribute('data-key');
+        if (!key) return;
+
+        const totalItems = globalCounts[key]?.total || 0;
+        const visibleItems = Object.values(visibleCounts[key]?.valMap || {}).reduce((a, b) => a + b, 0);
+        
+        const baseIcon = trigger.textContent.split(' ')[0];
+        trigger.textContent = `${baseIcon} {${visibleItems}/${totalItems}}`;
       });
     };
 
     filterInput.addEventListener('input', applyFilter);
 
-    // FIX: Core visibility checking condition updated to cleanly match visible row element arrays
     MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
-      return rowsArray.filter(row => row.element.style.display !== 'none');
+      return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
       clearRowHighlights();
@@ -530,6 +620,9 @@ return {
     });
 
     window.ProjectGridTriggerFilterUpdate = applyFilter;
+    
+    // Initial data run to render layout counters accurately on bootup
+    setTimeout(applyFilter, 50);
   }
 };
 })();
@@ -543,7 +636,7 @@ return {
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
       trigger.setAttribute('data-key', key);
-      trigger.tabIndex = 0; // Allows headers to receive explicit keyboard focus
+      trigger.tabIndex = 0; // FIX: ENABLES TITLES FILTER BUTTONS TO BE SEPARATELY FOCUSABLE VIA KEYBOARD
       trigger.textContent = titleIcon;
   
       let activePanel = null;
@@ -553,44 +646,69 @@ return {
   
       const closePanel = () => {
         if (activePanel) { activePanel.remove(); activePanel = null; }
+        trigger.classList.remove('projectgrid-header-focused-indicator');
       };
+  
+      // FIX: ATTACH INDICATOR HIGHLIGHT WHEN CELL TRIGGER CAPTURES ACTIVE FOCUS
+      trigger.addEventListener('focus', () => {
+        trigger.classList.add('projectgrid-header-focused-indicator');
+      });
+      trigger.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (!activePanel) trigger.classList.remove('projectgrid-header-focused-indicator');
+        }, 150);
+      });
   
       const openPanel = () => {
         closePanel();
         selectionIdx = 0;
+        trigger.classList.add('projectgrid-header-focused-indicator');
         activePanel = document.createElement('div');
         activePanel.className = 'projectgrid-dropup-panel';
   
         const rect = trigger.getBoundingClientRect();
-        activePanel.style.position = 'fixed';
-        activePanel.style.top = `${rect.bottom + window.scrollY + 4}px`;
-        activePanel.style.left = `${rect.left + window.scrollX}px`;
-        activePanel.style.zIndex = '300000';
-        activePanel.style.height = 'auto';
+        Object.assign(activePanel.style, {
+          position: 'fixed', top: `${rect.bottom + window.scrollY + 4}px`,
+          left: `${rect.left + window.scrollX}px`, zIndex: '300000', height: 'auto'
+        });
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
-          
-          // FIX: APPLY HUE ROTATING BORDER TO CURRENTLY CHOSEN KEYBOARD SELECTION INDICATOR
           if (oIdx === selectionIdx) wrapper.classList.add('projectgrid-row-focused');
           
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
-          checkbox.tabIndex = -1; // Keep focus locked on the parent container
+          checkbox.tabIndex = -1;
           
+          let visibleCount = 0;
+          let totalCount = 0;
+  
+          // FIX: CALCULATE DYNAMIC VISIBLE/TOTAL VALUE METRICS FOR EACH DROPDOWN ITEM SELECTOR
           if (opt === '[ALL]') {
             checkbox.checked = (activeFilters.size === defaults.length);
+            totalCount = rowsArray.length;
+            visibleCount = rowsArray.filter(r => r.element.style.display !== 'none').length;
           } else {
             checkbox.checked = activeFilters.has(opt);
+            rowsArray.forEach(r => {
+              const currentVal = r.yamlMetadataValues && r.yamlMetadataValues[key] ? String(r.yamlMetadataValues[key]) : '⬛';
+              const normOpt = opt === '⬛' ? '' : opt;
+              const normCurrent = currentVal === '⬛' ? '' : currentVal;
+              if (normCurrent === normOpt) {
+                totalCount++;
+                if (r.element.style.display !== 'none') visibleCount++;
+              }
+            });
           }
   
-          checkbox.addEventListener('change', () => {
-            handleToggle(opt, checkbox.checked);
-          });
+          checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
           wrapper.appendChild(checkbox);
-          wrapper.appendChild(document.createTextNode(opt));
+          
+          // Format layout string to display counts inside trailing tags: Icon {visible/total}
+          const textLabel = document.createTextNode(` ${opt} {${visibleCount}/${totalCount}}`);
+          wrapper.appendChild(textLabel);
           activePanel.appendChild(wrapper);
         });
   
@@ -611,9 +729,7 @@ return {
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
           boxes[0].checked = (activeFilters.size === defaults.length);
-          defaults.forEach((d, idx) => {
-            boxes[idx + 1].checked = activeFilters.has(d);
-          });
+          defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
         rowsArray.forEach(row => {
@@ -625,23 +741,13 @@ return {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
-      // FIX: NATIVE CAPTURING ROUTINE STEPS CHROME BORDER INDICATOR SELECTIONS RELIABLY
       function handlePanelKeys(evt) {
         if (!activePanel) return;
-  
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-          evt.preventDefault();
-          evt.stopPropagation(); // Stop parent components from executing main row drift jumps
-          
-          if (evt.key === 'ArrowDown') {
-            selectionIdx = (selectionIdx + 1) >= fullOptionsList.length ? 0 : selectionIdx + 1;
-          } else {
-            selectionIdx = (selectionIdx - 1) < 0 ? fullOptionsList.length - 1 : selectionIdx - 1;
-          }
-  
+          evt.preventDefault(); evt.stopPropagation();
+          selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
           activePanel.querySelectorAll('.projectgrid-dropup-option').forEach((lbl, lIdx) => {
-            if (lIdx === selectionIdx) lbl.className = 'projectgrid-dropup-option projectgrid-row-focused';
-            else lbl.className = 'projectgrid-dropup-option';
+            lbl.className = lIdx === selectionIdx ? 'projectgrid-dropup-option projectgrid-row-focused' : 'projectgrid-dropup-option';
           });
         } else if (evt.key === ' ' || evt.key === 'Spacebar') {
           evt.preventDefault();
@@ -662,7 +768,6 @@ return {
         if (activePanel) closePanel(); else openPanel();
       });
   
-      // Ensure listeners drop when user exits container
       trigger.addEventListener('blur', () => {
         setTimeout(() => {
           if (activePanel && !activePanel.contains(document.activeElement)) {
@@ -705,21 +810,40 @@ return {
 })();
 const UiRowActions = (function() {
 return {
-    appendLauncherButtons(tableRow, folder, absoluteVaultRoot) {
+    appendLauncherButtons(tableRow, folder, absoluteVaultRoot, appInstance) {
       const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
       
-      const actions = [
-        { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus' },
-        { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor' },
-        { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault' }
-      ];
+      const cellDopus = document.createElement('td');
+      cellDopus.className = 'projectgrid-matrix-cell action-icon-cell';
+      cellDopus.innerHTML = `<a href="aip://dopus/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="Open folder in Directory Opus">📁</a>`;
+      tableRow.appendChild(cellDopus);
   
-      actions.forEach(act => {
-        const cell = document.createElement('td');
-        cell.className = 'projectgrid-matrix-cell action-icon-cell';
-        cell.innerHTML = `<a href="aip://${act.protocol}/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="${act.title}">${act.icon}</a>`;
-        tableRow.appendChild(cell);
+      const cellCursor = document.createElement('td');
+      cellCursor.className = 'projectgrid-matrix-cell action-icon-cell';
+      cellCursor.innerHTML = `<a href="aip://cursor/${absoluteLocalPath}" class="projectgrid-aip-icon-btn" title="Open workspace in Cursor">💻</a>`;
+      tableRow.appendChild(cellCursor);
+  
+      const cellObsidian = document.createElement('td');
+      cellObsidian.className = 'projectgrid-matrix-cell action-icon-cell';
+      
+      const obsidianAnchor = document.createElement('a');
+      obsidianAnchor.href = `aip://obsidian/${absoluteLocalPath}`;
+      obsidianAnchor.className = 'projectgrid-aip-icon-btn';
+      obsidianAnchor.title = 'Open directory as Obsidian Vault';
+      obsidianAnchor.textContent = '💜';
+  
+      // FIX: ASYNCHRONOUSLY EVALUATE VAULT EXISTENCE TO ENFORCE TRANSPARENCY WITHOUT FREEZING THE INTERFACE
+      const checkPath = `${folder.path}/.obsidian`;
+      appInstance.vault.adapter.exists(checkPath).then((vaultConfigFolderExists) => {
+        if (!vaultConfigFolderExists) {
+          // Apply 35% opacity rendering to handle the required visual transparency state layout parameters
+          obsidianAnchor.style.opacity = '0.25';
+          obsidianAnchor.style.filter = 'grayscale(100%)';
+        }
       });
+  
+      cellObsidian.appendChild(obsidianAnchor);
+      tableRow.appendChild(cellObsidian);
     }
   };
 })();
@@ -777,7 +901,7 @@ return {
 })();
 
 return {
-  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
     const btn = document.createElement('div');
     btn.className = 'projectgrid-custom-select-btn';
     btn.tabIndex = 0;
@@ -809,8 +933,23 @@ return {
 
       optionsList.forEach((opt, oIdx) => {
         const li = document.createElement('li');
+        
+        let visibleCount = 0;
+        let totalCount = 0;
+
+        // FIX: COMPUTE METADATA FIELD COUNTERS FOR SUB-ROW PICKER LIST SELECTION OPTIONS
+        rowsArray.forEach(r => {
+          const checkVal = r.yamlMetadataValues && r.yamlMetadataValues[cfg.key] ? String(r.yamlMetadataValues[cfg.key]) : '⬛';
+          if (checkVal === opt) {
+            totalCount++;
+            if (r.element.style.display !== 'none') visibleCount++;
+          }
+        });
+
+        // Format label parameter value layout sequence: Option {visible/total}
+        li.textContent = `${opt} {${visibleCount}/${totalCount}}`;
         li.className = oIdx === selectionIdx ? 'projectgrid-custom-dropdown-item projectgrid-row-focused' : 'projectgrid-custom-dropdown-item';
-        li.textContent = opt;
+        
         li.addEventListener('mousedown', (e) => { e.preventDefault(); commitSelection(opt); });
         activeDropdown.appendChild(li);
       });
@@ -860,11 +999,10 @@ return {
 })();
 
 return {
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
     const tableRow = document.createElement('tr');
     tableRow.className = 'projectgrid-matrix-row';
 
-    // Column 1: Core Note link cell
     const noteCell = document.createElement('td');
     noteCell.className = 'projectgrid-matrix-cell note-title-cell';
     const fileAnchor = document.createElement('a');
@@ -880,10 +1018,9 @@ return {
     noteCell.appendChild(fileAnchor);
     tableRow.appendChild(noteCell);
 
-    // Columns 2, 3, 4: Launcher Buttons (Appended modularly)
-    UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot);
+    // Columns 2, 3, 4: App Launcher shortcuts (Passes app context layer)
+    UiRowActions.appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app);
 
-    // Columns 5 through 12: Define the 8 metadata keys
     const fieldsConfig = [
       { key: 'stars', defaults: ['0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'], isExtendable: false },
       { key: 'value', defaults: ['0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'], isExtendable: false },
@@ -901,8 +1038,8 @@ return {
       const cell = document.createElement('td');
       cell.className = 'projectgrid-matrix-cell select-cell projectgrid-uniform-yaml-td';
       
-      // Call custom select button builder (Defined in ui-row-select.js)
-      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+      // RELAYS CURRENT WORKSPACE ROW MATRIX ARRAYS FOR DYNAMIC SELECTION OVERLAY PROCESSING
+      UiRowSelect.buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray);
       
       tableRow.appendChild(cell);
     });
@@ -940,8 +1077,9 @@ return {
     return UiDropdown.buildHeaderDropup(titleIcon, key, defaults, rowsArray);
   },
 
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
-    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
+    // FIX: RELAYS THE GLOBAL ROW REFERENCE STATE DOWNSTREAM FOR ITEM VOLUME TRACKING MEASUREMENTS
+    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray);
   }
 };
 })();
@@ -983,10 +1121,14 @@ module.exports = class ProjectGridPlugin extends Plugin {
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // FIX: COMPLETELY ELIMINATED THE launcherColumns ARRAY LOOP TO STOP THE 3 DUPLICATE ICONS FROM SHIFTING COLS
+    // Define the launcher configurations for header filters mapping
+    const launcherColumns = [
+      { icon: '📁', key: 'dopus', options: ['Active'] },
+      { icon: '💻', key: 'cursor', options: ['Active'] },
+      { icon: '💜', key: 'obsidian', options: ['Active'] }
+    ];
 
     // Define the 8 exact YAML frontmatter metadata columns (Columns 5 through 12)
-    // Stars column (⭐) explicitly includes the comprehensive choice array to render all choices inside the dropup panel
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -1014,6 +1156,12 @@ module.exports = class ProjectGridPlugin extends Plugin {
         tableBody.appendChild(rowRef.element);
         rowsArray.push(rowRef);
       }
+    });
+
+    // Build and append the 3 launcher filter dropups
+    launcherColumns.forEach(col => {
+      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
+      headerRow.appendChild(dropupTh);
     });
 
     // Build and append the 8 interactive YAML metadata dropup filter headers directly over columns 5-12

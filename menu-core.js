@@ -7,7 +7,7 @@ const MenuDom = require('./menu-dom');
 
 module.exports = {
   bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Categories Wheel, 2 = Sub Items list
+    let pickerLevel = 0; // 0 = Closed, 1 = Categories, 2 = Sub Items
     let activeItems = [];
     let activeIndex = 0;
     let storedCategoryIndex = 0;
@@ -36,10 +36,9 @@ module.exports = {
     filterInput.addEventListener('keydown', (evt) => {
       const visibleRows = getVisibleRows();
 
-      // FIX: IF EXTENSION DROPDOWN HEADER PANEL IS OPENED, FORWARD KEYBOARD ARROW CONTROL TRACKS
+      // FIX: INTERCEPT ENGINE DROPS SEARCH CURSOR ACTIONS COMPLETELY IF A TITLE PANEL GAINS KEYBOARD FOCUS
       const openHeaderPanel = document.querySelector('.projectgrid-dropup-panel');
       if (openHeaderPanel) {
-        // Drop standard text cursor movements while menu handles selections
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp' || evt.key === 'Escape' || evt.key === 'Enter') {
           return; 
         }

@@ -74,7 +74,6 @@ module.exports = {
         }
         .projectgrid-clear-btn:hover { color: var(--text-accent, #70a1ff) !important; }
   
-        /* MASTER HUE-CYCLING CRITICAL DEFINITION MAP */
         @keyframes projectgrid-hue-cycle {
           0% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(0deg); }
           100% { box-shadow: inset 0 0 0 2px #ff4757 !important; filter: hue-rotate(360deg); }
@@ -87,8 +86,6 @@ module.exports = {
         .projectgrid-matrix-row:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.01)) !important;
         }
-        
-        /* FIX: ENACTIVE ROTATING HUE INNER GLOW ENFORCED BOUNDS FOR ROW TRACKS */
         .projectgrid-row-focused {
           background-color: var(--background-modifier-hover, rgba(112, 161, 255, 0.08)) !important;
           animation: projectgrid-hue-cycle 3s linear infinite !important;
@@ -98,12 +95,16 @@ module.exports = {
         .note-title-cell { font-weight: 500 !important; white-space: nowrap !important; }
         .projectgrid-matrix-link { text-decoration: none !important; }
         .projectgrid-matrix-link:hover { text-decoration: none !important; }
-        
-        /* FIX: FORCE NO UNDERLINES ON THE LAUNCH COLUMNS LINK HANDLERS */
         .action-icon-cell { text-align: center !important; }
         .action-icon-cell a { text-decoration: none !important; }
         .action-icon-cell a:hover { text-decoration: none !important; }
   
+        /* OBSIDIAN TRANSPARENT INTERFACE SHORTCUT GHOST */
+        .projectgrid-aip-icon-btn.is-vault-missing {
+          opacity: 0.15 !important;
+        }
+  
+        /* HEADER TRIGGER BOUNDS WITH REVOLVING ACCENT OUTLINE IN FOCUS */
         .projectgrid-header-dropup-trigger {
           cursor: pointer !important;
           display: inline-block !important;
@@ -113,9 +114,14 @@ module.exports = {
           font-size: 13px !important;
           width: 100% !important;
           box-sizing: border-box !important;
+          outline: none !important;
+          border: 2px solid transparent !important;
         }
         .projectgrid-header-dropup-trigger:hover {
           background-color: var(--background-modifier-hover, rgba(255, 255, 255, 0.08)) !important;
+        }
+        .projectgrid-header-dropup-trigger:focus {
+          animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
   
         .projectgrid-dropup-panel {
@@ -145,8 +151,6 @@ module.exports = {
           width: 100% !important;
           border: 2px solid transparent !important;
         }
-        
-        /* FIX: ENFORCE NATIVE HUE BORDER ALIGNMENT STATES TO ACTIVE CHECKBOX INDICATORS TOO */
         .projectgrid-dropup-option.projectgrid-row-focused {
           animation: projectgrid-hue-cycle 3s linear infinite !important;
         }
@@ -194,8 +198,6 @@ module.exports = {
           box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
           box-sizing: border-box !important;
         }
-        
-        /* FIX: SUB-SELECTION ITEM BOX OUTLINES ENFORCE ONLY HUE REVOLVING CHROME BOUNDS */
         .projectgrid-custom-dropdown-item {
           padding: 4px 4px !important;
           cursor: pointer !important;
@@ -215,7 +217,7 @@ module.exports = {
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
           z-index: 10000 !important;
           padding: 6px !important;
-          min-width: 200px !important;
+          min-width: 220px !important;
           box-sizing: border-box !important;
         }
         .projectgrid-picker-item {

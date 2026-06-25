@@ -9,14 +9,20 @@ module.exports = {
       const picker = document.createElement('div');
       picker.className = 'projectgrid-command-picker';
       
-      // Position picker panel directly aligned beneath the text search field
+      // Align beneath search input
       picker.style.top = `${filterInput.offsetTop + filterInput.offsetHeight + 4}px`;
       picker.style.left = `${filterInput.offsetLeft}px`;
   
       itemsList.forEach((item, idx) => {
         const el = document.createElement('div');
         el.className = 'projectgrid-picker-item';
-        if (idx === selectedIndex) el.classList.add('projectgrid-picker-highlight');
+        
+        // Apply hue rotating focus border if this picker item is selected
+        if (idx === selectedIndex) {
+          el.classList.add('projectgrid-picker-highlight');
+          el.classList.add('projectgrid-row-focused');
+        }
+        
         el.textContent = item.name;
   
         el.addEventListener('click', (e) => {

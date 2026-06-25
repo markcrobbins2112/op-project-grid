@@ -10,7 +10,7 @@ module.exports = {
       const trigger = document.createElement('div');
       trigger.className = 'projectgrid-header-dropup-trigger';
       trigger.setAttribute('data-key', key);
-      trigger.tabIndex = 0; // Allows headers to receive explicit keyboard focus
+      trigger.tabIndex = 0; // FIX: ENABLES TITLES FILTER BUTTONS TO BE SEPARATELY FOCUSABLE VIA KEYBOARD
       trigger.textContent = titleIcon;
   
       let activePanel = null;
@@ -20,44 +20,69 @@ module.exports = {
   
       const closePanel = () => {
         if (activePanel) { activePanel.remove(); activePanel = null; }
+        trigger.classList.remove('projectgrid-header-focused-indicator');
       };
+  
+      // FIX: ATTACH INDICATOR HIGHLIGHT WHEN CELL TRIGGER CAPTURES ACTIVE FOCUS
+      trigger.addEventListener('focus', () => {
+        trigger.classList.add('projectgrid-header-focused-indicator');
+      });
+      trigger.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (!activePanel) trigger.classList.remove('projectgrid-header-focused-indicator');
+        }, 150);
+      });
   
       const openPanel = () => {
         closePanel();
         selectionIdx = 0;
+        trigger.classList.add('projectgrid-header-focused-indicator');
         activePanel = document.createElement('div');
         activePanel.className = 'projectgrid-dropup-panel';
   
         const rect = trigger.getBoundingClientRect();
-        activePanel.style.position = 'fixed';
-        activePanel.style.top = `${rect.bottom + window.scrollY + 4}px`;
-        activePanel.style.left = `${rect.left + window.scrollX}px`;
-        activePanel.style.zIndex = '300000';
-        activePanel.style.height = 'auto';
+        Object.assign(activePanel.style, {
+          position: 'fixed', top: `${rect.bottom + window.scrollY + 4}px`,
+          left: `${rect.left + window.scrollX}px`, zIndex: '300000', height: 'auto'
+        });
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
           wrapper.className = 'projectgrid-dropup-option';
-          
-          // FIX: APPLY HUE ROTATING BORDER TO CURRENTLY CHOSEN KEYBOARD SELECTION INDICATOR
           if (oIdx === selectionIdx) wrapper.classList.add('projectgrid-row-focused');
           
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
-          checkbox.tabIndex = -1; // Keep focus locked on the parent container
+          checkbox.tabIndex = -1;
           
+          let visibleCount = 0;
+          let totalCount = 0;
+  
+          // FIX: CALCULATE DYNAMIC VISIBLE/TOTAL VALUE METRICS FOR EACH DROPDOWN ITEM SELECTOR
           if (opt === '[ALL]') {
             checkbox.checked = (activeFilters.size === defaults.length);
+            totalCount = rowsArray.length;
+            visibleCount = rowsArray.filter(r => r.element.style.display !== 'none').length;
           } else {
             checkbox.checked = activeFilters.has(opt);
+            rowsArray.forEach(r => {
+              const currentVal = r.yamlMetadataValues && r.yamlMetadataValues[key] ? String(r.yamlMetadataValues[key]) : '⬛';
+              const normOpt = opt === '⬛' ? '' : opt;
+              const normCurrent = currentVal === '⬛' ? '' : currentVal;
+              if (normCurrent === normOpt) {
+                totalCount++;
+                if (r.element.style.display !== 'none') visibleCount++;
+              }
+            });
           }
   
-          checkbox.addEventListener('change', () => {
-            handleToggle(opt, checkbox.checked);
-          });
+          checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
           wrapper.appendChild(checkbox);
-          wrapper.appendChild(document.createTextNode(opt));
+          
+          // Format layout string to display counts inside trailing tags: Icon {visible/total}
+          const textLabel = document.createTextNode(` ${opt} {${visibleCount}/${totalCount}}`);
+          wrapper.appendChild(textLabel);
           activePanel.appendChild(wrapper);
         });
   
@@ -78,9 +103,7 @@ module.exports = {
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
           boxes[0].checked = (activeFilters.size === defaults.length);
-          defaults.forEach((d, idx) => {
-            boxes[idx + 1].checked = activeFilters.has(d);
-          });
+          defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
         rowsArray.forEach(row => {
@@ -92,23 +115,13 @@ module.exports = {
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
-      // FIX: NATIVE CAPTURING ROUTINE STEPS CHROME BORDER INDICATOR SELECTIONS RELIABLY
       function handlePanelKeys(evt) {
         if (!activePanel) return;
-  
         if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-          evt.preventDefault();
-          evt.stopPropagation(); // Stop parent components from executing main row drift jumps
-          
-          if (evt.key === 'ArrowDown') {
-            selectionIdx = (selectionIdx + 1) >= fullOptionsList.length ? 0 : selectionIdx + 1;
-          } else {
-            selectionIdx = (selectionIdx - 1) < 0 ? fullOptionsList.length - 1 : selectionIdx - 1;
-          }
-  
+          evt.preventDefault(); evt.stopPropagation();
+          selectionIdx = evt.key === 'ArrowDown' ? ((selectionIdx + 1) % fullOptionsList.length) : ((selectionIdx - 1 + fullOptionsList.length) % fullOptionsList.length);
           activePanel.querySelectorAll('.projectgrid-dropup-option').forEach((lbl, lIdx) => {
-            if (lIdx === selectionIdx) lbl.className = 'projectgrid-dropup-option projectgrid-row-focused';
-            else lbl.className = 'projectgrid-dropup-option';
+            lbl.className = lIdx === selectionIdx ? 'projectgrid-dropup-option projectgrid-row-focused' : 'projectgrid-dropup-option';
           });
         } else if (evt.key === ' ' || evt.key === 'Spacebar') {
           evt.preventDefault();
@@ -129,7 +142,6 @@ module.exports = {
         if (activePanel) closePanel(); else openPanel();
       });
   
-      // Ensure listeners drop when user exits container
       trigger.addEventListener('blur', () => {
         setTimeout(() => {
           if (activePanel && !activePanel.contains(document.activeElement)) {

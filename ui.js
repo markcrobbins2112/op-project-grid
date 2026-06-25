@@ -33,8 +33,9 @@ module.exports = {
     return UiDropdown.buildHeaderDropup(titleIcon, key, defaults, rowsArray);
   },
 
-  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
-    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput);
+  buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
+    // FIX: RELAYS THE GLOBAL ROW REFERENCE STATE DOWNSTREAM FOR ITEM VOLUME TRACKING MEASUREMENTS
+    return UiRow.buildRow(folder, absoluteVaultRoot, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray);
   }
 };
 

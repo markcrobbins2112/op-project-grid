@@ -5,7 +5,7 @@
 const UiRowKeys = require('./ui-row-keys');
 
 module.exports = {
-  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
+  buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput, rowsArray) {
     const btn = document.createElement('div');
     btn.className = 'projectgrid-custom-select-btn';
     btn.tabIndex = 0;
@@ -37,8 +37,23 @@ module.exports = {
 
       optionsList.forEach((opt, oIdx) => {
         const li = document.createElement('li');
+        
+        let visibleCount = 0;
+        let totalCount = 0;
+
+        // FIX: COMPUTE METADATA FIELD COUNTERS FOR SUB-ROW PICKER LIST SELECTION OPTIONS
+        rowsArray.forEach(r => {
+          const checkVal = r.yamlMetadataValues && r.yamlMetadataValues[cfg.key] ? String(r.yamlMetadataValues[cfg.key]) : '⬛';
+          if (checkVal === opt) {
+            totalCount++;
+            if (r.element.style.display !== 'none') visibleCount++;
+          }
+        });
+
+        // Format label parameter value layout sequence: Option {visible/total}
+        li.textContent = `${opt} {${visibleCount}/${totalCount}}`;
         li.className = oIdx === selectionIdx ? 'projectgrid-custom-dropdown-item projectgrid-row-focused' : 'projectgrid-custom-dropdown-item';
-        li.textContent = opt;
+        
         li.addEventListener('mousedown', (e) => { e.preventDefault(); commitSelection(opt); });
         activeDropdown.appendChild(li);
       });
