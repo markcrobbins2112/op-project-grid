@@ -12,11 +12,11 @@ module.exports = {
         position: 'fixed', 
         top: `${rect.bottom + window.scrollY}px`,
         left: `${rect.left + window.scrollX}px`, 
-        width: `${rect.width + 30}px`,
-        zIndex: '200000', 
-        height: 'auto', 
+        width: '300px', // FIX: Forced hardcoded 300px spatial panel width boundaries
+        maxHeight: '320px',
         display: 'flex', 
-        flexDirection: 'column'
+        flexDirection: 'column',
+        boxSizing: 'border-box'
       });
   
       const label = document.createElement('div');
@@ -30,11 +30,21 @@ module.exports = {
     buildCustomInput(dropdown) {
       const inputWrapper = document.createElement('div');
       inputWrapper.className = 'projectgrid-tags-input-container';
+      // Ensure wrapper uses full dimension tracks
+      inputWrapper.style.width = '100%';
+      inputWrapper.style.boxSizing = 'border-box';
       
       const customInput = document.createElement('input');
       customInput.type = 'text';
       customInput.className = 'projectgrid-tags-custom-entry-field';
-      customInput.placeholder = '➕ Filter / Add...';
+      customInput.placeholder = '➕ Create New Checklist Item...';
+      
+      // FIX: Scale input element properties flawlessly across the full 300px box framework
+      Object.assign(customInput.style, {
+        width: '100%',
+        boxSizing: 'border-box',
+        display: 'block'
+      });
       
       inputWrapper.appendChild(customInput);
       dropdown.appendChild(inputWrapper);

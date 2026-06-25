@@ -1650,11 +1650,11 @@ return {
         position: 'fixed', 
         top: `${rect.bottom + window.scrollY}px`,
         left: `${rect.left + window.scrollX}px`, 
-        width: `${rect.width + 30}px`,
-        zIndex: '200000', 
-        height: 'auto', 
+        width: '300px', // FIX: Forced hardcoded 300px spatial panel width boundaries
+        maxHeight: '320px',
         display: 'flex', 
-        flexDirection: 'column'
+        flexDirection: 'column',
+        boxSizing: 'border-box'
       });
   
       const label = document.createElement('div');
@@ -1668,11 +1668,21 @@ return {
     buildCustomInput(dropdown) {
       const inputWrapper = document.createElement('div');
       inputWrapper.className = 'projectgrid-tags-input-container';
+      // Ensure wrapper uses full dimension tracks
+      inputWrapper.style.width = '100%';
+      inputWrapper.style.boxSizing = 'border-box';
       
       const customInput = document.createElement('input');
       customInput.type = 'text';
       customInput.className = 'projectgrid-tags-custom-entry-field';
-      customInput.placeholder = '➕ Filter / Add...';
+      customInput.placeholder = '➕ Create New Checklist Item...';
+      
+      // FIX: Scale input element properties flawlessly across the full 300px box framework
+      Object.assign(customInput.style, {
+        width: '100%',
+        boxSizing: 'border-box',
+        display: 'block'
+      });
       
       inputWrapper.appendChild(customInput);
       dropdown.appendChild(inputWrapper);
@@ -1715,124 +1725,353 @@ return {
 })();
 globalThis.UiRowSelectDom = UiRowSelectDom;
 
+const UiRowSelectState = (function() {
+// ==========================================
+// START OF FILE: ui-row-select-state.js
+// ==========================================
+
+return {
+    initializeButtonState(btn, cfg, frontmatter, rowTrackingReference) {
+      const isMarkdownFileTarget = (cfg.key === 'tasks');
+      const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
+      
+      let activeValuesArray = (rawVal && rawVal !== '⬛') ? rawVal.split(',').map(v => v.trim()).filter(v => v.length > 0) : [];
+  
+      if (isMarkdownFileTarget) {
+        const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
+        btn.textContent = `${activeValuesArray.length}/${totalCount}`;
+      } else {
+        btn.textContent = rawVal || '⬛';
+      }
+      
+      if (rowTrackingReference && rowTrackingReference.yamlMetadataValues) {
+        rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
+      }
+  
+      let optionsList = isMarkdownFileTarget ? [...cfg.defaults.filter(d => d !== '⬛')] : ['⬛', ...cfg.defaults.filter(d => d !== '⬛')];
+      if (rawVal && !isMarkdownFileTarget && !optionsList.includes(rawVal)) optionsList.push(rawVal);
+  
+      return { isMarkdownFileTarget, activeValuesArray, optionsList };
+    }
+  };
+  
+  globalThis.UiRowSelectState = module.exports;
+  
+  // ==========================================
+  // END OF FILE: ui-row-select-state.js
+  // ==========================================
+})();
+globalThis.UiRowSelectState = UiRowSelectState;
+
+const UiRowSelectHandlers = (function() {
+// ==========================================
+// START OF FILE: ui-row-select-handlers.js
+// ==========================================
+
+return {
+    bindLifecycleFocus(btn, tableRow, closeDropdownCallback) {
+      btn.addEventListener('focus', () => { 
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn); 
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); 
+      });
+  
+      btn.addEventListener('blur', () => { 
+        setTimeout(() => { 
+          const openPanel = document.querySelector('.projectgrid-dropup-panel');
+          if (openPanel && !openPanel.contains(document.activeElement) && document.activeElement !== btn) {
+            closeDropdownCallback(); 
+          } 
+        }, 180); 
+        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); 
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); 
+      });
+    }
+  };
+  
+  globalThis.UiRowSelectHandlers = module.exports;
+  
+  // ==========================================
+  // END OF FILE: ui-row-select-handlers.js
+  // ==========================================
+})();
+globalThis.UiRowSelectHandlers = UiRowSelectHandlers;
+
+const UiRowSelectKeys = (function() {
+// ==========================================
+// START OF FILE: ui-row-select-keys.js
+// ==========================================
+
+return {
+    setupKeyboardRouting(ctx, optionsList, isMarkdownFileTarget, itemsContainer, customInput, onCommitCallback, onCloseCallback) {
+      const handleKeyRouting = async (e, isInputNode) => {
+        const currentItemsCount = itemsContainer.querySelectorAll('.projectgrid-custom-dropdown-item').length;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault(); e.stopPropagation();
+          ctx.selectionIdx = e.key === 'ArrowDown' ? ((ctx.selectionIdx + 1) % currentItemsCount) : ((ctx.selectionIdx - 1 + currentItemsCount) % currentItemsCount);
+          ctx.updateVisualSelection();
+        } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
+          e.preventDefault(); e.stopPropagation();
+          const val = isInputNode ? customInput.value.trim() : '';
+          await onCommitCallback(val, isInputNode);
+        } else if (e.key === 'Escape') { 
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          onCloseCallback();
+        }
+      };
+  
+      if (customInput) {
+        customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true));
+      } else {
+        itemsContainer.parentElement.addEventListener('keydown', (e) => handleKeyRouting(e, false));
+      }
+    }
+  };
+  
+  globalThis.UiRowSelectKeys = module.exports;
+  
+  // ==========================================
+  // END OF FILE: ui-row-select-keys.js
+  // ==========================================
+})();
+globalThis.UiRowSelectKeys = UiRowSelectKeys;
+
+const TasksMarkdownSync = (function() {
+// ==========================================
+// START OF FILE: tasks-markdown-sync.js
+// ==========================================
+
+const tasksMarkdownSyncModule = {
+    getInitialCheckedList(linesArray) {
+      let insideTasksHeaderZone = false;
+      const checkedTasksList = [];
+  
+      for (let i = 0; i < linesArray.length; i++) {
+        const currentLineText = linesArray[i];
+        if (currentLineText.trim().startsWith('## Incoming Tasks')) { insideTasksHeaderZone = true; continue; }
+        if (insideTasksHeaderZone && currentLineText.trim().startsWith('##')) { break; }
+        
+        if (insideTasksHeaderZone) {
+          const checkboxMatchSignature = currentLineText.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+          if (checkboxMatchSignature) {
+            const isChecked = checkboxMatchSignature[1].toLowerCase() === 'x';
+            const taskTextString = checkboxMatchSignature[2].trim();
+            if (isChecked && taskTextString) {
+              checkedTasksList.push(taskTextString);
+            }
+          }
+        }
+      }
+      return checkedTasksList;
+    },
+  
+    mutateMarkdownCheckboxes(linesArray, targetTaskString, isNowCheckedState) {
+      let insideTasks = false;
+      for (let i = 0; i < linesArray.length; i++) {
+        const line = linesArray[i];
+        if (line.trim().startsWith('## Incoming Tasks')) { insideTasks = true; continue; }
+        if (insideTasks && line.trim().startsWith('##')) { break; }
+        
+        if (insideTasks) {
+          const match = line.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
+          if (match && match[2].trim() === targetTaskString) {
+            const checkedTokenMarker = isNowCheckedState ? 'x' : ' ';
+            linesArray[i] = line.replace(/-\s*\[[ xX]\]/, `- [${checkedTokenMarker}]`);
+            break;
+          }
+        }
+      }
+      return linesArray.join('\n');
+    }
+  };
+  
+  // GLOBAL REGISTRY LOCK: Bypasses hidden IIFE closure walls safely
+  globalThis.TasksMarkdownSync = tasksMarkdownSyncModule;
+  return tasksMarkdownSyncModule;
+  
+  // ==========================================
+  // END OF FILE: tasks-markdown-sync.js
+  // ==========================================
+})();
+globalThis.TasksMarkdownSync = TasksMarkdownSync;
+
+const TasksMarkdownWriter = (function() {
+// ==========================================
+// START OF FILE: tasks-markdown-writer.js
+// ==========================================
+
+const tasksMarkdownWriterModule = {
+    async appendAndRefreshVault(app, expectedNotePath, taskText, btnElement, scrollingContainer, optionsList, activeValuesArray, updateVisualSelectionCallback) {
+      const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
+      if (!fileAbstract) return;
+  
+      const rawContent = await app.vault.read(fileAbstract);
+      const lines = rawContent.split('\n');
+      
+      let headingIndex = lines.findIndex(l => l.trim().startsWith('## Incoming Tasks'));
+      const newTaskLineStr = `- [ ] ${taskText}`;
+  
+      if (headingIndex === -1) {
+        lines.push('\n## Incoming Tasks');
+        lines.push(newTaskLineStr);
+      } else {
+        lines.splice(headingIndex + 1, 0, newTaskLineStr);
+      }
+  
+      await app.vault.modify(fileAbstract, lines.join('\n'));
+      
+      if (!optionsList.includes(taskText)) {
+        optionsList.push(taskText);
+        
+        if (!window.ProjectGridDiscoveredActualTasksList) window.ProjectGridDiscoveredActualTasksList = [];
+        if (!window.ProjectGridDiscoveredActualTasksList.includes(taskText)) {
+          window.ProjectGridDiscoveredActualTasksList.push(taskText);
+          window.ProjectGridDiscoveredActualTasksList.sort();
+        }
+  
+        const li = document.createElement('div');
+        li.className = 'projectgrid-custom-dropdown-item';
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '6px';
+        li.style.textAlign = 'left';
+  
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.tabIndex = -1;
+        cb.checked = activeValuesArray.includes(taskText);
+        cb.style.margin = '0';
+        cb.style.cursor = 'pointer';
+  
+        li.appendChild(cb);
+        li.appendChild(document.createTextNode(taskText));
+        scrollingContainer.appendChild(li);
+  
+        // FIXED: Bind the interaction handler once, immediately on generation. No DOM mutation cascades.
+        li.addEventListener('click', async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          
+          if (activeValuesArray.includes(taskText)) {
+            activeValuesArray.splice(activeValuesArray.indexOf(taskText), 1);
+          } else {
+            activeValuesArray.push(taskText);
+          }
+          cb.checked = activeValuesArray.includes(taskText);
+          
+          const activeSelectModule = globalThis.UiRowSelect || require('./ui-row-select');
+          if (activeSelectModule && typeof activeSelectModule._triggerDirectCommit === 'function') {
+            await activeSelectModule._triggerDirectCommit(app, expectedNotePath, activeValuesArray.join(', '), taskText, cb.checked, btnElement, optionsList, activeValuesArray);
+          }
+          updateVisualSelectionCallback(optionsList.indexOf(taskText));
+        });
+      }
+  
+      const totalCount = optionsList.length;
+      btnElement.textContent = `${activeValuesArray.length}/${totalCount}`;
+      
+      updateVisualSelectionCallback(optionsList.length - 1);
+    }
+  };
+  
+  globalThis.TasksMarkdownWriter = tasksMarkdownWriterModule;
+  return tasksMarkdownWriterModule;
+  
+  // ==========================================
+  // END OF FILE: tasks-markdown-writer.js
+  // ==========================================
+})();
+globalThis.TasksMarkdownWriter = TasksMarkdownWriter;
+
 return {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const btn = document.createElement('div');
     btn.className = 'projectgrid-custom-select-btn';
     btn.tabIndex = 0; btn.setAttribute('data-field-index', fieldIdx);
 
-    const isMarkdownFileTarget = (cfg.key === 'tasks');
-    const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-    let activeValuesArray = (rawVal && rawVal !== '⬛') ? rawVal.split(',').map(v => v.trim()).filter(v => v.length > 0) : [];
+    const state = UiRowSelectState.initializeButtonState(btn, cfg, frontmatter, rowTrackingReference);
+    let activeDropdown = null; let isOpening = false; const ctx = { selectionIdx: 0 };
 
-    if (isMarkdownFileTarget) {
-      const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
-      btn.textContent = `${activeValuesArray.length}/${totalCount}`;
-      rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
-    } else {
-      btn.textContent = rawVal || '⬛'; rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
-    }
-
-    let optionsList = isMarkdownFileTarget ? cfg.defaults.filter(d => d !== '⬛') : ['⬛', ...cfg.defaults.filter(d => d !== '⬛')];
-    if (rawVal && !isMarkdownFileTarget && !optionsList.includes(rawVal)) optionsList.push(rawVal);
-
-    let activeDropdown = null; let isOpening = false;
     const closeDropdown = () => { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null); };
+    UiRowSelectHandlers.bindLifecycleFocus(btn, tableRow, closeDropdown);
 
     const openDropdown = () => {
       if (activeDropdown) return;
       isOpening = true; document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
-      let selectionIdx = 0;
+      ctx.selectionIdx = 0;
 
       activeDropdown = UiRowSelectDom.createDropdownContainer(btn, cfg.key);
       let customInput = cfg.isExtendable ? UiRowSelectDom.buildCustomInput(activeDropdown) : null;
 
       const scrollingContainer = document.createElement('div');
       scrollingContainer.style.overflowY = 'auto'; scrollingContainer.style.flex = '1';
-
-      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList, isMarkdownFileTarget, activeValuesArray);
+      UiRowSelectDom.populateItemsList(scrollingContainer, state.optionsList, state.isMarkdownFileTarget, state.activeValuesArray);
       activeDropdown.appendChild(scrollingContainer); document.body.appendChild(activeDropdown);
 
-      const items = scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item');
-      const updateVisualSelection = () => {
-        items.forEach((li, lIdx) => {
-          li.classList.toggle('projectgrid-picker-highlight', lIdx === selectionIdx);
-          li.classList.toggle('projectgrid-row-focused', lIdx === selectionIdx);
-          if (lIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) { window.ProjectGridUpdateFocusOverlay(li); li.scrollIntoView({ block: 'nearest' }); }
+      ctx.updateVisualSelection = (forcedIdx = null) => {
+        if (forcedIdx !== null) ctx.selectionIdx = forcedIdx;
+        const itemsList = scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item');
+        itemsList.forEach((li, lIdx) => {
+          const isSel = lIdx === ctx.selectionIdx;
+          li.classList.toggle('projectgrid-picker-highlight', isSel); li.classList.toggle('projectgrid-row-focused', isSel);
+          if (isSel && window.ProjectGridUpdateFocusOverlay) { window.ProjectGridUpdateFocusOverlay(li); li.scrollIntoView({ block: 'nearest' }); }
         });
       };
 
-      const handleKeyRouting = async (e, isInputNode) => {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-          e.preventDefault(); e.stopPropagation();
-          selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-          updateVisualSelection();
-        } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
-          e.preventDefault(); e.stopPropagation();
-          const val = isInputNode ? customInput.value.trim() : '';
-          
-          if (isMarkdownFileTarget) {
-            // RESOLVE VIA GLOBAL SCOPE: Look up writer engine fallback variables directly from global context
-            const activeWriter = globalThis.TasksMarkdownWriter;
-            if (isInputNode && val !== '' && activeWriter) {
-              await activeWriter.appendAndRefreshVault(app, expectedNotePath, val, btn);
-              closeDropdown(); openDropdown(); return;
-            }
-            const targetVal = optionsList[selectionIdx];
-            if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
-            else activeValuesArray.push(targetVal);
-            const cb = items[selectionIdx].querySelector('input[type="checkbox"]');
-            if (cb) cb.checked = activeValuesArray.includes(targetVal);
-            await commitSelection(activeValuesArray.join(', '), targetVal, activeValuesArray.includes(targetVal));
-          } else {
-            if (isInputNode && val !== '') commitSelection(val); else commitSelection(optionsList[selectionIdx]);
+      const onKeyEnterCommit = async (typedValue, isInputNode) => {
+        if (state.isMarkdownFileTarget) {
+          if (isInputNode && typedValue !== '') {
+            await globalThis.TasksMarkdownWriter.appendAndRefreshVault(app, expectedNotePath, typedValue, btn, scrollingContainer, state.optionsList, state.activeValuesArray, ctx.updateVisualSelection);
+            customInput.value = ''; return;
           }
-        } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); closeDropdown(); btn.focus(); }
+          const targetVal = state.optionsList[ctx.selectionIdx];
+          if (state.activeValuesArray.includes(targetVal)) state.activeValuesArray = state.activeValuesArray.filter(v => v !== targetVal);
+          else state.activeValuesArray.push(targetVal);
+          const cb = scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item')[ctx.selectionIdx]?.querySelector('input[type="checkbox"]');
+          if (cb) cb.checked = state.activeValuesArray.includes(targetVal);
+          await commitSelection(state.activeValuesArray.join(', '), targetVal, state.activeValuesArray.includes(targetVal));
+        } else {
+          if (isInputNode && typedValue !== '') commitSelection(typedValue); else commitSelection(state.optionsList[ctx.selectionIdx]);
+        }
       };
 
-      if (customInput) { requestAnimationFrame(() => { customInput.focus(); }); customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true)); }
-      else { activeDropdown.tabIndex = 0; requestAnimationFrame(() => { if (activeDropdown) activeDropdown.focus(); }); activeDropdown.addEventListener('keydown', (e) => handleKeyRouting(e, false)); }
+      UiRowSelectKeys.setupKeyboardRouting(ctx, state.optionsList, state.isMarkdownFileTarget, scrollingContainer, customInput, onKeyEnterCommit, () => { closeDropdown(); btn.focus(); });
 
-      items.forEach((item, idx) => {
+      // FIXED: Bind mouse clicks linearly on initial panel opening pass. No MutationObserver infinite loops.
+      scrollingContainer.querySelectorAll('.projectgrid-custom-dropdown-item').forEach((item, idx) => {
         item.addEventListener('click', async (e) => {
-          e.preventDefault(); e.stopPropagation(); selectionIdx = idx;
-          if (isMarkdownFileTarget) {
-            const targetVal = optionsList[idx];
-            if (activeValuesArray.includes(targetVal)) activeValuesArray = activeValuesArray.filter(v => v !== targetVal);
-            else activeValuesArray.push(targetVal);
-            const cb = item.querySelector('input[type="checkbox"]');
-            if (cb) cb.checked = activeValuesArray.includes(targetVal);
-            await commitSelection(activeValuesArray.join(', '), targetVal, activeValuesArray.includes(targetVal));
-            updateVisualSelection();
-          } else { commitSelection(optionsList[idx]); }
+          e.preventDefault(); e.stopPropagation(); ctx.selectionIdx = idx;
+          if (state.isMarkdownFileTarget) {
+            const targetVal = state.optionsList[idx];
+            if (state.activeValuesArray.includes(targetVal)) state.activeValuesArray = state.activeValuesArray.filter(v => v !== targetVal);
+            else state.activeValuesArray.push(targetVal);
+            const cb = item.querySelector('input[type="checkbox"]'); if (cb) cb.checked = state.activeValuesArray.includes(targetVal);
+            await commitSelection(state.activeValuesArray.join(', '), targetVal, state.activeValuesArray.includes(targetVal)); ctx.updateVisualSelection();
+          } else { commitSelection(state.optionsList[idx]); }
         });
       });
-      setTimeout(() => { updateVisualSelection(); isOpening = false; }, 20);
+
+      if (customInput) requestAnimationFrame(() => customInput.focus());
+      else { activeDropdown.tabIndex = 0; requestAnimationFrame(() => activeDropdown.focus()); }
+      setTimeout(() => { ctx.updateVisualSelection(); isOpening = false; }, 20);
     };
 
     const commitSelection = async (value, targetString = '', isChecked = false) => {
       const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
       if (fileAbstract) {
-        // RESOLVE VIA GLOBAL SCOPE: Look up sync engine fallback variables directly from global context
-        const activeSyncEngine = globalThis.TasksMarkdownSync;
-        if (isMarkdownFileTarget && targetString && activeSyncEngine) {
+        if (state.isMarkdownFileTarget && targetString) {
           const rawContent = await app.vault.read(fileAbstract);
-          const updatedText = activeSyncEngine.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
+          const updatedText = globalThis.TasksMarkdownSync.mutateMarkdownCheckboxes(rawContent.split('\n'), targetString, isChecked);
           await app.vault.modify(fileAbstract, updatedText);
         } else {
           await app.fileManager.processFrontMatter(fileAbstract, (fm) => { if (value === '' || value === '⬛') delete fm[cfg.key]; else fm[cfg.key] = value; });
         }
-        if (isMarkdownFileTarget) {
-          const totalCount = cfg.defaults.filter(d => d !== '⬛').length;
-          btn.textContent = `${activeValuesArray.length}/${totalCount}`;
-          rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
-        } else { btn.textContent = value; rowTrackingReference.yamlMetadataValues[cfg.key] = value; }
+        if (state.isMarkdownFileTarget) { btn.textContent = `${state.activeValuesArray.length}/${state.optionsList.length}`; } 
+        else { btn.textContent = value; }
+        if (rowTrackingReference && rowTrackingReference.yamlMetadataValues) rowTrackingReference.yamlMetadataValues[cfg.key] = btn.textContent;
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       }
     };
 
-    btn.addEventListener('focus', () => { if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); });
-    btn.addEventListener('blur', () => { setTimeout(() => { if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) closeDropdown(); }, 180); if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); });
+    this._triggerDirectCommit = commitSelection;
     btn.addEventListener('mousedown', (e) => { e.stopPropagation(); if (activeDropdown && !isOpening) closeDropdown(); else { btn.focus(); openDropdown(); } });
     btn.addEventListener('keydown', (evt) => {
       if (evt.key === 'Escape') { evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation(); btn.blur(); const rootContainer = btn.closest('.block-language-projectgrid') || document; const targetInput = rootContainer.querySelector('.projectgrid-filter-input'); if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); }); return; }
@@ -1842,6 +2081,8 @@ return {
     btn.openDropdown = openDropdown; cell.appendChild(btn);
   }
 };
+
+globalThis.UiRowSelect = module.exports;
 
 // ==========================================
 // END OF FILE: ui-row-select.js
@@ -2595,120 +2836,7 @@ return {
 })();
 globalThis.MainRenderer = MainRenderer;
 
-const TasksMarkdownSync = (function() {
-// ==========================================
-// START OF FILE: tasks-markdown-sync.js
-// ==========================================
 
-const tasksMarkdownSyncModule = {
-    getInitialCheckedList(linesArray) {
-      let insideTasksHeaderZone = false;
-      const checkedTasksList = [];
-  
-      for (let i = 0; i < linesArray.length; i++) {
-        const currentLineText = linesArray[i];
-        if (currentLineText.trim().startsWith('## Incoming Tasks')) { insideTasksHeaderZone = true; continue; }
-        if (insideTasksHeaderZone && currentLineText.trim().startsWith('##')) { break; }
-        
-        if (insideTasksHeaderZone) {
-          const checkboxMatchSignature = currentLineText.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
-          if (checkboxMatchSignature) {
-            const isChecked = checkboxMatchSignature[1].toLowerCase() === 'x';
-            const taskTextString = checkboxMatchSignature[2].trim();
-            if (isChecked && taskTextString) {
-              checkedTasksList.push(taskTextString);
-            }
-          }
-        }
-      }
-      return checkedTasksList;
-    },
-  
-    mutateMarkdownCheckboxes(linesArray, targetTaskString, isNowCheckedState) {
-      let insideTasks = false;
-      for (let i = 0; i < linesArray.length; i++) {
-        const line = linesArray[i];
-        if (line.trim().startsWith('## Incoming Tasks')) { insideTasks = true; continue; }
-        if (insideTasks && line.trim().startsWith('##')) { break; }
-        
-        if (insideTasks) {
-          const match = line.match(/^\s*-\s*\[([ xX])\]\s*(.*)$/);
-          if (match && match[2].trim() === targetTaskString) {
-            const checkedTokenMarker = isNowCheckedState ? 'x' : ' ';
-            linesArray[i] = line.replace(/-\s*\[[ xX]\]/, `- [${checkedTokenMarker}]`);
-            break;
-          }
-        }
-      }
-      return linesArray.join('\n');
-    }
-  };
-  
-  // GLOBAL REGISTRY LOCK: Bypasses hidden IIFE closure walls safely
-  globalThis.TasksMarkdownSync = tasksMarkdownSyncModule;
-  return tasksMarkdownSyncModule;
-  
-  // ==========================================
-  // END OF FILE: tasks-markdown-sync.js
-  // ==========================================
-})();
-globalThis.TasksMarkdownSync = TasksMarkdownSync;
-
-const TasksMarkdownWriter = (function() {
-// ==========================================
-// START OF FILE: tasks-markdown-writer.js
-// ==========================================
-
-const tasksMarkdownWriterModule = {
-    async appendAndRefreshVault(app, expectedNotePath, taskText, btnElement) {
-      const fileAbstract = app.vault.getAbstractFileByPath(expectedNotePath);
-      if (!fileAbstract) return;
-  
-      const rawContent = await app.vault.read(fileAbstract);
-      const lines = rawContent.split('\n');
-      
-      let headingIndex = lines.findIndex(l => l.trim().startsWith('## Incoming Tasks'));
-      const newTaskLineStr = `- [ ] ${taskText}`;
-  
-      if (headingIndex === -1) {
-        lines.push('\n## Incoming Tasks');
-        lines.push(newTaskLineStr);
-      } else {
-        lines.splice(headingIndex + 1, 0, newTaskLineStr);
-      }
-  
-      await app.vault.modify(fileAbstract, lines.join('\n'));
-      
-      if (window.ProjectGridTriggerFilterUpdate) {
-        const liveContainer = btnElement.closest('.block-language-projectgrid');
-        const mainTableBody = liveContainer ? liveContainer.querySelector('tbody') : null;
-        const mainInput = liveContainer ? liveContainer.querySelector('.projectgrid-filter-input') : null;
-        
-        if (mainTableBody && mainInput && window.ProjectGridActiveRowsTrackingArrayRegistryPool) {
-          mainTableBody.innerHTML = '';
-          window.ProjectGridActiveRowsTrackingArrayRegistryPool.length = 0;
-          
-          
-          const absoluteVaultRoot = app.vault.adapter.getBasePath();
-          const rootTarget = liveContainer.closest('.cm-embed-block')?.textContent?.trim() || "__";
-          
-          MainScanner.scanVaultProjectsFolders(
-            app, rootTarget, absoluteVaultRoot, mainTableBody, window.ProjectGridActiveRowsTrackingArrayRegistryPool, mainInput
-          );
-        }
-      }
-    }
-  };
-  
-  // GLOBAL REGISTRY LOCK: Bypasses hidden IIFE closure walls safely
-  globalThis.TasksMarkdownWriter = tasksMarkdownWriterModule;
-  return tasksMarkdownWriterModule;
-  
-  // ==========================================
-  // END OF FILE: tasks-markdown-writer.js
-  // ==========================================
-})();
-globalThis.TasksMarkdownWriter = TasksMarkdownWriter;
 
 module.exports = class ProjectGridPlugin extends Plugin {
   async onload() {
