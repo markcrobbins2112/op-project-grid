@@ -502,6 +502,7 @@ return {
         return;
       }
 
+      // --- CRITICAL DOWNSTREAM ROW SELECTION ENGINE FIXED OVERLAY SYNCS ---
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
@@ -516,10 +517,10 @@ return {
         }
 
         updateFocusIndex(visibleIdx);
-        const targetRow = visibleRows[visibleIdx];
-        targetRow.classList.add('projectgrid-row-focused');
+        const targetRow = visibleRows[visibleIdx].element;
         
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetRow);
+        // Ensure row indicators follow focus cleanly
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
@@ -530,7 +531,6 @@ return {
         executeSelection();
       }, closeAllPickers);
 
-      // Snap the global focus portal cleanly over the highlighted category item row
       setTimeout(() => {
         const targetItem = pickerEl.querySelectorAll('.projectgrid-picker-item')[activeIndex];
         if (targetItem && window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetItem);
@@ -569,7 +569,6 @@ return {
     const applyFilter = () => {
       const val = filterInput.value.toLowerCase().trim();
       clearButton.style.visibility = val ? 'visible' : 'hidden';
-      currentFocusedIndex = -1;
       clearRowHighlights();
       
       const globalCounts = {};
@@ -603,7 +602,7 @@ return {
         }
       });
 
-      // Second run: Render button counter texts without curly braces prefix string layouts
+      // Update counters text without curly braces
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
@@ -617,24 +616,39 @@ return {
           const currentVal = row.yamlMetadataValues ? String(row.yamlMetadataValues[key]) : '⬛';
           const visNum = visibleCounts[key]?.valMap[currentVal] || 0;
           const totNum = globalCounts[key]?.valMap[currentVal] || 0;
-
-          // FIX: STRIPPED CURLY BRACES LAYOUT ARTIFACTS
           btn.textContent = `${currentVal} ${visNum}/${totNum}`;
         });
       });
 
-      // Third run: Re-sync table header titles cleanly
+      // Re-sync header counters text layouts
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key) return;
-
         const totalItems = globalCounts[key]?.total || 0;
         const visibleItems = Object.values(visibleCounts[key]?.valMap || {}).reduce((a, b) => a + b, 0);
-        
         const baseIcon = trigger.textContent.split(' ')[0];
-        // FIX: RENDER TITLES AS CLEAN RAW VAL CONNECTIONS
         trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
       });
+
+      // --- FIX: AUTOMATICALLY ENSURE A ROW INDICATOR IS ALWAYS ACTIVE ---
+      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      if (visibleRows.length > 0) {
+        // If our pointer was cleared or went out of bounds, snap it cleanly to the first visible row
+        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) {
+          currentFocusedIndex = 0;
+        }
+        const targetRow = visibleRows[currentFocusedIndex].element;
+        targetRow.classList.add('projectgrid-row-focused');
+        
+        if (window.ProjectGridUpdateRowOverlay) {
+          window.ProjectGridUpdateRowOverlay(targetRow);
+        }
+      } else {
+        currentFocusedIndex = -1;
+        if (window.ProjectGridUpdateRowOverlay) {
+          window.ProjectGridUpdateRowOverlay(null);
+        }
+      }
     };
 
     filterInput.addEventListener('input', applyFilter);
@@ -643,7 +657,13 @@ return {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
+      // Re-evaluate overlays using a safe structural tracking loop
+      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       clearRowHighlights();
+      if (visibleRows[index]) {
+        visibleRows[index].element.classList.add('projectgrid-row-focused');
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
+      }
     });
 
     clearButton.addEventListener('click', () => {
@@ -687,10 +707,14 @@ return {
         activePanel.className = 'projectgrid-dropup-panel';
   
         const rect = trigger.getBoundingClientRect();
-        Object.assign(activePanel.style, {
-          position: 'fixed', top: `${rect.bottom + window.scrollY + 4}px`,
-          left: `${rect.left + window.scrollX}px`, zIndex: '300000', height: 'auto'
-        });
+        activePanel.style.position = 'fixed';
+        
+        // FIX 1: ALTER BOUNDING BOX POSITION FROM RECT.BOTTOM TO RECT.TOP TO FORCE DROP-UP BEHAVIOR
+        // Using an implicit margin offset handles vertical clearance smoothly
+        activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+        activePanel.style.left = `${rect.left + window.scrollX}px`;
+        activePanel.style.zIndex = '300000';
+        activePanel.style.height = 'auto';
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
@@ -704,8 +728,11 @@ return {
           checkbox.type = 'checkbox';
           checkbox.tabIndex = -1; 
           
-          if (opt === '[ALL]') checkbox.checked = (activeFilters.size === defaults.length);
-          else checkbox.checked = activeFilters.has(opt);
+          if (opt === '[ALL]') {
+            checkbox.checked = (activeFilters.size === defaults.length);
+          } else {
+            checkbox.checked = activeFilters.has(opt);
+          }
   
           checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
@@ -730,20 +757,32 @@ return {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          boxes.checked = (activeFilters.size === defaults.length);
+          boxes[0].checked = (activeFilters.size === defaults.length);
           defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
+        // FIX 2: STRIP EXTRA ICON TRAILS NATIVELY TO RESOLVE FILTER RE-SYNC CACHE MISSES
         rowsArray.forEach(row => {
           if (!row.dropdownFilters) row.dropdownFilters = {};
-          const currentVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
-          row.dropdownFilters[key] = activeFilters.has(currentVal) || (currentVal === '⬛' && activeFilters.has('⬛'));
+          
+          const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
+          const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
+  
+          // Check if our active validation pool contains matching sanitized elements
+          let isMatchFound = false;
+          activeFilters.forEach(filterOpt => {
+            const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
+            if (sanitizedRaw === sanitizedFilter || (sanitizedRaw === '⬛' && sanitizedFilter === '⬛')) {
+              isMatchFound = true;
+            }
+          });
+  
+          row.dropdownFilters[key] = isMatchFound;
         });
   
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
-      // FIX: SUPPORTS COMPREHENSIVE DOWNSTREAM PANELS KEYBOARD LOOPS FOR NAVIGATION CHECKS
       function handlePanelKeys(evt) {
         if (!activePanel) return;
   
@@ -769,7 +808,6 @@ return {
         }
       }
   
-      // FIX: ADDED ADVANCED TRIGGER MACROS FOR OPENING THE FILTER MENU WITHOUT PREVIOUS CELL SELECTIONS
       trigger.addEventListener('keydown', (evt) => {
         if (!activePanel) {
           if ((evt.key === 'ArrowDown' && evt.altKey) || evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 'Enter') {
@@ -829,40 +867,45 @@ return {
   };
 })();
 const UiRowActions = (function() {
+// FIX: Pull in Node's native File System module to perform direct physical disk lookups
+const fs = require('fs');
+const path = require('path');
+
 return {
-    appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app) {
-      const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
+  appendLauncherButtons(tableRow, folder, absoluteVaultRoot, app) {
+    const absoluteLocalPath = `${absoluteVaultRoot}\\${folder.path}`.replace(/[/\\]+/g, '\\');
+    
+    // --- FIX: USE RAW UNMASKED DISK QUERIES TO IDENTIFY MOUNTED DIRECTORY JUNCTIONS ---
+    const dotObsidianPhysicalPath = path.join(absoluteVaultRoot, folder.path, '.obsidian');
+    const hasObsidianVault = fs.existsSync(dotObsidianPhysicalPath);
+    // ----------------------------------------------------------------------------------
+
+    const actions = [
+      { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus', isMissing: false },
+      { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor', isMissing: false },
+      { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault', isMissing: !hasObsidianVault }
+    ];
+
+    actions.forEach(act => {
+      const cell = document.createElement('td');
+      cell.className = 'projectgrid-matrix-cell action-icon-cell';
       
-      // Check if the directory target features a hidden configuration folder path track
-      const dotObsidianPath = `${folder.path}/.obsidian`;
-      const hasObsidianVault = app.vault.getAbstractFileByPath(dotObsidianPath) !== null;
-  
-      const actions = [
-        { protocol: 'dopus', icon: '📁', title: 'Open folder in Directory Opus', isMissing: false },
-        { protocol: 'cursor', icon: '💻', title: 'Open workspace in Cursor', isMissing: false },
-        { protocol: 'obsidian', icon: '💜', title: 'Open directory as Obsidian Vault', isMissing: !hasObsidianVault }
-      ];
-  
-      actions.forEach(act => {
-        const cell = document.createElement('td');
-        cell.className = 'projectgrid-matrix-cell action-icon-cell';
-        
-        const fileAnchor = document.createElement('a');
-        fileAnchor.href = `aip://${act.protocol}/${absoluteLocalPath}`;
-        fileAnchor.className = 'projectgrid-aip-icon-btn';
-        fileAnchor.textContent = act.icon;
-        fileAnchor.title = act.title;
-  
-        // FIX: ATTACH GHOST TRANSPARENCY SHADOW STATE IF DOT OBSIDIAN FILE ATTRIBUTES MISSING
-        if (act.isMissing) {
-          fileAnchor.classList.add('is-vault-missing');
-        }
-  
-        cell.appendChild(fileAnchor);
-        tableRow.appendChild(cell);
-      });
-    }
-  };
+      const fileAnchor = document.createElement('a');
+      fileAnchor.href = `aip://${act.protocol}/${absoluteLocalPath}`;
+      fileAnchor.className = 'projectgrid-aip-icon-btn';
+      fileAnchor.textContent = act.icon;
+      fileAnchor.title = act.title;
+
+      // Apply ghost transparency overlay strictly if the path is genuinely missing from your drive
+      if (act.isMissing) {
+        fileAnchor.classList.add('is-vault-missing');
+      }
+
+      cell.appendChild(fileAnchor);
+      tableRow.appendChild(cell);
+    });
+  }
+};
 })();
 const UiRowSelect = (function() {
 const UiRowKeys = (function() {
@@ -1174,7 +1217,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
-    // --- NEW: GENERATE THE DYNAMIC DASHBOARD TOOLBAR ELEMENT ---
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -1194,20 +1236,16 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Static columns geometry bindings
+    // Columns 2, 3, 4: Generates the 3 unique static table header icons
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Dynamic Filter Headers configuration rules mapping
-    const launcherColumns = [
-      { icon: '📁', key: 'dopus', options: ['Active'] },
-      { icon: '💻', key: 'cursor', options: ['Active'] },
-      { icon: '💜', key: 'obsidian', options: ['Active'] }
-    ];
+    // FIX: COMPLETELY REMOVED THE LAUNCHERCOLUMNS INTERACTIVE HEADERS LOOP TO STOP COLUMN SHIFTING
 
+    // Define the 8 exact YAML frontmatter metadata columns matching your metadata fields (Columns 5 through 12)
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -1236,11 +1274,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    launcherColumns.forEach(col => {
-      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
-      headerRow.appendChild(dropupTh);
-    });
-
+    // Build and append the 8 interactive YAML metadata dropup filter headers directly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
@@ -1252,7 +1286,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    // Wire up toolbar click event helper to route directly to master ScrollLock handler commands
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();

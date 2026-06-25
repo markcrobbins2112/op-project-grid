@@ -31,7 +31,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
     const targetFolders = this.app.vault.getAllLoadedFiles().filter(file => file.children && file.path.startsWith(rootTarget));
 
-    // --- NEW: GENERATE THE DYNAMIC DASHBOARD TOOLBAR ELEMENT ---
     const toolbar = document.createElement('div');
     toolbar.className = 'projectgrid-toolbar';
     
@@ -51,20 +50,16 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const headerSetup = UiBuilder.generateHeaderCell();
     headerRow.appendChild(headerSetup.cell);
     
-    // Static columns geometry bindings
+    // Columns 2, 3, 4: Generates the 3 unique static table header icons
     headerRow.insertAdjacentHTML('beforeend', `
       <th style="width: 5%; text-align: center;" title="Directory Opus">📁</th>
       <th style="width: 5%; text-align: center;" title="Cursor Workspace">💻</th>
       <th style="width: 5%; text-align: center;" title="Obsidian Vault">💜</th>
     `);
 
-    // Dynamic Filter Headers configuration rules mapping
-    const launcherColumns = [
-      { icon: '📁', key: 'dopus', options: ['Active'] },
-      { icon: '💻', key: 'cursor', options: ['Active'] },
-      { icon: '💜', key: 'obsidian', options: ['Active'] }
-    ];
+    // FIX: COMPLETELY REMOVED THE LAUNCHERCOLUMNS INTERACTIVE HEADERS LOOP TO STOP COLUMN SHIFTING
 
+    // Define the 8 exact YAML frontmatter metadata columns matching your metadata fields (Columns 5 through 12)
     const columnDropdowns = [
       { icon: '⭐', key: 'stars', options: ['⬛','0⭐','1⭐','2⭐','3⭐','4⭐','5⭐'] },
       { icon: '💲', key: 'value', options: ['⬛','0💲','1💲','2💲','3💲','4💲','5💲','6💲','7💲','8💲','9💲'] },
@@ -93,11 +88,7 @@ module.exports = class ProjectGridPlugin extends Plugin {
       }
     });
 
-    launcherColumns.forEach(col => {
-      const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
-      headerRow.appendChild(dropupTh);
-    });
-
+    // Build and append the 8 interactive YAML metadata dropup filter headers directly over columns 5-12
     columnDropdowns.forEach(col => {
       const dropupTh = UiBuilder.buildHeaderDropup(col.icon, col.key, col.options, rowsArray);
       headerRow.appendChild(dropupTh);
@@ -109,7 +100,6 @@ module.exports = class ProjectGridPlugin extends Plugin {
     
     FilterManager.initializeTableFilter(headerSetup.input, headerSetup.clearBtn, rowsArray, containerElement);
 
-    // Wire up toolbar click event helper to route directly to master ScrollLock handler commands
     toolbarBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       headerSetup.input.focus();

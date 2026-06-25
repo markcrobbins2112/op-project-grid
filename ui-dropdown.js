@@ -30,10 +30,14 @@ module.exports = {
         activePanel.className = 'projectgrid-dropup-panel';
   
         const rect = trigger.getBoundingClientRect();
-        Object.assign(activePanel.style, {
-          position: 'fixed', top: `${rect.bottom + window.scrollY + 4}px`,
-          left: `${rect.left + window.scrollX}px`, zIndex: '300000', height: 'auto'
-        });
+        activePanel.style.position = 'fixed';
+        
+        // FIX 1: ALTER BOUNDING BOX POSITION FROM RECT.BOTTOM TO RECT.TOP TO FORCE DROP-UP BEHAVIOR
+        // Using an implicit margin offset handles vertical clearance smoothly
+        activePanel.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+        activePanel.style.left = `${rect.left + window.scrollX}px`;
+        activePanel.style.zIndex = '300000';
+        activePanel.style.height = 'auto';
   
         fullOptionsList.forEach((opt, oIdx) => {
           const wrapper = document.createElement('label');
@@ -47,8 +51,11 @@ module.exports = {
           checkbox.type = 'checkbox';
           checkbox.tabIndex = -1; 
           
-          if (opt === '[ALL]') checkbox.checked = (activeFilters.size === defaults.length);
-          else checkbox.checked = activeFilters.has(opt);
+          if (opt === '[ALL]') {
+            checkbox.checked = (activeFilters.size === defaults.length);
+          } else {
+            checkbox.checked = activeFilters.has(opt);
+          }
   
           checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
   
@@ -73,20 +80,32 @@ module.exports = {
   
         if (activePanel) {
           const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          boxes.checked = (activeFilters.size === defaults.length);
+          boxes[0].checked = (activeFilters.size === defaults.length);
           defaults.forEach((d, idx) => { boxes[idx + 1].checked = activeFilters.has(d); });
         }
   
+        // FIX 2: STRIP EXTRA ICON TRAILS NATIVELY TO RESOLVE FILTER RE-SYNC CACHE MISSES
         rowsArray.forEach(row => {
           if (!row.dropdownFilters) row.dropdownFilters = {};
-          const currentVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
-          row.dropdownFilters[key] = activeFilters.has(currentVal) || (currentVal === '⬛' && activeFilters.has('⬛'));
+          
+          const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
+          const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
+  
+          // Check if our active validation pool contains matching sanitized elements
+          let isMatchFound = false;
+          activeFilters.forEach(filterOpt => {
+            const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
+            if (sanitizedRaw === sanitizedFilter || (sanitizedRaw === '⬛' && sanitizedFilter === '⬛')) {
+              isMatchFound = true;
+            }
+          });
+  
+          row.dropdownFilters[key] = isMatchFound;
         });
   
         if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
       };
   
-      // FIX: SUPPORTS COMPREHENSIVE DOWNSTREAM PANELS KEYBOARD LOOPS FOR NAVIGATION CHECKS
       function handlePanelKeys(evt) {
         if (!activePanel) return;
   
@@ -112,7 +131,6 @@ module.exports = {
         }
       }
   
-      // FIX: ADDED ADVANCED TRIGGER MACROS FOR OPENING THE FILTER MENU WITHOUT PREVIOUS CELL SELECTIONS
       trigger.addEventListener('keydown', (evt) => {
         if (!activePanel) {
           if ((evt.key === 'ArrowDown' && evt.altKey) || evt.key === ' ' || evt.key === 'ArrowDown' || evt.key === 'Enter') {

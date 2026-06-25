@@ -59,6 +59,7 @@ module.exports = {
         return;
       }
 
+      // --- CRITICAL DOWNSTREAM ROW SELECTION ENGINE FIXED OVERLAY SYNCS ---
       if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
         if (visibleRows.length === 0) return;
         evt.preventDefault();
@@ -73,10 +74,10 @@ module.exports = {
         }
 
         updateFocusIndex(visibleIdx);
-        const targetRow = visibleRows[visibleIdx];
-        targetRow.classList.add('projectgrid-row-focused');
+        const targetRow = visibleRows[visibleIdx].element;
         
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetRow);
+        // Ensure row indicators follow focus cleanly
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
         targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
@@ -87,7 +88,6 @@ module.exports = {
         executeSelection();
       }, closeAllPickers);
 
-      // Snap the global focus portal cleanly over the highlighted category item row
       setTimeout(() => {
         const targetItem = pickerEl.querySelectorAll('.projectgrid-picker-item')[activeIndex];
         if (targetItem && window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(targetItem);

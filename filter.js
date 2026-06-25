@@ -19,7 +19,6 @@ module.exports = {
     const applyFilter = () => {
       const val = filterInput.value.toLowerCase().trim();
       clearButton.style.visibility = val ? 'visible' : 'hidden';
-      currentFocusedIndex = -1;
       clearRowHighlights();
       
       const globalCounts = {};
@@ -53,7 +52,7 @@ module.exports = {
         }
       });
 
-      // Second run: Render button counter texts without curly braces prefix string layouts
+      // Update counters text without curly braces
       rowsArray.forEach(row => {
         if (!row.element) return;
         const selects = row.element.querySelectorAll('.projectgrid-custom-select-btn');
@@ -67,24 +66,39 @@ module.exports = {
           const currentVal = row.yamlMetadataValues ? String(row.yamlMetadataValues[key]) : '⬛';
           const visNum = visibleCounts[key]?.valMap[currentVal] || 0;
           const totNum = globalCounts[key]?.valMap[currentVal] || 0;
-
-          // FIX: STRIPPED CURLY BRACES LAYOUT ARTIFACTS
           btn.textContent = `${currentVal} ${visNum}/${totNum}`;
         });
       });
 
-      // Third run: Re-sync table header titles cleanly
+      // Re-sync header counters text layouts
       document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
         const key = trigger.getAttribute('data-key');
         if (!key) return;
-
         const totalItems = globalCounts[key]?.total || 0;
         const visibleItems = Object.values(visibleCounts[key]?.valMap || {}).reduce((a, b) => a + b, 0);
-        
         const baseIcon = trigger.textContent.split(' ')[0];
-        // FIX: RENDER TITLES AS CLEAN RAW VAL CONNECTIONS
         trigger.textContent = `${baseIcon} ${visibleItems}/${totalItems}`;
       });
+
+      // --- FIX: AUTOMATICALLY ENSURE A ROW INDICATOR IS ALWAYS ACTIVE ---
+      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      if (visibleRows.length > 0) {
+        // If our pointer was cleared or went out of bounds, snap it cleanly to the first visible row
+        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) {
+          currentFocusedIndex = 0;
+        }
+        const targetRow = visibleRows[currentFocusedIndex].element;
+        targetRow.classList.add('projectgrid-row-focused');
+        
+        if (window.ProjectGridUpdateRowOverlay) {
+          window.ProjectGridUpdateRowOverlay(targetRow);
+        }
+      } else {
+        currentFocusedIndex = -1;
+        if (window.ProjectGridUpdateRowOverlay) {
+          window.ProjectGridUpdateRowOverlay(null);
+        }
+      }
     };
 
     filterInput.addEventListener('input', applyFilter);
@@ -93,7 +107,13 @@ module.exports = {
       return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
     }, (index) => {
       currentFocusedIndex = index;
+      // Re-evaluate overlays using a safe structural tracking loop
+      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
       clearRowHighlights();
+      if (visibleRows[index]) {
+        visibleRows[index].element.classList.add('projectgrid-row-focused');
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
+      }
     });
 
     clearButton.addEventListener('click', () => {
