@@ -3,6 +3,7 @@
 // ==========================================
 
 const UiRowKeys = require('./ui-row-keys');
+const UiRowTagsDom = require('./ui-row-tags-dom');
 
 module.exports = {
   buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -35,50 +36,15 @@ module.exports = {
     const openTagsDropdown = () => {
       if (activeTagsDropdown) return;
       isOpeningPanel = true; tagsSelectionIdx = 0;
-      activeTagsDropdown = document.createElement('div');
-      activeTagsDropdown.className = 'projectgrid-dropup-panel projectgrid-tags-portal-panel';
-
-      const globalTagsSet = new Set();
-      document.querySelectorAll('.projectgrid-tags-cell-btn').forEach(b => {
-        if (b.textContent !== '⬛') b.textContent.split(', ').forEach(t => globalTagsSet.add(t.trim()));
-      });
-      const uniqueAvailableTags = Array.from(globalTagsSet).sort();
-
-      const rect = tagsBtn.getBoundingClientRect();
-      Object.assign(activeTagsDropdown.style, {
-        position: 'fixed', top: `${rect.bottom + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: '170px',
-        zIndex: '250000', height: 'auto', maxHeight: '300px', display: 'flex', flexDirection: 'column'
-      });
-
-      const label = document.createElement('div');
-      label.className = 'projectgrid-dropup-header-title';
-      label.textContent = '🏷️ Multi-Select Tags';
-      activeTagsDropdown.appendChild(label);
-
-      const inputWrapper = document.createElement('div');
-      inputWrapper.className = 'projectgrid-tags-input-container';
       
-      const customInput = document.createElement('input');
-      customInput.type = 'text'; customInput.className = 'projectgrid-tags-custom-entry-field';
-      customInput.placeholder = '➕ Filter / Add Tag...';
-      inputWrapper.appendChild(customInput);
-      activeTagsDropdown.appendChild(inputWrapper);
+      activeTagsDropdown = UiRowTagsDom.createTagsContainer(tagsBtn);
+      const uniqueAvailableTags = UiRowTagsDom.gatherUniqueAvailableTags();
 
+      const customInput = UiRowTagsDom.buildCustomInput(activeTagsDropdown);
       const scrollingContainer = document.createElement('div');
       scrollingContainer.style.overflowY = 'auto'; scrollingContainer.style.flex = '1';
 
-      uniqueAvailableTags.forEach((tag, tIdx) => {
-        const itemWrapper = document.createElement('label');
-        itemWrapper.className = 'projectgrid-dropup-option';
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox'; cb.checked = activeTagsArray.includes(tag); cb.tabIndex = -1;
-        cb.addEventListener('change', () => toggleTagValue(tag, cb.checked));
-
-        itemWrapper.appendChild(cb); itemWrapper.appendChild(document.createTextNode(tag));
-        scrollingContainer.appendChild(itemWrapper);
-      });
+      UiRowTagsDom.populateTagsList(scrollingContainer, uniqueAvailableTags, activeTagsArray, toggleTagValue);
       activeTagsDropdown.appendChild(scrollingContainer);
       document.body.appendChild(activeTagsDropdown);
 
@@ -93,11 +59,11 @@ module.exports = {
           tagsSelectionIdx = e.key === 'ArrowDown' ? ((tagsSelectionIdx + 1) % options.length) : ((tagsSelectionIdx - 1 + options.length) % options.length);
 
           options.forEach((lbl, lIdx) => {
-            if (lIdx === tagsSelectionIdx) {
-              lbl.classList.add('projectgrid-row-focused');
-              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
+            lbl.classList.toggle('projectgrid-row-focused', lIdx === tagsSelectionIdx);
+            if (lIdx === tagsSelectionIdx && window.ProjectGridUpdateFocusOverlay) {
+              window.ProjectGridUpdateFocusOverlay(lbl);
               lbl.scrollIntoView({ block: 'nearest' });
-            } else { lbl.classList.remove('projectgrid-row-focused'); }
+            }
           });
         } else if (e.key === 'Enter') {
           e.preventDefault(); e.stopPropagation();
@@ -113,7 +79,7 @@ module.exports = {
             if (!activeTagsArray.includes(typedText)) await toggleTagValue(typedText, true);
             closeTagsDropdown(); tagsBtn.focus();
           }
-        } else if (e.key === 'Escape' || (e.key === 'Enter' && e.ctrlKey)) {
+        } else if (e.key === 'Escape') {
           e.preventDefault(); e.stopPropagation(); closeTagsDropdown(); tagsBtn.focus();
         }
       });
@@ -147,33 +113,28 @@ module.exports = {
       }
     };
 
-    // FIX: Safely route closed cell navigation tracking to the new row utility tracking sequence
     tagsBtn.addEventListener('keydown', (evt) => {
-      if (activeTagsDropdown) return;
-      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-        evt.preventDefault(); evt.stopPropagation();
-        UiRowKeys.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-tags-cell-btn', 0);
-      } else if (evt.key === 'Enter' || evt.key === ' ') {
-        evt.preventDefault(); evt.stopPropagation(); openTagsDropdown();
+      if (evt.key === 'Escape') {
+        evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation();
+        tagsBtn.blur();
+        const rootContainer = tagsBtn.closest('.block-language-projectgrid') || document;
+        const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+        if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); });
+        return;
       }
-    });
+      if (!activeTagsDropdown) {
+        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar') {
+          evt.preventDefault(); evt.stopPropagation(); openTagsDropdown(); return;
+        }
+        const mockCfg = { key: 'tags', defaults: ['⬛'], isExtendable: true };
+        const handled = UiRowKeys.handleClosedNavigation(evt, tagsBtn, tableRow, 7, mockCfg, filterInput);
+        if (handled) { evt.preventDefault(); evt.stopPropagation(); }
+      }
+    }, true);
 
-    tagsBtn.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(tagsBtn);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-    });
-
-    tagsBtn.addEventListener('blur', () => {
-      setTimeout(() => { if (activeTagsDropdown && !activeTagsDropdown.contains(document.activeElement)) closeTagsDropdown(); }, 180);
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
-    });
-
-    tagsBtn.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      if (activeTagsDropdown && !isOpeningPanel) closeTagsDropdown();
-      else { tagsBtn.focus(); openTagsDropdown(); }
-    });
+    tagsBtn.addEventListener('focus', () => { if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(tagsBtn); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); });
+    tagsBtn.addEventListener('blur', () => { setTimeout(() => { if (activeTagsDropdown && !activeTagsDropdown.contains(document.activeElement) && document.activeElement !== tagsBtn) closeTagsDropdown(); }, 180); if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); });
+    tagsBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if (activeTagsDropdown && !isOpeningPanel) closeTagsDropdown(); else { tagsBtn.focus(); openTagsDropdown(); } });
 
     tagsCell.appendChild(tagsBtn);
     tableRow.appendChild(tagsCell);

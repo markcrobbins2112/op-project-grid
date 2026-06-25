@@ -7,6 +7,7 @@ const path = require('path');
 
 const ENTRY_FILE = '_main.js';
 const OUTPUT_FILE = 'main.js';
+const MANIFEST_FILE = 'manifest.json';
 const SOURCE_DIR = process.cwd();
 
 console.log(`🚀 Starting IIFE Encapsulation Bundler Engine in: ${SOURCE_DIR}`);
@@ -34,7 +35,6 @@ function bundle() {
         requireRegex.lastIndex = 0;
 
         while ((match = requireRegex.exec(fileContent)) !== null) {
-            // FIX: Map code-block search strings safely to their index arrays to avoid undefined evaluation crashes
             const fullStatement = match[0];
             const variableName = match[1].trim();
             const moduleName = match[2].trim();
@@ -81,29 +81,26 @@ function deployToObsidian() {
             console.log(`📁 Created deployment directory: ${destDir}`);
         }
 
-        // CONSOLIDATION FIX: Added grid-config.js to the duplication protection tracking blacklist
-        const blacklistedFiles = ['_main.js', 'build.js', 'styles.js', 'filter.js', 'ui.js', 'menu-core.js', 'menu-state.js', 'menu-dom.js', 'ui-color.js', 'ui-dropdown.js', 'ui-row.js', 'ui-row-actions.js', 'ui-row-keys.js', 'ui-row-select.js', 'styles-core.js', 'styles-animation.js', 'styles-components.js', 'ui-row-dates.js', 'ui-row-tags.js', 'ui-row-tasks.js', 'menu-state-sort.js', 'menu-state-utils.js', 'tasks-parser.js', 'tasks-dom.js', 'main-toolbar.js', 'main-scanner.js', 'grid-config.js'];
-        const allowedExtensions = ['.js', '.json', '.css', '.html'];
-        const allItems = fs.readdirSync(SOURCE_DIR);
+        // TARGETED DEPLOYMENT: Only allow these two files into the vault
+        const whitelistFiles = [OUTPUT_FILE, MANIFEST_FILE];
         let copyCount = 0;
 
-        allItems.forEach(item => {
-            if (blacklistedFiles.includes(item)) return;
-
+        whitelistFiles.forEach(item => {
             const sourcePath = path.join(SOURCE_DIR, item);
             const destPath = path.join(destDir, item);
-            
-            const isFile = fs.statSync(sourcePath).isFile();
-            const ext = path.extname(item).toLowerCase();
 
-            if (isFile && allowedExtensions.includes(ext)) {
+            if (fs.existsSync(sourcePath) && fs.statSync(sourcePath).isFile()) {
                 fs.copyFileSync(sourcePath, destPath);
-                console.log(`🚚 Synced asset: ${item}`);
+                console.log(`🚚 Synced targeted asset: ${item}`);
                 copyCount++;
+            } else {
+                if (item === MANIFEST_FILE) {
+                    console.warn(`⚠️ Warning: ${MANIFEST_FILE} was not found in your source directory. Please create it.`);
+                }
             }
         });
 
-        console.log(`🎉 Sync completed successfully. ${copyCount} files active inside Obsidian workspace.`);
+        console.log(`🎉 Sync completed successfully. ${copyCount} deployment files active inside Obsidian workspace.`);
     } catch (error) {
         console.error('❌ An error occurred during file deployment loop:', error.message);
     }

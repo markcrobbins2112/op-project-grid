@@ -3,6 +3,7 @@
 // ==========================================
 
 const UiRowKeys = require('./ui-row-keys');
+const UiRowSelectDom = require('./ui-row-select-dom');
 
 module.exports = {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -12,7 +13,9 @@ module.exports = {
     btn.setAttribute('data-field-index', fieldIdx);
 
     const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-    rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+    if (rowTrackingReference && rowTrackingReference.yamlMetadataValues) {
+      rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+    }
     btn.textContent = rawVal || '⬛';
 
     let optionsList = ['⬛', ...cfg.defaults];
@@ -36,44 +39,18 @@ module.exports = {
       let selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
-      activeDropdown = document.createElement('div');
-      activeDropdown.className = 'projectgrid-dropup-panel';
-      
-      const rect = btn.getBoundingClientRect();
-      Object.assign(activeDropdown.style, {
-        position: 'fixed', top: `${rect.bottom + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: `${rect.width + 30}px`,
-        zIndex: '200000', height: 'auto', display: 'flex', flexDirection: 'column'
-      });
-
-      const label = document.createElement('div');
-      label.className = 'projectgrid-dropup-header-title';
-      label.textContent = `📋 ${cfg.key.toUpperCase()}`;
-      activeDropdown.appendChild(label);
+      activeDropdown = UiRowSelectDom.createDropdownContainer(btn, cfg.key);
 
       let customInput = null;
       if (cfg.isExtendable) {
-        const inputWrapper = document.createElement('div');
-        inputWrapper.className = 'projectgrid-tags-input-container';
-        
-        customInput = document.createElement('input');
-        customInput.type = 'text';
-        customInput.className = 'projectgrid-tags-custom-entry-field';
-        customInput.placeholder = '➕ Filter / Add...';
-        inputWrapper.appendChild(customInput);
-        activeDropdown.appendChild(inputWrapper);
+        customInput = UiRowSelectDom.buildCustomInput(activeDropdown);
       }
 
       const scrollingContainer = document.createElement('div');
       scrollingContainer.style.overflowY = 'auto';
       scrollingContainer.style.flex = '1';
 
-      optionsList.forEach((opt, oIdx) => {
-        const li = document.createElement('div');
-        li.className = 'projectgrid-custom-dropdown-item';
-        li.textContent = opt;
-        scrollingContainer.appendChild(li);
-      });
+      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList);
       activeDropdown.appendChild(scrollingContainer);
       document.body.appendChild(activeDropdown);
 
@@ -81,65 +58,41 @@ module.exports = {
       
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
-          if (lIdx === selectionIdx) {
-            li.classList.add('projectgrid-picker-highlight');
-            li.classList.add('projectgrid-row-focused');
-            if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(li);
+          li.classList.toggle('projectgrid-picker-highlight', lIdx === selectionIdx);
+          li.classList.toggle('projectgrid-row-focused', lIdx === selectionIdx);
+          if (lIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
+            window.ProjectGridUpdateFocusOverlay(li);
             li.scrollIntoView({ block: 'nearest' });
-          } else { 
-            li.classList.remove('projectgrid-picker-highlight');
-            li.classList.remove('projectgrid-row-focused');
           }
         });
       };
 
+      const handleKeyRouting = (e, isInputNode) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault(); e.stopPropagation();
+          selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
+          updateVisualSelection();
+        } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
+          e.preventDefault(); e.stopPropagation();
+          const val = isInputNode ? customInput.value.trim() : '';
+          if (isInputNode && val !== '') commitSelection(val);
+          else commitSelection(optionsList[selectionIdx]);
+        } else if (e.key === 'Escape') { 
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          closeDropdown(); btn.focus(); 
+        }
+      };
+
       if (customInput) {
         customInput.focus();
-        customInput.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault(); e.stopPropagation();
-            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-            updateVisualSelection();
-          } else if (e.key === 'Enter') {
-            e.preventDefault(); e.stopPropagation();
-            const val = customInput.value.trim();
-            if (val === '') commitSelection(optionsList[selectionIdx]);
-            else commitSelection(val);
-          } else if (e.key === 'Escape') { 
-            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-            closeDropdown(); 
-            btn.focus(); 
-          }
-        });
+        customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true));
       } else {
         activeDropdown.tabIndex = 0;
-        requestAnimationFrame(() => {
-          if (activeDropdown) activeDropdown.focus();
-        });
-
-        activeDropdown.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault(); e.stopPropagation();
-            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-            updateVisualSelection();
-          } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-            e.preventDefault(); e.stopPropagation();
-            commitSelection(optionsList[selectionIdx]);
-          } else if (e.key === 'Escape') { 
-            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-            closeDropdown(); 
-            btn.focus(); 
-          }
-        });
+        requestAnimationFrame(() => { if (activeDropdown) activeDropdown.focus(); });
+        activeDropdown.addEventListener('keydown', (e) => handleKeyRouting(e, false));
       }
 
-      setTimeout(() => {
-        updateVisualSelection();
-        isOpening = false;
-        if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
-          window.ProjectGridTriggerTutorHelpBoxRedraw(customInput || activeDropdown);
-        }
-      }, 20);
+      setTimeout(() => { updateVisualSelection(); isOpening = false; }, 20);
     };
 
     const commitSelection = async (value) => {
@@ -151,74 +104,30 @@ module.exports = {
           else fm[cfg.key] = finalVal;
         });
         btn.textContent = value; closeDropdown();
-        
-        const activeChain = window.ProjectGridActiveSortChainList || [];
-        if (activeChain.includes(cfg.key) && window.ProjectGridTriggerSortReRun) window.ProjectGridTriggerSortReRun();
-        else if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
         btn.focus();
       }
     };
 
-    btn.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(btn, 'cell-btn');
-    });
+    btn.addEventListener('focus', () => { if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); });
+    btn.addEventListener('blur', () => { setTimeout(() => { if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) closeDropdown(); }, 180); if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); });
+    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); if (activeDropdown && !isOpening) closeDropdown(); else { btn.focus(); openDropdown(); } });
     
-    btn.addEventListener('blur', () => {
-      setTimeout(() => { 
-        if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) {
-          closeDropdown(); 
-        }
-      }, 180);
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
-    });
-    
-    btn.addEventListener('mousedown', (e) => { 
-      e.stopPropagation(); 
-      if (activeDropdown && !isOpening) {
-        closeDropdown(); 
-      } else { 
-        btn.focus(); 
-        openDropdown(); 
-      } 
-    });
-    
-    // NATIVE INTERCEPT: Intercepts keyboard events locally to break Obsidian's document canvas focus retention loops
     btn.addEventListener('keydown', (evt) => {
       if (evt.key === 'Escape') {
-        // Stop Obsidian or CodeMirror from ever seeing this keydown stroke
-        evt.preventDefault();
-        evt.stopPropagation();
-        evt.stopImmediatePropagation();
-
-        // Hard reset the button focus boundary to prevent cursor retention loops
+        evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation();
         btn.blur();
-
-        // Immediately find and focus the search bar directly via the DOM
         const rootContainer = btn.closest('.block-language-projectgrid') || document;
         const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
-        
-        if (targetInput) {
-          requestAnimationFrame(() => {
-            targetInput.focus();
-            targetInput.select();
-          });
-        }
+        if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); });
         return;
       }
-
       if (!activeDropdown) {
-        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar' || (evt.key === 'ArrowDown' && evt.altKey)) {
-          evt.preventDefault(); evt.stopPropagation(); openDropdown(); return;
-        }
-        
+        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar') { evt.preventDefault(); openDropdown(); return; }
         const handled = UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
         if (handled) { evt.preventDefault(); evt.stopPropagation(); }
       }
-    }, true); 
+    }, true);
 
     btn.openDropdown = openDropdown;
     cell.appendChild(btn);

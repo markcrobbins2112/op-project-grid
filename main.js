@@ -164,9 +164,9 @@ return {
     }
   };
 })();
-const StylesComponents = (function() {
+const StylesComponentsToolbar = (function() {
 return {
-    getComponentStyles() {
+    getToolbarStyles() {
       return `
         /* INTERACTIVE BUTTON DASHBOARD TOOLBAR */
         .projectgrid-toolbar {
@@ -210,7 +210,14 @@ return {
           border: 2px solid transparent !important;
         }
         .projectgrid-header-dropup-trigger:hover { background-color: transparent !important; }
-  
+      `;
+    }
+  };
+})();
+const StylesComponentsDropdown = (function() {
+return {
+    getDropdownStyles() {
+      return `
         /* MENU PANELS FLOAT HIGH ABOVE ALL ROW INDICATORS NATIVELY */
         .projectgrid-dropup-panel {
           display: flex !important;
@@ -274,7 +281,7 @@ return {
           overflow: hidden !important;
           white-space: nowrap !important;
         }
-
+  
         .projectgrid-custom-dropdown-list {
           display: flex !important;
           flex-direction: column !important;
@@ -299,8 +306,8 @@ return {
           border: 2px solid transparent !important;
           background-color: transparent !important;
         }
-        
-        /* FIX: Render dynamic high contrast background color configurations specifically over key selected list nodes */
+  
+        /* Renders high-contrast background configurations over active selected nodes */
         .projectgrid-custom-dropdown-item.projectgrid-picker-highlight,
         .projectgrid-custom-dropdown-item.projectgrid-row-focused,
         .projectgrid-custom-dropdown-item:hover {
@@ -308,7 +315,14 @@ return {
           color: var(--text-accent, #70a1ff) !important;
           border-radius: 4px !important;
         }
-  
+      `;
+    }
+  };
+})();
+const StylesComponentsOverlays = (function() {
+return {
+    getOverlayStyles() {
+      return `
         .projectgrid-command-picker {
           position: fixed !important; 
           background-color: var(--background-secondary, #1e1e1e) !important;
@@ -334,45 +348,45 @@ return {
           background-color: var(--background-modifier-hover, rgba(255,255,255,0.08)) !important;
           color: var(--text-accent, #70a1ff) !important;
         }
-
+  
         .projectgrid-wide-tasks-portal {
-            display: flex !important;
-            flex-direction: column !important;
-            background-color: var(--background-secondary, #1a1a1a) !important;
-            border: 2px solid var(--text-accent, #70a1ff) !important;
-            border-radius: 6px !important;
-            padding: 8px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-            z-index: 700000 !important;
-            box-sizing: border-box !important;
+          display: flex !important;
+          flex-direction: column !important;
+          background-color: var(--background-secondary, #1a1a1a) !important;
+          border: 2px solid var(--text-accent, #70a1ff) !important;
+          border-radius: 6px !important;
+          padding: 8px !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+          z-index: 700000 !important;
+          box-sizing: border-box !important;
         }
         .projectgrid-tutor-tooltip-portal {
-            position: fixed !important;
-            background-color: #1a1a2e !important;
-            border: 2px solid var(--text-accent, #70a1ff) !important;
-            border-radius: 6px !important;
-            padding: 8px 12px !important;
-            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75) !important;
-            z-index: 999999 !important;
-            pointer-events: none !important;
-            max-width: 280px !important;
-            display: none;
-            box-sizing: border-box !important;
+          position: fixed !important;
+          background-color: #1a1a2e !important;
+          border: 2px solid var(--text-accent, #70a1ff) !important;
+          border-radius: 6px !important;
+          padding: 8px 12px !important;
+          box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75) !important;
+          z-index: 999999 !important;
+          pointer-events: none !important;
+          max-width: 280px !important;
+          display: none;
+          box-sizing: border-box !important;
         }
         .projectgrid-tutor-heading {
-            font-size: 10px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            color: #ff4757 !important;
-            margin-bottom: 4px !important;
-            border-bottom: 1px dashed rgba(255,255,255,0.15) !important;
-            padding-bottom: 2px !important;
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          color: #ff4757 !important;
+          margin-bottom: 4px !important;
+          border-bottom: 1px dashed rgba(255,255,255,0.15) !important;
+          padding-bottom: 2px !important;
         }
         .projectgrid-tutor-shortcut {
-            font-size: 10px !important;
-            color: #ffffff !important;
-            line-height: 1.4 !important;
-            font-family: var(--font-monospace) !important;
+          font-size: 10px !important;
+          color: #ffffff !important;
+          line-height: 1.4 !important;
+          font-family: var(--font-monospace) !important;
         }
       `;
     }
@@ -381,23 +395,26 @@ return {
 
 return {
   injectStyles() {
-    if (document.getElementById('obsidian-projectgrid-styles')) return;
+    let styleElement = document.getElementById('obsidian-projectgrid-styles');
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'obsidian-projectgrid-styles';
+      document.head.appendChild(styleElement);
+    }
 
-    const styleEl = document.createElement('style');
-    styleEl.id = 'obsidian-projectgrid-styles';
+    const compiledCss = `
+      ${StylesCore.getCoreStyles()}
+      ${StylesAnimation.getAnimationStyles()}
+      ${StylesComponentsToolbar.getToolbarStyles()}
+      ${StylesComponentsDropdown.getDropdownStyles()}
+      ${StylesComponentsOverlays.getOverlayStyles()}
+    `;
 
-    // Concatenate your isolated logical modules sequentially into the template rule
-    styleEl.innerHTML = 
-      StylesCore.getCoreStyles() + 
-      StylesAnimation.getAnimationStyles() + 
-      StylesComponents.getComponentStyles();
-
-    document.head.appendChild(styleEl);
+    styleElement.textContent = compiledCss;
   }
 };
 })();
-const FilterManager = (function() {
-const MenuCore = (function() {
+const MainShortcuts = (function() {
 const MenuState = (function() {
 const GridConfig = (function() {
 const gridConfigModule = {
@@ -572,209 +589,218 @@ const gridConfigModule = {
 })();
 const MenuStateUtils = (function() {
 const UiDropdown = (function() {
-const uiDropdownModule = {
-    activeDropdownInstances: {},
+const UiDropdownDom = (function() {
+return {
+    createPanelContainer(triggerElement) {
+      const panel = document.createElement('div');
+      panel.className = 'projectgrid-dropup-panel';
   
-    buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
-      const th = document.createElement('th');
-      th.className = 'projectgrid-uniform-yaml-th';
-      
-      const trigger = document.createElement('div');
-      trigger.className = 'projectgrid-header-dropup-trigger';
-      trigger.setAttribute('data-key', key);
-      trigger.tabIndex = 0; 
-      trigger.textContent = titleIcon;
+      const rect = triggerElement.getBoundingClientRect();
+      Object.assign(panel.style, {
+        position: 'fixed', 
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        left: `${rect.left + window.scrollX}px`, 
+        zIndex: '300000', 
+        height: 'auto',
+        display: 'flex', 
+        flexDirection: 'column', 
+        width: '150px'
+      });
   
-      let activePanel = null;
-      let selectionIdx = 0;
-      const activeFilters = new Set(defaults);
-      const fullOptionsList = ['[ALL]', ...defaults];
-      let isOpeningPanel = false;
+      return panel;
+    },
   
-      const closePanel = () => {
-        if (activePanel) { activePanel.remove(); activePanel = null; }
-        if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-        if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(null);
-        document.removeEventListener('mousedown', handleOutsideClickGlobalClosure);
-      };
+    buildOptionsList(scrollingContainer, fullOptionsList, defaults, activeFilters, onToggle) {
+      fullOptionsList.forEach((opt) => {
+        const wrapper = document.createElement('label');
+        wrapper.className = 'projectgrid-dropup-option';
   
-      const handleOutsideClickGlobalClosure = (e) => {
-        if (activePanel && !activePanel.contains(e.target) && !trigger.contains(e.target)) {
-          closePanel();
-        }
-      };
-
-      const openPanel = () => {
-        if (activePanel) return;
-        isOpeningPanel = true;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.tabIndex = -1; 
         
-        document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
-  
-        selectionIdx = 0;
-        activePanel = document.createElement('div');
-        activePanel.className = 'projectgrid-dropup-panel';
-  
-        const rect = trigger.getBoundingClientRect();
-        Object.assign(activePanel.style, {
-          position: 'fixed', bottom: `${window.innerHeight - rect.top + 4}px`,
-          left: `${rect.left + window.scrollX}px`, zIndex: '300000', height: 'auto',
-          display: 'flex', flexDirection: 'column', width: '150px'
-        });
-  
-        const labelHeader = document.createElement('div');
-        labelHeader.className = 'projectgrid-dropup-header-title';
-        labelHeader.textContent = `📋 Filters: ${key.toUpperCase()}`;
-        activePanel.appendChild(labelHeader);
-  
-        const scrollingContainer = document.createElement('div');
-        scrollingContainer.style.overflowY = 'auto';
-        scrollingContainer.style.flex = '1';
-  
-        fullOptionsList.forEach((opt, oIdx) => {
-          const wrapper = document.createElement('label');
-          wrapper.className = 'projectgrid-dropup-option';
-  
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.tabIndex = -1; 
-          
-          if (opt === '[ALL]') checkbox.checked = (activeFilters.size === defaults.length);
-          else checkbox.checked = activeFilters.has(opt);
-  
-          checkbox.addEventListener('change', () => handleToggle(opt, checkbox.checked));
-  
-          wrapper.appendChild(checkbox);
-          wrapper.appendChild(document.createTextNode(opt));
-          scrollingContainer.appendChild(wrapper);
-        });
-        activePanel.appendChild(scrollingContainer);
-        document.body.appendChild(activePanel);
-  
-        activePanel.tabIndex = 0;
-        activePanel.focus();
-  
-        activePanel.addEventListener('keydown', (e) => {
-          const options = scrollingContainer.querySelectorAll('.projectgrid-dropup-option');
-          if (options.length === 0) return;
-  
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault(); e.stopPropagation();
-            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % options.length) : ((selectionIdx - 1 + options.length) % options.length);
-            
-            options.forEach((lbl, lIdx) => {
-              if (lIdx === selectionIdx) {
-                lbl.classList.add('projectgrid-row-focused');
-                if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
-                lbl.scrollIntoView({ block: 'nearest' });
-              } else { lbl.classList.remove('projectgrid-row-focused'); }
-            });
-          } else if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
-            e.preventDefault(); e.stopPropagation();
-            if (options[selectionIdx]) {
-              const cb = options[selectionIdx].querySelector('input[type="checkbox"]');
-              cb.checked = !cb.checked;
-              handleToggle(fullOptionsList[selectionIdx], cb.checked);
-            }
-          } else if (e.key === 'Escape') {
-            // FIX 1: Break CodeMirror's event tracking loops when escaping inside an open filter list panel
-            e.preventDefault(); 
-            e.stopPropagation(); 
-            e.stopImmediatePropagation();
-            closePanel(); 
-            trigger.focus();
-          }
-        });
-  
-        requestAnimationFrame(() => {
-          document.addEventListener('mousedown', handleOutsideClickGlobalClosure);
-          isOpeningPanel = false;
-          if (activePanel) activePanel.focus();
-          
-          const firstOpt = scrollingContainer.querySelector('.projectgrid-dropup-option');
-          if (firstOpt && window.ProjectGridUpdateFocusOverlay) {
-            firstOpt.classList.add('projectgrid-row-focused');
-            window.ProjectGridUpdateFocusOverlay(firstOpt);
-          }
-          if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(activePanel, 'filter-panel');
-        });
-      };
-
-      const handleToggle = (opt, isChecked) => {
         if (opt === '[ALL]') {
-          if (isChecked) defaults.forEach(d => activeFilters.add(d));
-          else activeFilters.clear();
+          checkbox.checked = (activeFilters.size === defaults.length);
         } else {
-          if (isChecked) activeFilters.add(opt);
-          else activeFilters.delete(opt);
+          checkbox.checked = activeFilters.has(opt);
         }
-        if (activePanel) {
-          const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
-          if (boxes && boxes.length > 0) {
-            boxes.checked = (activeFilters.size === defaults.length);
-            defaults.forEach((d, idx) => { if (boxes[idx + 1]) boxes[idx + 1].checked = activeFilters.has(d); });
-          }
-        }
-        rowsArray.forEach(row => {
-          if (!row.dropdownFilters) row.dropdownFilters = {};
-          const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
-          const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
-          let isMatchFound = false;
-          activeFilters.forEach(filterOpt => {
-            const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
-            if (sanitizedRaw === sanitizedFilter || (sanitizedRaw === '⬛' && sanitizedFilter === '⬛')) isMatchFound = true;
-          });
-          row.dropdownFilters[key] = isMatchFound;
-        });
-        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-      };
   
-      // FIX 2: Use an active high-priority capturing listener parameter ("true") on the closed filter headers trigger
-      trigger.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Escape') {
-          // Instantly block CodeMirror's canvas editor capture routine
-          evt.preventDefault();
-          evt.stopPropagation();
-          evt.stopImmediatePropagation();
-          
-          trigger.blur();
-
-          // Safely redirect focus right up into the main dashboard search field
-          const rootContainer = trigger.closest('.block-language-projectgrid') || document;
-          const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
-          
-          if (targetInput) {
-            requestAnimationFrame(() => {
-              targetInput.focus();
-              targetInput.select();
-            });
-          }
-          return;
-        }
-
-        if (!activePanel) {
-          if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
-            evt.preventDefault(); evt.stopPropagation(); openPanel();
-          }
-        }
-      }, true); // Capturing listener intercepts keystroke sequence first
+        checkbox.addEventListener('change', () => onToggle(opt, checkbox.checked));
   
-      trigger.addEventListener('focus', () => {
-        if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
-        if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(trigger, 'filter-header');
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(document.createTextNode(opt));
+        scrollingContainer.appendChild(wrapper);
       });
-  
-      trigger.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (activePanel && !isOpeningPanel) closePanel();
-        else { trigger.focus(); openPanel(); }
-      });
-  
-      this.activeDropdownInstances[key] = { open: openPanel, triggerElement: trigger };
-  
-      th.appendChild(trigger);
-      return th;
     }
+  };
+})();
+
+const uiDropdownModule = {
+  activeDropdownInstances: {},
+
+  buildHeaderDropup(titleIcon, key, defaults, rowsArray) {
+    const th = document.createElement('th');
+    th.className = 'projectgrid-uniform-yaml-th';
+    
+    const trigger = document.createElement('div');
+    trigger.className = 'projectgrid-header-dropup-trigger';
+    trigger.setAttribute('data-key', key);
+    trigger.tabIndex = 0; 
+    trigger.textContent = titleIcon;
+
+    let activePanel = null;
+    let selectionIdx = 0;
+    const activeFilters = new Set(defaults);
+    const fullOptionsList = ['[ALL]', ...defaults];
+    let isOpeningPanel = false;
+
+    const closePanel = () => {
+      if (activePanel) { activePanel.remove(); activePanel = null; }
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(null);
+      document.removeEventListener('mousedown', handleOutsideClickGlobalClosure);
+    };
+
+    const handleOutsideClickGlobalClosure = (e) => {
+      if (activePanel && !activePanel.contains(e.target) && !trigger.contains(e.target)) {
+        closePanel();
+      }
+    };
+
+    const openPanel = () => {
+      if (activePanel) return;
+      isOpeningPanel = true;
+      
+      document.querySelectorAll('.projectgrid-dropup-panel').forEach(p => p.remove());
+
+      selectionIdx = 0;
+      activePanel = UiDropdownDom.createPanelContainer(trigger);
+
+      const labelHeader = document.createElement('div');
+      labelHeader.className = 'projectgrid-dropup-header-title';
+      labelHeader.textContent = `📋 Filters: ${key.toUpperCase()}`;
+      activePanel.appendChild(labelHeader);
+
+      const scrollingContainer = document.createElement('div');
+      scrollingContainer.style.overflowY = 'auto';
+      scrollingContainer.style.flex = '1';
+
+      UiDropdownDom.buildOptionsList(scrollingContainer, fullOptionsList, defaults, activeFilters, handleToggle);
+      activePanel.appendChild(scrollingContainer);
+      document.body.appendChild(activePanel);
+
+      activePanel.tabIndex = 0;
+      activePanel.focus();
+
+      activePanel.addEventListener('keydown', (e) => {
+        const options = scrollingContainer.querySelectorAll('.projectgrid-dropup-option');
+        if (options.length === 0) return;
+
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault(); e.stopPropagation();
+          selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % options.length) : ((selectionIdx - 1 + options.length) % options.length);
+          
+          options.forEach((lbl, lIdx) => {
+            if (lIdx === selectionIdx) {
+              lbl.classList.add('projectgrid-row-focused');
+              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
+              lbl.scrollIntoView({ block: 'nearest' });
+            } else { lbl.classList.remove('projectgrid-row-focused'); }
+          });
+        } else if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
+          e.preventDefault(); e.stopPropagation();
+          if (options[selectionIdx]) {
+            const cb = options[selectionIdx].querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+            handleToggle(fullOptionsList[selectionIdx], cb.checked);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          closePanel(); 
+          trigger.focus();
+        }
+      });
+
+      requestAnimationFrame(() => {
+        document.addEventListener('mousedown', handleOutsideClickGlobalClosure);
+        isOpeningPanel = false;
+        if (activePanel) activePanel.focus();
+        
+        const firstOpt = scrollingContainer.querySelector('.projectgrid-dropup-option');
+        if (firstOpt && window.ProjectGridUpdateFocusOverlay) {
+          firstOpt.classList.add('projectgrid-row-focused');
+          window.ProjectGridUpdateFocusOverlay(firstOpt);
+        }
+        if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(activePanel, 'filter-panel');
+      });
+    };
+
+    const handleToggle = (opt, isChecked) => {
+      if (opt === '[ALL]') {
+        if (isChecked) defaults.forEach(d => activeFilters.add(d));
+        else activeFilters.clear();
+      } else {
+        if (isChecked) activeFilters.add(opt);
+        else activeFilters.delete(opt);
+      }
+      if (activePanel) {
+        const boxes = activePanel.querySelectorAll('input[type="checkbox"]');
+        if (boxes && boxes.length > 0) {
+          boxes[0].checked = (activeFilters.size === defaults.length);
+          defaults.forEach((d, idx) => { if (boxes[idx + 1]) boxes[idx + 1].checked = activeFilters.has(d); });
+        }
+      }
+      rowsArray.forEach(row => {
+        if (!row.dropdownFilters) row.dropdownFilters = {};
+        const rawVal = row.yamlMetadataValues && row.yamlMetadataValues[key] ? String(row.yamlMetadataValues[key]) : '⬛';
+        const sanitizedRaw = rawVal.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
+        let isMatchFound = false;
+        activeFilters.forEach(filterOpt => {
+          const sanitizedFilter = filterOpt.replace(/[⭐💲🐘🎱🏅🛑🌐🛠🧪📦]/g, '').trim();
+          if (sanitizedRaw === sanitizedFilter || (sanitizedRaw === '⬛' && sanitizedFilter === '⬛')) isMatchFound = true;
+        });
+        row.dropdownFilters[key] = isMatchFound;
+      });
+      if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
+    };
+
+    trigger.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Escape') {
+        evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation();
+        trigger.blur();
+
+        const rootContainer = trigger.closest('.block-language-projectgrid') || document;
+        const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+        
+        if (targetInput) {
+          requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); });
+        }
+        return;
+      }
+
+      if (!activePanel) {
+        if (evt.key === 'Enter' || evt.key === ' ' || (evt.key === 'ArrowDown' && evt.altKey) || evt.key === 'ArrowDown') {
+          evt.preventDefault(); evt.stopPropagation(); openPanel();
+        }
+      }
+    }, true);
+
+    trigger.addEventListener('focus', () => {
+      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(trigger);
+      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(trigger, 'filter-header');
+    });
+
+    trigger.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (activePanel && !isOpeningPanel) closePanel();
+      else { trigger.focus(); openPanel(); }
+    });
+
+    this.activeDropdownInstances[key] = { open: openPanel, triggerElement: trigger };
+
+    th.appendChild(trigger);
+    return th;
+  }
 };
 
 globalThis.UiDropdown = uiDropdownModule;
@@ -927,243 +953,89 @@ return {
 })();
 
 return {
-  bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
-    let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
-    let activeItems = [];
-    let activeIndex = 0;
-    let storedCategoryIndex = 0;
-    let activePickerEl = null;
+  registerGlobalPluginScopes(pluginInstance) {
+    pluginInstance.app.workspace.on('layout-ready', () => {
+      if (!pluginInstance.scope) return;
 
-    const closeAllPickers = () => {
-      pickerLevel = 0;
-      MenuDom.destroyActivePickers(containerElement);
-      activePickerEl = null;
-      filterInput.focus();
-      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-    };
-
-    // RESTORED: Standard ScrollLock event capture sequence behaves exactly like your proven historical baseline
-    window.addEventListener('keydown', (evt) => {
-      if (evt.key === 'ScrollLock') {
-        evt.preventDefault();
-        
-        if (document.activeElement !== filterInput) {
-          filterInput.focus();
-          filterInput.select();
-        } else {
-          pickerLevel = 1;
-          activeIndex = 0;
-          
-          const targetMenuStateInstance = globalThis.MenuState || MenuState;
-          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-          renderMenu();
-        }
-      }
-    });
-
-    filterInput.addEventListener('keydown', (evt) => {
-      const visibleRows = getVisibleRows();
-
-      if (pickerLevel > 0 && activePickerEl) {
-        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+      // 1. UNIVERSAL PANEL ESCAPE OVERRIDE SHORTCUT
+      pluginInstance.scope.register([], 'Escape', (evt) => {
+        const widePanel = document.querySelector('.projectgrid-wide-tasks-portal');
+        if (widePanel) {
           evt.preventDefault();
-          activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
-          
-          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
-          items.forEach((item, idx) => {
-            if (idx === activeIndex) {
-              item.classList.add('projectgrid-picker-highlight');
-              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
-            } else {
-              item.classList.remove('projectgrid-picker-highlight');
-            }
+          const activeTasksTrigger = document.querySelector('.projectgrid-tasks-trigger-btn:focus') || 
+                                     document.querySelector('.projectgrid-row-focused .projectgrid-tasks-trigger-btn') ||
+                                     document.querySelector('.projectgrid-tasks-trigger-btn');
+          widePanel.remove();
+          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          if (activeTasksTrigger) requestAnimationFrame(() => { activeTasksTrigger.focus(); });
+          return false;
+        }
+
+        const activeNode = document.activeElement;
+        if (activeNode && activeNode.closest('.projectgrid-matrix-table')) {
+          evt.preventDefault();
+          const container = activeNode.closest('.block-language-projectgrid') || document;
+          const filterInput = container.querySelector('.projectgrid-filter-input');
+          if (filterInput) { filterInput.focus(); filterInput.select(); }
+          return false;
+        }
+        return true; 
+      });
+
+      // 2. BULLETPROOF SYSTEM COMMAND PICKER HOTKEY (Ctrl + Shift + Space)
+      pluginInstance.scope.register(['Ctrl', 'Shift'], ' ', (evt) => {
+        evt.preventDefault();
+
+        console.log(
+          '%c[ProjectGrid CAPTURE]%c Captured Ctrl+Shift+Space stroke. Active focus element:', 
+          'color: #00d2d3; font-weight: bold;', 
+          'color: default;', 
+          document.activeElement
+        );
+
+        const filterInput = document.querySelector('.projectgrid-filter-input');
+        const containerElement = document.querySelector('.block-language-projectgrid') || document.body;
+
+        if (!filterInput) {
+          console.error('%c[ProjectGrid ERROR]%c Could not find .projectgrid-filter-input bar on screen!', 'color: #ee5253; font-weight: bold;');
+          return true;
+        }
+
+        filterInput.focus();
+        filterInput.select();
+
+        const existingPicker = document.querySelector('.projectgrid-command-picker');
+        if (existingPicker) {
+          existingPicker.remove();
+          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+          return false;
+        }
+
+        const targetMenuStateInstance = globalThis.MenuState || MenuState;
+        
+        try {
+          const rowsArray = window.ProjectGridActiveRowsTrackingArrayRegistryPool || [];
+          const activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, () => {
+            MenuDom.destroyActivePickers(containerElement);
+            filterInput.focus();
           });
-          return;
-        } else if (evt.key === 'Enter') {
-          evt.preventDefault();
-          executeSelection();
-          return;
-        } else if (evt.key === 'Escape') {
-          evt.preventDefault();
-          if (pickerLevel === 2) {
-            pickerLevel = 1;
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeIndex = storedCategoryIndex;
-            renderMenu();
-          } else {
-            closeAllPickers();
+
+          console.log('%c[ProjectGrid]%c Packaging dynamic picker layout data map items:', 'color: #10ac84; font-weight: bold;', 'color: default;', activeItems);
+
+          if (window.ProjectGridTriggerMenuCorePickerSpawn) {
+            window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
           }
-          return;
-        }
-      }
-
-      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-        if (visibleRows.length === 0) return;
-        evt.preventDefault();
-        
-        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
-        let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
-
-        if (evt.key === 'ArrowDown') {
-          visibleIdx = (visibleIdx + 1) >= visibleRows.length ? 0 : visibleIdx + 1;
-        } else {
-          visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
+        } catch (err) {
+          console.error('%c[ProjectGrid EXCEPTION]%c Command Picker compilation crashed:', 'color: #ee5253; font-weight: bold;', 'color: default;', err.message);
         }
 
-        updateFocusIndex(visibleIdx);
-        const targetRow = visibleRows[visibleIdx].element;
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
-        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
+        return false; 
+      });
     });
-
-    const renderMenu = () => {
-      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
-        activeIndex = idx;
-        executeSelection();
-      }, closeAllPickers);
-
-      setTimeout(() => {
-        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
-        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
-          window.ProjectGridUpdateFocusOverlay(activeItem);
-        }
-      }, 10);
-    };
-
-    const executeSelection = () => {
-      if (pickerLevel === 1) {
-        storedCategoryIndex = activeIndex;
-        activeItems = activeItems[activeIndex].items;
-        pickerLevel = 2;
-        activeIndex = 0;
-        renderMenu();
-      } else if (pickerLevel === 2) {
-        const selectedAction = activeItems[activeIndex].action;
-        if (selectedAction) {
-          selectedAction();
-          
-          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
-          if (currentCategoryText === '📶 Sort') {
-            const targetMenuStateInstance = globalThis.MenuState || MenuState;
-            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
-            activeItems = masterSchema[storedCategoryIndex].items;
-            renderMenu(); 
-            return;
-          }
-        }
-        closeAllPickers();
-      }
-    };
   }
 };
 })();
-
-return {
-  initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
-    let currentFocusedIndex = -1;
-
-    const applyFilter = () => {
-      const val = filterInput.value.toLowerCase().trim();
-      clearButton.style.visibility = val ? 'visible' : 'hidden';
-      
-      rowsArray.forEach(row => {
-        const passText = row.searchText.includes(val);
-        const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
-        if (row.element) {
-          row.element.style.display = (passText && passDropdowns) ? '' : 'none';
-        }
-      });
-
-      const globalCounts = {};
-      const visibleCounts = {};
-
-      rowsArray.forEach(row => {
-        const metadata = row.yamlMetadataValues || {};
-        const launchers = row.launcherValues || {};
-        const dates = row.folderDatesValues || {};
-        
-        const allFields = { ...metadata, ...launchers, ...dates };
-        const isRowVisible = row.element && row.element.style.display !== 'none';
-
-        Object.keys(allFields).forEach(key => {
-          if (!globalCounts[key]) globalCounts[key] = { nonNullTotal: 0 };
-          if (!visibleCounts[key]) visibleCounts[key] = { nonNullVisible: 0 };
-          const valueStr = String(allFields[key]).trim();
-          if (valueStr && valueStr !== '⬛' && valueStr !== '' && valueStr !== '0000.00.00 00' && valueStr !== '0/0') {
-            globalCounts[key].nonNullTotal++;
-            if (isRowVisible) visibleCounts[key].nonNullVisible++;
-          }
-        });
-      });
-
-      // FIX: Static, bulletproof backup map eliminates runtime object lookup race conditions entirely
-      const headerIconsMap = {
-        tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
-        value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
-        git: '💿', agents: '🤖'
-      };
-
-      const activeSortChain = window.ProjectGridActiveSortChainList || [];
-
-      document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
-        const key = trigger.getAttribute('data-key');
-        if (!key || !headerIconsMap[key]) return;
-
-        let baseIcon = headerIconsMap[key];
-        const chainIdx = activeSortChain.indexOf(key);
-        
-        if (chainIdx === 0) baseIcon = '🟢' + baseIcon;
-        else if (chainIdx === 1) baseIcon = '🟡' + baseIcon;
-        else if (chainIdx === 2) baseIcon = '🔴' + baseIcon;
-
-        let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
-        let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
-
-        if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
-          nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none').length;
-          nonNullTot = rowsArray.length;
-        }
-
-        trigger.textContent = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
-      });
-
-      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-      if (visibleRows.length > 0) {
-        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
-        const finalTargetRow = visibleRows[currentFocusedIndex].element;
-        if (finalTargetRow) {
-          finalTargetRow.classList.add('projectgrid-row-focused');
-          if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
-        }
-      }
-    };
-
-    filterInput.addEventListener('input', applyFilter);
-
-    // RESTORED: Localized keyboard events binding track fires perfectly now that initialization is safe
-    MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
-      return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-    }, (index) => {
-      currentFocusedIndex = index;
-      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
-      rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
-      if (visibleRows[index] && visibleRows[index].element) {
-        visibleRows[index].element.classList.add('projectgrid-row-focused');
-        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
-      }
-    });
-
-    clearButton.addEventListener('click', () => {
-      filterInput.value = ''; applyFilter(); filterInput.focus();
-    });
-
-    window.ProjectGridTriggerFilterUpdate = applyFilter;
-    setTimeout(applyFilter, 50);
-  }
-};
-})();
+const MainRenderer = (function() {
 const UiBuilder = (function() {
 const UiRow = (function() {
 const fs = require('fs');
@@ -1340,6 +1212,77 @@ return {
     }
   };
 })();
+const UiRowTagsDom = (function() {
+return {
+    createTagsContainer(btnElement) {
+      const dropdown = document.createElement('div');
+      dropdown.className = 'projectgrid-dropup-panel projectgrid-tags-portal-panel';
+  
+      const rect = btnElement.getBoundingClientRect();
+      Object.assign(dropdown.style, {
+        position: 'fixed', 
+        top: `${rect.bottom + window.scrollY}px`,
+        left: `${rect.left + window.scrollX}px`, 
+        width: '170px',
+        zIndex: '250000', 
+        height: 'auto', 
+        maxHeight: '300px', 
+        display: 'flex', 
+        flexDirection: 'column'
+      });
+  
+      const label = document.createElement('div');
+      label.className = 'projectgrid-dropup-header-title';
+      label.textContent = '🏷️ Multi-Select Tags';
+      dropdown.appendChild(label);
+  
+      return dropdown;
+    },
+  
+    buildCustomInput(dropdown) {
+      const inputWrapper = document.createElement('div');
+      inputWrapper.className = 'projectgrid-tags-input-container';
+      
+      const customInput = document.createElement('input');
+      customInput.type = 'text'; 
+      customInput.className = 'projectgrid-tags-custom-entry-field';
+      customInput.placeholder = '➕ Filter / Add Tag...';
+      
+      inputWrapper.appendChild(customInput);
+      dropdown.appendChild(inputWrapper);
+      
+      return customInput;
+    },
+  
+    gatherUniqueAvailableTags() {
+      const globalTagsSet = new Set();
+      document.querySelectorAll('.projectgrid-tags-cell-btn').forEach(b => {
+        if (b.textContent !== '⬛') {
+          b.textContent.split(', ').forEach(t => globalTagsSet.add(t.trim()));
+        }
+      });
+      return Array.from(globalTagsSet).sort();
+    },
+  
+    populateTagsList(scrollingContainer, uniqueAvailableTags, activeTagsArray, onToggle) {
+      uniqueAvailableTags.forEach((tag) => {
+        const itemWrapper = document.createElement('label');
+        itemWrapper.className = 'projectgrid-dropup-option';
+  
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; 
+        cb.checked = activeTagsArray.includes(tag); 
+        cb.tabIndex = -1;
+        
+        cb.addEventListener('change', () => onToggle(tag, cb.checked));
+  
+        itemWrapper.appendChild(cb); 
+        itemWrapper.appendChild(document.createTextNode(tag));
+        scrollingContainer.appendChild(itemWrapper);
+      });
+    }
+  };
+})();
 
 return {
   buildInteractiveTagsColumn(tableRow, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
@@ -1372,50 +1315,15 @@ return {
     const openTagsDropdown = () => {
       if (activeTagsDropdown) return;
       isOpeningPanel = true; tagsSelectionIdx = 0;
-      activeTagsDropdown = document.createElement('div');
-      activeTagsDropdown.className = 'projectgrid-dropup-panel projectgrid-tags-portal-panel';
-
-      const globalTagsSet = new Set();
-      document.querySelectorAll('.projectgrid-tags-cell-btn').forEach(b => {
-        if (b.textContent !== '⬛') b.textContent.split(', ').forEach(t => globalTagsSet.add(t.trim()));
-      });
-      const uniqueAvailableTags = Array.from(globalTagsSet).sort();
-
-      const rect = tagsBtn.getBoundingClientRect();
-      Object.assign(activeTagsDropdown.style, {
-        position: 'fixed', top: `${rect.bottom + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: '170px',
-        zIndex: '250000', height: 'auto', maxHeight: '300px', display: 'flex', flexDirection: 'column'
-      });
-
-      const label = document.createElement('div');
-      label.className = 'projectgrid-dropup-header-title';
-      label.textContent = '🏷️ Multi-Select Tags';
-      activeTagsDropdown.appendChild(label);
-
-      const inputWrapper = document.createElement('div');
-      inputWrapper.className = 'projectgrid-tags-input-container';
       
-      const customInput = document.createElement('input');
-      customInput.type = 'text'; customInput.className = 'projectgrid-tags-custom-entry-field';
-      customInput.placeholder = '➕ Filter / Add Tag...';
-      inputWrapper.appendChild(customInput);
-      activeTagsDropdown.appendChild(inputWrapper);
+      activeTagsDropdown = UiRowTagsDom.createTagsContainer(tagsBtn);
+      const uniqueAvailableTags = UiRowTagsDom.gatherUniqueAvailableTags();
 
+      const customInput = UiRowTagsDom.buildCustomInput(activeTagsDropdown);
       const scrollingContainer = document.createElement('div');
       scrollingContainer.style.overflowY = 'auto'; scrollingContainer.style.flex = '1';
 
-      uniqueAvailableTags.forEach((tag, tIdx) => {
-        const itemWrapper = document.createElement('label');
-        itemWrapper.className = 'projectgrid-dropup-option';
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox'; cb.checked = activeTagsArray.includes(tag); cb.tabIndex = -1;
-        cb.addEventListener('change', () => toggleTagValue(tag, cb.checked));
-
-        itemWrapper.appendChild(cb); itemWrapper.appendChild(document.createTextNode(tag));
-        scrollingContainer.appendChild(itemWrapper);
-      });
+      UiRowTagsDom.populateTagsList(scrollingContainer, uniqueAvailableTags, activeTagsArray, toggleTagValue);
       activeTagsDropdown.appendChild(scrollingContainer);
       document.body.appendChild(activeTagsDropdown);
 
@@ -1430,11 +1338,11 @@ return {
           tagsSelectionIdx = e.key === 'ArrowDown' ? ((tagsSelectionIdx + 1) % options.length) : ((tagsSelectionIdx - 1 + options.length) % options.length);
 
           options.forEach((lbl, lIdx) => {
-            if (lIdx === tagsSelectionIdx) {
-              lbl.classList.add('projectgrid-row-focused');
-              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(lbl);
+            lbl.classList.toggle('projectgrid-row-focused', lIdx === tagsSelectionIdx);
+            if (lIdx === tagsSelectionIdx && window.ProjectGridUpdateFocusOverlay) {
+              window.ProjectGridUpdateFocusOverlay(lbl);
               lbl.scrollIntoView({ block: 'nearest' });
-            } else { lbl.classList.remove('projectgrid-row-focused'); }
+            }
           });
         } else if (e.key === 'Enter') {
           e.preventDefault(); e.stopPropagation();
@@ -1450,7 +1358,7 @@ return {
             if (!activeTagsArray.includes(typedText)) await toggleTagValue(typedText, true);
             closeTagsDropdown(); tagsBtn.focus();
           }
-        } else if (e.key === 'Escape' || (e.key === 'Enter' && e.ctrlKey)) {
+        } else if (e.key === 'Escape') {
           e.preventDefault(); e.stopPropagation(); closeTagsDropdown(); tagsBtn.focus();
         }
       });
@@ -1484,33 +1392,28 @@ return {
       }
     };
 
-    // FIX: Safely route closed cell navigation tracking to the new row utility tracking sequence
     tagsBtn.addEventListener('keydown', (evt) => {
-      if (activeTagsDropdown) return;
-      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
-        evt.preventDefault(); evt.stopPropagation();
-        UiRowKeys.jumpToVerticalRowCell(evt, tableRow, '.projectgrid-tags-cell-btn', 0);
-      } else if (evt.key === 'Enter' || evt.key === ' ') {
-        evt.preventDefault(); evt.stopPropagation(); openTagsDropdown();
+      if (evt.key === 'Escape') {
+        evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation();
+        tagsBtn.blur();
+        const rootContainer = tagsBtn.closest('.block-language-projectgrid') || document;
+        const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
+        if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); });
+        return;
       }
-    });
+      if (!activeTagsDropdown) {
+        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar') {
+          evt.preventDefault(); evt.stopPropagation(); openTagsDropdown(); return;
+        }
+        const mockCfg = { key: 'tags', defaults: ['⬛'], isExtendable: true };
+        const handled = UiRowKeys.handleClosedNavigation(evt, tagsBtn, tableRow, 7, mockCfg, filterInput);
+        if (handled) { evt.preventDefault(); evt.stopPropagation(); }
+      }
+    }, true);
 
-    tagsBtn.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(tagsBtn);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-    });
-
-    tagsBtn.addEventListener('blur', () => {
-      setTimeout(() => { if (activeTagsDropdown && !activeTagsDropdown.contains(document.activeElement)) closeTagsDropdown(); }, 180);
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
-    });
-
-    tagsBtn.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      if (activeTagsDropdown && !isOpeningPanel) closeTagsDropdown();
-      else { tagsBtn.focus(); openTagsDropdown(); }
-    });
+    tagsBtn.addEventListener('focus', () => { if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(tagsBtn); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); });
+    tagsBtn.addEventListener('blur', () => { setTimeout(() => { if (activeTagsDropdown && !activeTagsDropdown.contains(document.activeElement) && document.activeElement !== tagsBtn) closeTagsDropdown(); }, 180); if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); });
+    tagsBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if (activeTagsDropdown && !isOpeningPanel) closeTagsDropdown(); else { tagsBtn.focus(); openTagsDropdown(); } });
 
     tagsCell.appendChild(tagsBtn);
     tableRow.appendChild(tagsCell);
@@ -1518,6 +1421,58 @@ return {
 };
 })();
 const UiRowSelect = (function() {
+const UiRowSelectDom = (function() {
+return {
+    createDropdownContainer(btnElement, configKey) {
+      const dropdown = document.createElement('div');
+      dropdown.className = 'projectgrid-dropup-panel';
+      
+      const rect = btnElement.getBoundingClientRect();
+      Object.assign(dropdown.style, {
+        position: 'fixed', 
+        top: `${rect.bottom + window.scrollY}px`,
+        left: `${rect.left + window.scrollX}px`, 
+        width: `${rect.width + 30}px`,
+        zIndex: '200000', 
+        height: 'auto', 
+        display: 'flex', 
+        flexDirection: 'column'
+      });
+  
+      const label = document.createElement('div');
+      label.className = 'projectgrid-dropup-header-title';
+      label.textContent = `📋 ${configKey.toUpperCase()}`;
+      dropdown.appendChild(label);
+  
+      return dropdown;
+    },
+  
+    buildCustomInput(dropdown) {
+      const inputWrapper = document.createElement('div');
+      inputWrapper.className = 'projectgrid-tags-input-container';
+      
+      const customInput = document.createElement('input');
+      customInput.type = 'text';
+      customInput.className = 'projectgrid-tags-custom-entry-field';
+      customInput.placeholder = '➕ Filter / Add...';
+      
+      inputWrapper.appendChild(customInput);
+      dropdown.appendChild(inputWrapper);
+      
+      return customInput;
+    },
+  
+    populateItemsList(scrollingContainer, optionsList) {
+      optionsList.forEach((opt) => {
+        const li = document.createElement('div');
+        li.className = 'projectgrid-custom-dropdown-item';
+        li.textContent = opt;
+        scrollingContainer.appendChild(li);
+      });
+    }
+  };
+})();
+
 return {
   buildSelectButton(cell, tableRow, fieldIdx, cfg, expectedNotePath, app, frontmatter, rowTrackingReference, filterInput) {
     const btn = document.createElement('div');
@@ -1526,7 +1481,9 @@ return {
     btn.setAttribute('data-field-index', fieldIdx);
 
     const rawVal = frontmatter && frontmatter[cfg.key] !== undefined ? String(frontmatter[cfg.key]) : '';
-    rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+    if (rowTrackingReference && rowTrackingReference.yamlMetadataValues) {
+      rowTrackingReference.yamlMetadataValues[cfg.key] = rawVal || '⬛';
+    }
     btn.textContent = rawVal || '⬛';
 
     let optionsList = ['⬛', ...cfg.defaults];
@@ -1550,44 +1507,18 @@ return {
       let selectionIdx = optionsList.indexOf(cleanBtnText);
       if (selectionIdx === -1) selectionIdx = 0;
 
-      activeDropdown = document.createElement('div');
-      activeDropdown.className = 'projectgrid-dropup-panel';
-      
-      const rect = btn.getBoundingClientRect();
-      Object.assign(activeDropdown.style, {
-        position: 'fixed', top: `${rect.bottom + window.scrollY}px`,
-        left: `${rect.left + window.scrollX}px`, width: `${rect.width + 30}px`,
-        zIndex: '200000', height: 'auto', display: 'flex', flexDirection: 'column'
-      });
-
-      const label = document.createElement('div');
-      label.className = 'projectgrid-dropup-header-title';
-      label.textContent = `📋 ${cfg.key.toUpperCase()}`;
-      activeDropdown.appendChild(label);
+      activeDropdown = UiRowSelectDom.createDropdownContainer(btn, cfg.key);
 
       let customInput = null;
       if (cfg.isExtendable) {
-        const inputWrapper = document.createElement('div');
-        inputWrapper.className = 'projectgrid-tags-input-container';
-        
-        customInput = document.createElement('input');
-        customInput.type = 'text';
-        customInput.className = 'projectgrid-tags-custom-entry-field';
-        customInput.placeholder = '➕ Filter / Add...';
-        inputWrapper.appendChild(customInput);
-        activeDropdown.appendChild(inputWrapper);
+        customInput = UiRowSelectDom.buildCustomInput(activeDropdown);
       }
 
       const scrollingContainer = document.createElement('div');
       scrollingContainer.style.overflowY = 'auto';
       scrollingContainer.style.flex = '1';
 
-      optionsList.forEach((opt, oIdx) => {
-        const li = document.createElement('div');
-        li.className = 'projectgrid-custom-dropdown-item';
-        li.textContent = opt;
-        scrollingContainer.appendChild(li);
-      });
+      UiRowSelectDom.populateItemsList(scrollingContainer, optionsList);
       activeDropdown.appendChild(scrollingContainer);
       document.body.appendChild(activeDropdown);
 
@@ -1595,65 +1526,41 @@ return {
       
       const updateVisualSelection = () => {
         items.forEach((li, lIdx) => {
-          if (lIdx === selectionIdx) {
-            li.classList.add('projectgrid-picker-highlight');
-            li.classList.add('projectgrid-row-focused');
-            if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(li);
+          li.classList.toggle('projectgrid-picker-highlight', lIdx === selectionIdx);
+          li.classList.toggle('projectgrid-row-focused', lIdx === selectionIdx);
+          if (lIdx === selectionIdx && window.ProjectGridUpdateFocusOverlay) {
+            window.ProjectGridUpdateFocusOverlay(li);
             li.scrollIntoView({ block: 'nearest' });
-          } else { 
-            li.classList.remove('projectgrid-picker-highlight');
-            li.classList.remove('projectgrid-row-focused');
           }
         });
       };
 
+      const handleKeyRouting = (e, isInputNode) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault(); e.stopPropagation();
+          selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
+          updateVisualSelection();
+        } else if (e.key === 'Enter' || (!isInputNode && (e.key === ' ' || e.key === 'Spacebar'))) {
+          e.preventDefault(); e.stopPropagation();
+          const val = isInputNode ? customInput.value.trim() : '';
+          if (isInputNode && val !== '') commitSelection(val);
+          else commitSelection(optionsList[selectionIdx]);
+        } else if (e.key === 'Escape') { 
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+          closeDropdown(); btn.focus(); 
+        }
+      };
+
       if (customInput) {
         customInput.focus();
-        customInput.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault(); e.stopPropagation();
-            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-            updateVisualSelection();
-          } else if (e.key === 'Enter') {
-            e.preventDefault(); e.stopPropagation();
-            const val = customInput.value.trim();
-            if (val === '') commitSelection(optionsList[selectionIdx]);
-            else commitSelection(val);
-          } else if (e.key === 'Escape') { 
-            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-            closeDropdown(); 
-            btn.focus(); 
-          }
-        });
+        customInput.addEventListener('keydown', (e) => handleKeyRouting(e, true));
       } else {
         activeDropdown.tabIndex = 0;
-        requestAnimationFrame(() => {
-          if (activeDropdown) activeDropdown.focus();
-        });
-
-        activeDropdown.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault(); e.stopPropagation();
-            selectionIdx = e.key === 'ArrowDown' ? ((selectionIdx + 1) % optionsList.length) : ((selectionIdx - 1 + optionsList.length) % optionsList.length);
-            updateVisualSelection();
-          } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-            e.preventDefault(); e.stopPropagation();
-            commitSelection(optionsList[selectionIdx]);
-          } else if (e.key === 'Escape') { 
-            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-            closeDropdown(); 
-            btn.focus(); 
-          }
-        });
+        requestAnimationFrame(() => { if (activeDropdown) activeDropdown.focus(); });
+        activeDropdown.addEventListener('keydown', (e) => handleKeyRouting(e, false));
       }
 
-      setTimeout(() => {
-        updateVisualSelection();
-        isOpening = false;
-        if (window.ProjectGridTriggerTutorHelpBoxRedraw) {
-          window.ProjectGridTriggerTutorHelpBoxRedraw(customInput || activeDropdown);
-        }
-      }, 20);
+      setTimeout(() => { updateVisualSelection(); isOpening = false; }, 20);
     };
 
     const commitSelection = async (value) => {
@@ -1665,74 +1572,30 @@ return {
           else fm[cfg.key] = finalVal;
         });
         btn.textContent = value; closeDropdown();
-        
-        const activeChain = window.ProjectGridActiveSortChainList || [];
-        if (activeChain.includes(cfg.key) && window.ProjectGridTriggerSortReRun) window.ProjectGridTriggerSortReRun();
-        else if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
-
+        if (window.ProjectGridTriggerFilterUpdate) window.ProjectGridTriggerFilterUpdate();
         btn.focus();
       }
     };
 
-    btn.addEventListener('focus', () => {
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow);
-      if (window.ProjectGridTriggerTutorHelpBoxRedraw) window.ProjectGridTriggerTutorHelpBoxRedraw(btn, 'cell-btn');
-    });
+    btn.addEventListener('focus', () => { if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(btn); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(tableRow); });
+    btn.addEventListener('blur', () => { setTimeout(() => { if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) closeDropdown(); }, 180); if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null); if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null); });
+    btn.addEventListener('mousedown', (e) => { e.stopPropagation(); if (activeDropdown && !isOpening) closeDropdown(); else { btn.focus(); openDropdown(); } });
     
-    btn.addEventListener('blur', () => {
-      setTimeout(() => { 
-        if (activeDropdown && !activeDropdown.contains(document.activeElement) && document.activeElement !== btn) {
-          closeDropdown(); 
-        }
-      }, 180);
-      if (window.ProjectGridUpdateInputOverlay) window.ProjectGridUpdateInputOverlay(null);
-      if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(null);
-    });
-    
-    btn.addEventListener('mousedown', (e) => { 
-      e.stopPropagation(); 
-      if (activeDropdown && !isOpening) {
-        closeDropdown(); 
-      } else { 
-        btn.focus(); 
-        openDropdown(); 
-      } 
-    });
-    
-    // NATIVE INTERCEPT: Intercepts keyboard events locally to break Obsidian's document canvas focus retention loops
     btn.addEventListener('keydown', (evt) => {
       if (evt.key === 'Escape') {
-        // Stop Obsidian or CodeMirror from ever seeing this keydown stroke
-        evt.preventDefault();
-        evt.stopPropagation();
-        evt.stopImmediatePropagation();
-
-        // Hard reset the button focus boundary to prevent cursor retention loops
+        evt.preventDefault(); evt.stopPropagation(); evt.stopImmediatePropagation();
         btn.blur();
-
-        // Immediately find and focus the search bar directly via the DOM
         const rootContainer = btn.closest('.block-language-projectgrid') || document;
         const targetInput = rootContainer.querySelector('.projectgrid-filter-input');
-        
-        if (targetInput) {
-          requestAnimationFrame(() => {
-            targetInput.focus();
-            targetInput.select();
-          });
-        }
+        if (targetInput) requestAnimationFrame(() => { targetInput.focus(); targetInput.select(); });
         return;
       }
-
       if (!activeDropdown) {
-        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar' || (evt.key === 'ArrowDown' && evt.altKey)) {
-          evt.preventDefault(); evt.stopPropagation(); openDropdown(); return;
-        }
-        
+        if (evt.key === 'Enter' || evt.key === ' ' || evt.key === 'Spacebar') { evt.preventDefault(); openDropdown(); return; }
         const handled = UiRowKeys.handleClosedNavigation(evt, btn, tableRow, fieldIdx, cfg, filterInput);
         if (handled) { evt.preventDefault(); evt.stopPropagation(); }
       }
-    }, true); 
+    }, true);
 
     btn.openDropdown = openDropdown;
     cell.appendChild(btn);
@@ -2023,119 +1886,254 @@ return {
 
 
 
+const FilterManager = (function() {
+const MenuCore = (function() {
+return {
+  bindKeyboardEvents(filterInput, rowsArray, containerElement, getVisibleRows, updateFocusIndex) {
+    let pickerLevel = 0; // 0 = Closed, 1 = Category Node, 2 = Action Command Item
+    let activeItems = [];
+    let activeIndex = 0;
+    let storedCategoryIndex = 0;
+    let activePickerEl = null;
 
-module.exports = class ProjectGridPlugin extends Plugin {
-  async onload() {
-    console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
-    StylesManager.injectStyles();
+    const closeAllPickers = () => {
+      pickerLevel = 0;
+      MenuDom.destroyActivePickers(containerElement);
+      activePickerEl = null;
+      filterInput.focus();
+      if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
+    };
 
-    window.ProjectGridTutorModeActive = false;
-    const pluginInstance = this;
-
-    this.app.workspace.on('layout-ready', () => {
-      if (!pluginInstance.scope) return;
-
-      // 1. UNIVERSAL PANEL ESCAPE OVERRIDE SHORTCUT
-      pluginInstance.scope.register([], 'Escape', (evt) => {
-        const widePanel = document.querySelector('.projectgrid-wide-tasks-portal');
-        if (widePanel) {
-          evt.preventDefault();
-          const activeTasksTrigger = document.querySelector('.projectgrid-tasks-trigger-btn:focus') || 
-                                     document.querySelector('.projectgrid-row-focused .projectgrid-tasks-trigger-btn') ||
-                                     document.querySelector('.projectgrid-tasks-trigger-btn');
-          widePanel.remove();
-          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-          if (activeTasksTrigger) requestAnimationFrame(() => { activeTasksTrigger.focus(); });
-          return false;
-        }
-
-        const activeNode = document.activeElement;
-        if (activeNode && activeNode.closest('.projectgrid-matrix-table')) {
-          evt.preventDefault();
-          const container = activeNode.closest('.block-language-projectgrid') || document;
-          const filterInput = container.querySelector('.projectgrid-filter-input');
-          if (filterInput) { filterInput.focus(); filterInput.select(); }
-          return false;
-        }
-        return true; 
-      });
-
-      // 2. NEW BULLETPROOF SYSTEM COMMAND PICKER HOTKEY (Ctrl + Shift + Space)
-      // This official application scope hook guarantees execution priority over CodeMirror or Obsidian defaults
-      pluginInstance.scope.register(['Ctrl', 'Shift'], ' ', (evt) => {
+    // RESTORED: Standard ScrollLock event capture sequence behaves exactly like your proven historical baseline
+    window.addEventListener('keydown', (evt) => {
+      if (evt.key === 'ScrollLock') {
         evt.preventDefault();
-
-        // 📶 REAL-TIME TELEMETRY DIAGNOSTIC INDICATOR PASS
-        console.log(
-          '%c[ProjectGrid CAPTURE]%c Captured Ctrl+Shift+Space stroke. Active focus element:', 
-          'color: #00d2d3; font-weight: bold;', 
-          'color: default;', 
-          document.activeElement
-        );
-
-        // Dynamically discover the active block layout search query bar on screen
-        const filterInput = document.querySelector('.projectgrid-filter-input');
-        const containerElement = document.querySelector('.block-language-projectgrid') || document.body;
-
-        if (!filterInput) {
-          console.error('%c[ProjectGrid ERROR]%c Could not find .projectgrid-filter-input bar on screen!', 'color: #ee5253; font-weight: bold;');
-          return true;
-        }
-
-        // Force focus straight to the search field to maintain structural alignment tracks
-        filterInput.focus();
-        filterInput.select();
-
-        // Destroy any active pickers to refresh views cleanly
-        const existingPicker = document.querySelector('.projectgrid-command-picker');
-        if (existingPicker) {
-          existingPicker.remove();
-          if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(null);
-          return false;
-        }
-
-        const targetMenuStateInstance = globalThis.MenuState || MenuState;
         
-        try {
-          // Look up active note lists rows registers
-          const rowsArray = window.ProjectGridActiveRowsTrackingArrayRegistryPool || [];
-          const activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, () => {
-            MenuDom.destroyActivePickers(containerElement);
-            filterInput.focus();
+        if (document.activeElement !== filterInput) {
+          filterInput.focus();
+          filterInput.select();
+        } else {
+          pickerLevel = 1;
+          activeIndex = 0;
+          
+          const targetMenuStateInstance = globalThis.MenuState || MenuState;
+          activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+          renderMenu();
+        }
+      }
+    });
+
+    filterInput.addEventListener('keydown', (evt) => {
+      const visibleRows = getVisibleRows();
+
+      if (pickerLevel > 0 && activePickerEl) {
+        if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+          evt.preventDefault();
+          activeIndex = evt.key === 'ArrowDown' ? ((activeIndex + 1) % activeItems.length) : ((activeIndex - 1 + activeItems.length) % activeItems.length);
+          
+          const items = activePickerEl.querySelectorAll('.projectgrid-picker-item');
+          items.forEach((item, idx) => {
+            if (idx === activeIndex) {
+              item.classList.add('projectgrid-picker-highlight');
+              if (window.ProjectGridUpdateFocusOverlay) window.ProjectGridUpdateFocusOverlay(item);
+            } else {
+              item.classList.remove('projectgrid-picker-highlight');
+            }
           });
-
-          console.log('%c[ProjectGrid]%c Packaging dynamic picker layout data map items:', 'color: #10ac84; font-weight: bold;', 'color: default;', activeItems);
-
-          // Force programmatic invocation routing using MenuCore's internal dispatcher mechanics
-          if (window.ProjectGridTriggerMenuCorePickerSpawn) {
-            window.ProjectGridTriggerMenuCorePickerSpawn(activeItems);
+          return;
+        } else if (evt.key === 'Enter') {
+          evt.preventDefault();
+          executeSelection();
+          return;
+        } else if (evt.key === 'Escape') {
+          evt.preventDefault();
+          if (pickerLevel === 2) {
+            pickerLevel = 1;
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            activeItems = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeIndex = storedCategoryIndex;
+            renderMenu();
+          } else {
+            closeAllPickers();
           }
-        } catch (err) {
-          console.error('%c[ProjectGrid EXCEPTION]%c Command Picker compilation crashed:', 'color: #ee5253; font-weight: bold;', 'color: default;', err.message);
+          return;
+        }
+      }
+
+      if (evt.key === 'ArrowDown' || evt.key === 'ArrowUp') {
+        if (visibleRows.length === 0) return;
+        evt.preventDefault();
+        
+        let idx = rowsArray.findIndex(r => r.element && r.element.classList.contains('projectgrid-row-focused'));
+        let visibleIdx = visibleRows.findIndex(r => r.element === rowsArray[idx]?.element);
+
+        if (evt.key === 'ArrowDown') {
+          visibleIdx = (visibleIdx + 1) >= visibleRows.length ? 0 : visibleIdx + 1;
+        } else {
+          visibleIdx = (visibleIdx - 1) < 0 ? visibleRows.length - 1 : visibleIdx - 1;
         }
 
-        return false; // Tells Obsidian to swallow this hotkey event completely
+        updateFocusIndex(visibleIdx);
+        const targetRow = visibleRows[visibleIdx].element;
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(targetRow);
+        if (targetRow) targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+
+    const renderMenu = () => {
+      activePickerEl = MenuDom.renderPickerBox(filterInput, activeItems, activeIndex, containerElement, (idx) => {
+        activeIndex = idx;
+        executeSelection();
+      }, closeAllPickers);
+
+      setTimeout(() => {
+        const activeItem = activePickerEl.querySelector('.projectgrid-picker-highlight');
+        if (activeItem && window.ProjectGridUpdateFocusOverlay) {
+          window.ProjectGridUpdateFocusOverlay(activeItem);
+        }
+      }, 10);
+    };
+
+    const executeSelection = () => {
+      if (pickerLevel === 1) {
+        storedCategoryIndex = activeIndex;
+        activeItems = activeItems[activeIndex].items;
+        pickerLevel = 2;
+        activeIndex = 0;
+        renderMenu();
+      } else if (pickerLevel === 2) {
+        const selectedAction = activeItems[activeIndex].action;
+        if (selectedAction) {
+          selectedAction();
+          
+          const currentCategoryText = storedCategoryIndex === 3 ? '📶 Sort' : '';
+          if (currentCategoryText === '📶 Sort') {
+            const targetMenuStateInstance = globalThis.MenuState || MenuState;
+            const masterSchema = targetMenuStateInstance.getMenuSchema(filterInput, rowsArray, containerElement, closeAllPickers);
+            activeItems = masterSchema[storedCategoryIndex].items;
+            renderMenu(); 
+            return;
+          }
+        }
+        closeAllPickers();
+      }
+    };
+  }
+};
+})();
+
+return {
+  initializeTableFilter(filterInput, clearButton, rowsArray, containerElement) {
+    let currentFocusedIndex = -1;
+
+    const applyFilter = () => {
+      const val = filterInput.value.toLowerCase().trim();
+      clearButton.style.visibility = val ? 'visible' : 'hidden';
+      
+      rowsArray.forEach(row => {
+        const passText = row.searchText.includes(val);
+        const passDropdowns = Object.values(row.dropdownFilters || {}).every(status => status === true);
+        if (row.element) {
+          row.element.style.display = (passText && passDropdowns) ? '' : 'none';
+        }
       });
+
+      const globalCounts = {};
+      const visibleCounts = {};
+
+      rowsArray.forEach(row => {
+        const metadata = row.yamlMetadataValues || {};
+        const launchers = row.launcherValues || {};
+        const dates = row.folderDatesValues || {};
+        
+        const allFields = { ...metadata, ...launchers, ...dates };
+        const isRowVisible = row.element && row.element.style.display !== 'none';
+
+        Object.keys(allFields).forEach(key => {
+          if (!globalCounts[key]) globalCounts[key] = { nonNullTotal: 0 };
+          if (!visibleCounts[key]) visibleCounts[key] = { nonNullVisible: 0 };
+          const valueStr = String(allFields[key]).trim();
+          if (valueStr && valueStr !== '⬛' && valueStr !== '' && valueStr !== '0000.00.00 00' && valueStr !== '0/0') {
+            globalCounts[key].nonNullTotal++;
+            if (isRowVisible) visibleCounts[key].nonNullVisible++;
+          }
+        });
+      });
+
+      // FIX: Static, bulletproof backup map eliminates runtime object lookup race conditions entirely
+      const headerIconsMap = {
+        tasks: '🔧', created: '🆕', updated: '🆙', tags: '🏷️', stars: '⭐', 
+        value: '💲', size: '🐘', depth: '🎱', priority: '🏅', status: '🚦', lang: '🔤', target: '🎯',
+        git: '💿', agents: '🤖'
+      };
+
+      const activeSortChain = window.ProjectGridActiveSortChainList || [];
+
+      document.querySelectorAll('.projectgrid-header-dropup-trigger').forEach(trigger => {
+        const key = trigger.getAttribute('data-key');
+        if (!key || !headerIconsMap[key]) return;
+
+        let baseIcon = headerIconsMap[key];
+        const chainIdx = activeSortChain.indexOf(key);
+        
+        if (chainIdx === 0) baseIcon = '🟢' + baseIcon;
+        else if (chainIdx === 1) baseIcon = '🟡' + baseIcon;
+        else if (chainIdx === 2) baseIcon = '🔴' + baseIcon;
+
+        let nonNullVis = visibleCounts[key]?.nonNullVisible || 0;
+        let nonNullTot = globalCounts[key]?.nonNullTotal || 0;
+
+        if (key === 'tasks' || key === 'created' || key === 'updated' || key === 'git' || key === 'agents') {
+          nonNullVis = rowsArray.filter(r => r.element && r.element.style.display !== 'none').length;
+          nonNullTot = rowsArray.length;
+        }
+
+        trigger.textContent = `${baseIcon} ${nonNullVis}/${nonNullTot}`;
+      });
+
+      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      if (visibleRows.length > 0) {
+        if (currentFocusedIndex < 0 || currentFocusedIndex >= visibleRows.length) currentFocusedIndex = 0;
+        const finalTargetRow = visibleRows[currentFocusedIndex].element;
+        if (finalTargetRow) {
+          finalTargetRow.classList.add('projectgrid-row-focused');
+          if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(finalTargetRow);
+        }
+      }
+    };
+
+    filterInput.addEventListener('input', applyFilter);
+
+    // RESTORED: Localized keyboard events binding track fires perfectly now that initialization is safe
+    MenuCore.bindKeyboardEvents(filterInput, rowsArray, containerElement, () => {
+      return rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+    }, (index) => {
+      currentFocusedIndex = index;
+      const visibleRows = rowsArray.filter(row => row.element && row.element.style.display !== 'none');
+      rowsArray.forEach(row => { if (row.element) row.element.classList.remove('projectgrid-row-focused'); });
+      if (visibleRows[index] && visibleRows[index].element) {
+        visibleRows[index].element.classList.add('projectgrid-row-focused');
+        if (window.ProjectGridUpdateRowOverlay) window.ProjectGridUpdateRowOverlay(visibleRows[index].element);
+      }
     });
 
-    this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
-      this.renderProjectGridDashboard(sourceText, element);
+    clearButton.addEventListener('click', () => {
+      filterInput.value = ''; applyFilter(); filterInput.focus();
     });
-  }
 
-  onunload() {
-    const styleEl = document.getElementById('obsidian-projectgrid-styles');
-    if (styleEl) styleEl.remove();
-    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal, .projectgrid-tutor-tooltip-portal').forEach(el => el.remove());
+    window.ProjectGridTriggerFilterUpdate = applyFilter;
+    setTimeout(applyFilter, 50);
   }
+};
+})();
 
-  renderProjectGridDashboard(sourceText, containerElement) {
+return {
+  renderProjectGridDashboard(pluginContext, sourceText, containerElement) {
     const rootTarget = sourceText.trim() || "__";
-    const absoluteVaultRoot = this.app.vault.adapter.getBasePath();
+    const absoluteVaultRoot = pluginContext.app.vault.adapter.getBasePath();
 
     const headerSetup = UiBuilder.generateHeaderCell();
     
-    // Wire up the top toolbar gear button to execute the exact same command trigger sequence
     const toolbarSetup = MainToolbar.createToolbarLayout(containerElement, () => {
       const targetMenuStateInstance = globalThis.MenuState || MenuState;
       const activeItems = targetMenuStateInstance.getMenuSchema(headerSetup.input, rowsArray, containerElement, () => {
@@ -2177,11 +2175,10 @@ module.exports = class ProjectGridPlugin extends Plugin {
     const tableBody = document.createElement('tbody');
     const rowsArray = [];
     
-    // Globally register rows so our shortcut interceptor can pull data parameters on demand
     window.ProjectGridActiveRowsTrackingArrayRegistryPool = rowsArray;
 
     const universalTagsSet = MainScanner.scanVaultProjectsFolders(
-      this.app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, headerSetup.input
+      pluginContext.app, rootTarget, absoluteVaultRoot, tableBody, rowsArray, headerSetup.input
     );
 
     tableHeader.appendChild(headerRow);
@@ -2202,6 +2199,30 @@ module.exports = class ProjectGridPlugin extends Plugin {
     if (rowsArray.length > 0) {
       containerElement.appendChild(tableElement);
     }
+  }
+};
+})();
+
+module.exports = class ProjectGridPlugin extends Plugin {
+  async onload() {
+    console.log('%c[ProjectGrid]%c Core initialized...', 'color: #00d2d3; font-weight: bold;', 'color: default;');
+    StylesManager.injectStyles();
+
+    window.ProjectGridTutorModeActive = false;
+
+    // DELEGATE SHORTCUTS: Hook shortcuts array priorities securely via the dedicated manager module
+    MainShortcuts.registerGlobalPluginScopes(this);
+
+    this.registerMarkdownCodeBlockProcessor('projectgrid', (sourceText, element) => {
+      // DELEGATE RENDERING: Render grid elements cleanly via our isolated factory engine module
+      MainRenderer.renderProjectGridDashboard(this, sourceText, element);
+    });
+  }
+
+  onunload() {
+    const styleEl = document.getElementById('obsidian-projectgrid-styles');
+    if (styleEl) styleEl.remove();
+    document.querySelectorAll('.projectgrid-focus-overlay-portal, .projectgrid-input-overlay-portal, .projectgrid-row-overlay-portal, .projectgrid-wide-tasks-portal, .projectgrid-tutor-tooltip-portal').forEach(el => el.remove());
   }
 };
 

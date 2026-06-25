@@ -4,22 +4,28 @@
 
 const StylesCore = require('./styles-core');
 const StylesAnimation = require('./styles-animation');
-const StylesComponents = require('./styles-components');
+const StylesComponentsToolbar = require('./styles-components-toolbar');
+const StylesComponentsDropdown = require('./styles-components-dropdown');
+const StylesComponentsOverlays = require('./styles-components-overlays');
 
 module.exports = {
   injectStyles() {
-    if (document.getElementById('obsidian-projectgrid-styles')) return;
+    let styleElement = document.getElementById('obsidian-projectgrid-styles');
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'obsidian-projectgrid-styles';
+      document.head.appendChild(styleElement);
+    }
 
-    const styleEl = document.createElement('style');
-    styleEl.id = 'obsidian-projectgrid-styles';
+    const compiledCss = `
+      ${StylesCore.getCoreStyles()}
+      ${StylesAnimation.getAnimationStyles()}
+      ${StylesComponentsToolbar.getToolbarStyles()}
+      ${StylesComponentsDropdown.getDropdownStyles()}
+      ${StylesComponentsOverlays.getOverlayStyles()}
+    `;
 
-    // Concatenate your isolated logical modules sequentially into the template rule
-    styleEl.innerHTML = 
-      StylesCore.getCoreStyles() + 
-      StylesAnimation.getAnimationStyles() + 
-      StylesComponents.getComponentStyles();
-
-    document.head.appendChild(styleEl);
+    styleElement.textContent = compiledCss;
   }
 };
 
