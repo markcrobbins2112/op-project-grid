@@ -1,15 +1,3 @@
-<!-- # TEMPLATE: TESTING.template.md -->
-<!-- 
-# INSTRUCTIONS FOR THE HUMAN DEVELOPER:
-# Any text bounded by double curly braces {{like this}} is a placeholder for you to fill out.
-# Replace those placeholders with real paths, rules, and project constraints.
-#
-# INSTRUCTIONS FOR THE AI AGENT:
-# This file is an interactive QA test sheet. Use it to coordinate regression checks, 
-# layout edits, interface interactions, calculations checks, state transitions, and border boundaries.
-# Every major feature module must map back to an actionable checkbox item with expected outcomes.
--->
-
 <!-- markdownlint-disable MD013 -->
 # TESTING
 
@@ -38,53 +26,77 @@
 - [[#🗃️ QA Validation History (Sign-Off Log)]] ^toc-history
 - [[#🚀 Go to...]] ^toc-goto
 
-You can use this interactive test sheet directly with VS Code / Cursor to verify that all systems in **{{Specify Program Name}}** are fully functional. Put your cursor on these checkbox lines, and mark them done!
+You can use this interactive test sheet directly with VS Code / Cursor to verify that all systems in **ProjectGrid** are fully functional. Put your cursor on these checkbox lines, and mark them done!
 
 ---
 
 ## 🔵 1. Setup & Environment Initializations
 [[#^toc-setup|TOC]]
-- [ ] {{Test Scenario/Module Title}}
-  - **Instructions**: {{Give step-by-step guidance on how to trigger this test case}}
-  - **Expected Results**: {{Explain what successful outcome renders, what audible tone plays, or what logs are committed}}
-- [ ] {{Test Scenario/Module Title}}
-  - **Instructions**: {{Details}}
-  - **Expected Results**: {{Details}}
+- [ ] Build and deploy plugin
+  - **Instructions**: Run `node build.js` from repo root. Verify console shows successful bundle and deploy to `c:\_o\.obsidian\plugins\projectgrid\`.
+  - **Expected Results**: `main.js` and `manifest.json` exist in deploy folder with non-zero file size.
+- [ ] Enable plugin in Obsidian
+  - **Instructions**: Settings → Community plugins → enable **!!ProjectGrid Folder Note Visualizer**. Reload if prompted.
+  - **Expected Results**: No error toast. Console shows `🚀 Loading Project Matrix Grid Dashboard Engine...`.
 
 ## 🟢 2. Primary Functionality & Core Operations
 [[#^toc-core|TOC]]
-- [ ] {{Test Scenario/Module Title}}
-  - **Instructions**: {{Details}}
-  - **Expected Results**: {{Details}}
+- [ ] Project matrix renders from code block
+  - **Instructions**: Add ` ```projectgrid\n__\n``` ` to a note. Open in reading or live preview mode.
+  - **Expected Results**: Toolbar (☰ ❔) and table appear with rows for folders containing `+{name}.md` folder notes.
+- [ ] Folder note title link opens note
+  - **Instructions**: Click a `+{name}.md` link in the title column.
+  - **Expected Results**: Obsidian navigates to the folder note file.
+- [ ] Search filter hides non-matching rows
+  - **Instructions**: Type a partial folder name in the filter input.
+  - **Expected Results**: Non-matching rows hidden; clear button (✕) appears; header count badges update.
 
 ## ⚡ 3. Granular Property Checks & Edge Boundaries
 [[#^toc-edge|TOC]]
-- [ ] {{Test Scenario/Module Title}}
-  - **Instructions**: {{Details}}
-  - **Expected Results**: {{Details}}
+- [ ] YAML select writes frontmatter
+  - **Instructions**: Open a stars dropdown, select `3⭐`, close dropdown.
+  - **Expected Results**: Folder note frontmatter `stars: 3⭐` persisted. Reopen grid shows same value.
+- [ ] Tasks checkbox toggle syncs markdown body
+  - **Instructions**: Open tasks dropdown, toggle a task checkbox.
+  - **Expected Results**: Corresponding `- [ ]`/`- [x]` line under `## Incoming Tasks` updated in folder note.
+- [ ] Empty grid when no folder notes match
+  - **Instructions**: Use code block prefix with no matching folder notes (e.g., `nonexistent/`).
+  - **Expected Results**: No table rendered (empty container).
 
 ## 🕹️ 4. Layout, Rendering & States Loops
 [[#^toc-rendering|TOC]]
-- [ ] {{Test Scenario/Module Title}}
-  - **Instructions**: {{Details}}
-  - **Expected Results**: {{Details}}
+- [ ] ScrollLock command menu navigation
+  - **Instructions**: Focus filter input, press ScrollLock. Use F/C/L/S accelerators and arrow keys.
+  - **Expected Results**: Two-level picker opens; categories drill down; Escape closes and refocuses filter.
+- [ ] Sort chain reorders rows
+  - **Instructions**: ScrollLock → Sort → select 1-2 columns. Observe toolbar label and 🟢🟡🔴 badges.
+  - **Expected Results**: Rows reorder; toolbar shows `📶 Sort Chain: 🟢KEY ➔ 🟡KEY`; clear sort restores default directory order.
+- [ ] Tutor HUD displays column hints
+  - **Instructions**: Press Ctrl+Alt+T. Focus a tasks or tags select cell.
+  - **Expected Results**: Tutor overlay shows column-specific keyboard hints from `grid-config.js`.
 
 ## 🚀 5. Advanced Integrations, Backends & Performance Checks
 [[#^toc-advanced|TOC]]
-- [ ] {{Test Scenario/Module Title}}
-  - **Instructions**: {{Details}}
-  - **Expected Results**: {{Details}}
+- [ ] Git scanner shows remote link
+  - **Instructions**: Find a row with `.git` folder. Click ✅ git cell.
+  - **Expected Results**: Browser opens normalized HTTPS URL from git origin config.
+- [ ] Launcher icons fire aip:// URIs
+  - **Instructions**: Click 📁 💻 💜 launcher icons on a project row.
+  - **Expected Results**: External AIP handler opens Directory Opus, Cursor, or Obsidian vault respectively.
+- [ ] AGENTS.md missing shows AIMD init link
+  - **Instructions**: View row for project without `AGENTS.md`.
+  - **Expected Results**: 🤖 column shows ❌ linking to `aip://aimd/_ {path}`.
 
 ---
 
 ## 🗃️ QA Validation History (Sign-Off Log)
 [[#^toc-history|TOC]]
 
-### 📅 [YYYY-MM-DD] - Build v{{X.X.X}}
-- **Testing Agent:** {{e.g., Quality Assurance Bot / reference AGENTS.md}}
-- **Passed Cases:** {{List matching scenario titles that passed baseline validations}}
-- **Failed Cases / Notes:** {{None, or list issues found during test loop}}
-- **Status:** `[PASSED / READY FOR PRODUCTION]`
+### 📅 [2026-06-25] - Build v1.0.0
+- **Testing Agent:** Pending manual validation
+- **Passed Cases:** None recorded yet
+- **Failed Cases / Notes:** Automated test suite not implemented — manual checklist only
+- **Status:** `[PENDING VALIDATION]`
 
 ---
 ## 🚀 Go to...
@@ -103,5 +115,3 @@ You can use this interactive test sheet directly with VS Code / Cursor to verify
 - 🔹 [TERMS.md](TERMS.md)
 - 🔸 [TESTING.md](TESTING.md)
 - 🔹 [VERSIONS.md](VERSIONS.md)
-
-<!-- # TEMPLATE: TESTING.template.md -->

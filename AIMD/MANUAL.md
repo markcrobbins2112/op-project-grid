@@ -1,14 +1,3 @@
-<!-- # TEMPLATE: MANUAL.template.md -->
-<!-- 
-# INSTRUCTIONS FOR THE HUMAN DEVELOPER:
-# Any text bounded by double curly braces {{like this}} is a placeholder for you to fill out.
-# Replace those placeholders with real paths, rules, and project constraints.
-#
-# INSTRUCTIONS FOR THE AI AGENT:
-# This file is the developer's handbook. It maps structural topologies, data flow,
-# core algorithms, algebraic formulas, configuration guidelines, and technical specifications.
--->
-
 <!-- markdownlint-disable MD013 -->
 # MANUAL
 
@@ -38,7 +27,7 @@
 - [[#🔍 Diagnostics & Common Troubleshooting]] ^toc-diagnostics
 - [[#Go to...]] ^toc-goto
 
-This guide describes the structural architecture, module layout, internal algorithms, optimization behaviors, and technical specifications of the **{{Specify Application Name}}** codebase.
+This guide describes the structural architecture, module layout, internal algorithms, optimization behaviors, and technical specifications of the **ProjectGrid Folder Note Visualizer** codebase.
 
 ---
 
@@ -46,94 +35,142 @@ This guide describes the structural architecture, module layout, internal algori
 [[#^toc-install|TOC]]
 
 ### Setup Sequence
-- 1. **Compile/Build Assets:** Run the compile script or build pipeline as documented in `BUILD.md`.
-- 2. **Apply Configurations:** Run administrative scripts or system configurations required for the base application environment.
-- 3. **Register Components:** Execute target registry configurations or system file bindings to link the software with the host operating system.
+- 1. **Compile/Build Assets:** From `c:\_o\__\op-project-grid`, run `node build.js` (see `BUILD.md`).
+- 2. **Verify Deploy:** Confirm `main.js` and `manifest.json` copied to `c:\_o\.obsidian\plugins\projectgrid\`.
+- 3. **Enable Plugin:** In Obsidian → Settings → Community plugins → enable **!!ProjectGrid Folder Note Visualizer**.
+- 4. **Embed Dashboard:** Add a `projectgrid` code block to any note (see [[#🔧 5. Workspace Build & Configuration]]).
 
 ---
 
-<!-- 
-  INSTRUCTION: Outline the structural relationship of files and modules.
-  Include raw ASCII boxes or diagrams to make the architecture immediately obvious.
--->
 ## 🏗️ 1. Architecture Overview
 [[#^toc-architecture|TOC]]
 ```text
- +-----------------------------------------------------------------+
-
- |                    {{Main Module Client Interface}}             |
- +-------------------------------+---------------------------------+
-                                 |
-                                 v
- +-------------------------------+---------------------------------+
-
- |                    {{Central Control Engine / Core}}            |
- +-------------------------------+---------------------------------+
-                                 |
-           +---------------------+---------------------+
-
-           |                                           |
-           v                                           v
- +---------+---------------------+           +---------+-----------+
-
- |       {{Module A / Hooks}}    |           |     {{Module B}}    |
- +-------------------------------+           +---------------------+
+ +-------------------------------------------------------------+
+ |  Obsidian Note: ```projectgrid\n__\n```                     |
+ +-----------------------------+-------------------------------+
+                               |
+                               v
+ +-----------------------------+-------------------------------+
+ |  ProjectGridPlugin (_main.js)                               |
+ |  registerMarkdownCodeBlockProcessor('projectgrid')          |
+ +-----------------------------+-------------------------------+
+                               |
+                               v
+ +-----------------------------+-------------------------------+
+ |  main-renderer.js                                           |
+ |  Toolbar + Table Header + Filter Init                       |
+ +-------+-------------+-------+-------------+---------------+
+         |             |       |             |
+         v             v       v             v
+ +-------+---+  +------+-+  +--+--------+  +--+----------+
+ |main-      |  |filter  |  |menu-core  |  |styles.js    |
+ |scanner.js |  |.js     |  |+ menu-*   |  |+ components |
+ +-----+-----+  +--------+  +-----------+  +-------------+
+       |
+       v
+ +-----+-----------------------------------+
+ | ui-row.js  →  grid-config columns loop  |
+ |   ├─ ui-row-dates (timestamp)           |
+ |   ├─ ui-row-actions (launcher)            |
+ |   ├─ ui-row-tags (tags-cell)              |
+ |   └─ ui-row-select (yaml-select/tasks)   |
+ +-----------------------------------------+
 ```
-{{Detail the high-level operational lifecycle, stating what initiates, handles, and registers events}}
+
+Lifecycle: Obsidian loads bundled `main.js` → plugin `onload` injects CSS and registers processor → user opens note with code block → renderer scans vault → builds DOM table → filter/menu keyboard handlers bind → user interactions mutate vault files via Obsidian API.
 
 ---
 
-<!-- 
-  INSTRUCTION: Document individual subsystems, class constructors, interfaces, 
-  and persistent background loops that govern state transitions.
--->
 ## 🧠 2. Core Modules & Systems
 [[#^toc-modules|TOC]]
-- **{{System Name / e.g., Engine Compiler}}**: {{Describe internal class interfaces, global trackers, state variables, and callbacks}}
-- **{{System Name / e.g., Polling Worker}}**: {{Describe loops, timing triggers, and resource consumption guards}}
+- **Grid Config (`grid-config.js`)**: Single source of truth for 18 column definitions (key, icon, label, type, width, defaults, tutorKeys).
+- **Vault Scanner (`main-scanner.js`)**: Two-pass folder iteration — first pass collects vault-wide task strings from `## Incoming Tasks`; second pass builds rows with frontmatter + filesystem data.
+- **Row Factory (`ui-row.js`)**: Creates `<tr>` with `data-directory` attribute; dispatches cell creation by `col.type`.
+- **Select Engine (`ui-row-select.js` + 6 sub-modules)**: Dropdown open/close, keyboard routing, frontmatter commit, task checkbox mutation.
+- **Filter Manager (`filter.js`)**: Text filter, column filter conjunction, header badge counts, row focus overlay sync, `ProjectGridIndicatedDirectory` tracking.
+- **Sort Engine (`menu-state-sort.js`)**: Maintains 3-key sort chain; reorders DOM tbody children; triggers filter refresh.
+- **Command Menu (`menu-core.js`, `menu-state.js`, `menu-dom.js`)**: ScrollLock two-level picker with accelerator keys and live directory header.
+- **Tasks Backend (`tasks-markdown-sync.js`, `tasks-markdown-writer.js`, `tasks-git-extractor.js`)**: Markdown body CRUD for tasks; git remote URL extraction.
+- **Style Injector (`styles.js`)**: Aggregates CSS from `styles-core`, `styles-animation`, `styles-components-*` into `#obsidian-projectgrid-styles`.
 
 ---
 
-<!-- 
-  INSTRUCTION: Specify any underlying physical or software math calculations used.
-  Represent equations cleanly in LaTeX format (e.g. $$ formula $$) with detailed variable legends.
--->
 ## 🔎 3. Core Algorithm & Mathematical Formulas
 [[#^toc-math|TOC]]
-{{Describe the logical steps, logic gates, conditional switches, or core algorithm steps}}
 
-$$\text{{{Formula Output Key}}} = \text{{{Operation}}}\left(\frac{\text{{{Var 1}}} + \text{{{Var 2}}}}{\text{{{Var 3}}}}\right)$$
+### Task Progress Display
+Each tasks column cell shows checked count over total discovered options:
 
-- **`{{Var 1}}`**: {{Detailed explanation of variable role and default value}}
-- **`{{Var 2}}`**: {{Details}}
+$$\text{Display} = \frac{|\text{activeValuesArray}|}{|\text{optionsList}|}$$
+
+- **`activeValuesArray`**: Task strings currently checked for this row (parsed from `- [x]` lines).
+- **`optionsList`**: All task strings discovered vault-wide under `## Incoming Tasks` headings.
+
+### Header Column Fill Rate
+On each filter pass, header badges show non-null visible count over non-null total:
+
+$$\text{Badge} = \frac{\text{nonNullVisible}}{\text{nonNullTotal}}$$
+
+- **Null sentinel values**: `⬛`, empty string, `0000.00.00 00`, `0/0`.
+- **Tasks/Created/Updated columns**: Use visible row count over total row count instead.
+
+### Sort Chain Priority
+Up to 3 keys evaluated left-to-right. Numeric fields (stars, value, size, depth, priority, tasks) sort descending; text fields sort ascending with empty/`⬛` pushed to end (`zzzzz`). Tie-breaker: folder base name alphabetical.
 
 ---
 
-<!-- 
-  INSTRUCTION: Detail the operational command registry. This lists all binding combinations,
-  modifier mappings, context filters, and background triggering gates.
--->
 ## 🛰️ 4. Commands, Keybindings & Context Flags
 [[#^toc-commands|TOC]]
-- **{{Action Title / ID}}**:
-  - **Key combinations**: `{{Keys / e.g., Win+Alt+X}}`
-  - **Contextual triggers**: `{{Filters list / e.g., window_class=TargetApp}}`
-  - **Logical callback**: `{{Describe executed code logic}}`
+- **ScrollLock Command Menu**:
+  - **Key combinations**: `ScrollLock` (global) or ☰ click
+  - **Contextual triggers**: Focus on filter input or any projectgrid block
+  - **Logical callback**: Opens level-1 category picker; `F`/`C`/`L`/`S` accelerators drill into submenus
+- **Row Navigation**:
+  - **Key combinations**: `ArrowUp` / `ArrowDown` while filter input focused (no picker open)
+  - **Logical callback**: Cycles focused row in visible set; updates `ProjectGridIndicatedDirectory`
+- **Tutor Toggle**:
+  - **Key combinations**: `Ctrl+Alt+T`
+  - **Logical callback**: Toggles `ProjectGridTutorModeActive`; shows context help for focused cell
+- **Filter Clear**:
+  - **Key combinations**: Click ✕ clear button
+  - **Logical callback**: Clears filter input, refocuses, shows all rows
+- **Dropdown Escape**:
+  - **Key combinations**: `Escape` in select cell
+  - **Logical callback**: Closes dropdown, returns focus to filter input
+- **Picker Navigation**:
+  - **Key combinations**: `ArrowUp`/`ArrowDown`/`Enter` in picker; `Escape`/`Backspace` retreat/close
+  - **Logical callback**: Two-level menu navigation via `menu-core.js`
 
 ---
 
-<!-- 
-  INSTRUCTION: Document configuration files format (.ini, .json, .env.example) 
-  and properties mapping. Highlight how to customize settings.
--->
 ## 🔧 5. Workspace Build & Configuration
 [[#^toc-config|TOC]]
-- **Environment Variable:** `{{CORE_ROOT}}`
-  - **Purpose:** Identifies the absolute path to the main physical asset directory.
-  - **Expected Format:** `{{C:\Path\To\MainDirectory}}` (No trailing backslash)
-- **{{File Name / Path}}**:
-  - **Configuration Section/Field**: `{{Property Name}}`
-  - **Description**: {{Explain variable impact and guidelines for overriding values}}
+
+### Code Block Usage
+````markdown
+```projectgrid
+__
+```
+````
+- **Source text**: Vault path prefix. Only folders whose path starts with this prefix are scanned.
+- **Default**: If blank, uses `__` (matches folders under vault `__/` paths).
+- **Folder note requirement**: Each included folder must contain `+{folderName}.md`.
+
+### Column Configuration (`grid-config.js`)
+Edit the `columns` array to add/remove/reorder columns. Supported `type` values:
+- `static` — title link column (key must be `title`)
+- `timestamp` — filesystem dates (keys: `created`, `updated`)
+- `launcher` — `aip://` button (requires `protocol` field)
+- `yaml-select` — frontmatter dropdown (requires `defaults` array)
+- `tags-cell` — multi-select tags editor
+- `scanner-check` — filesystem file existence (requires `targetFile`)
+
+### Deploy Path Override
+In `build.js`, modify:
+```javascript
+const destDir = path.join('c:\\_o\\.obsidian\\plugins', outDir);
+```
+Change `c:\\_o` if your Obsidian vault lives elsewhere.
 
 ---
 
@@ -142,13 +179,25 @@ $$\text{{{Formula Output Key}}} = \text{{{Operation}}}\left(\frac{\text{{{Var 1}
 
 ### Known Failure States & Remediations
 
-#### 🚨 Symptom: "The environment variable '{{CORE_ROOT}}' is not defined."
-- **Root Cause:** The application was triggered before the system or user environment profile saved the location variable.
-- **Remediation:** Run a system setup terminal command to bind the path, or manually apply it via host operating system environment parameters.
+#### 🚨 Symptom: Plugin does not appear in Obsidian after build.
+- **Root Cause:** Deploy path mismatch or `manifest.json` missing from plugins folder.
+- **Remediation:** Verify `c:\_o\.obsidian\plugins\projectgrid\manifest.json` exists. Re-run `node build.js`. Restart Obsidian.
 
-#### 🚨 Symptom: Changes apply to files, but the visual interface does not update.
-- **Root Cause:** The operating system shell is serving a cached variation of the directory infrastructure layout.
-- **Remediation:** Re-trigger a shell refresh cycle or restart the host file architecture window manager.
+#### 🚨 Symptom: Code block renders empty — no table shown.
+- **Root Cause:** No folders under the path prefix contain folder notes (`+{name}.md`), or prefix is wrong.
+- **Remediation:** Check code block path prefix. Confirm folder notes exist. Table only appends when `rowsArray.length > 0`.
+
+#### 🚨 Symptom: Launcher icons do nothing when clicked.
+- **Root Cause:** External `aip://` URI handler not registered on the system.
+- **Remediation:** Ensure AIP protocol handler is installed and mapped for `dopus`, `cursor`, `obsidian`, `aimd` schemes.
+
+#### 🚨 Symptom: Task toggles revert after reload.
+- **Root Cause:** Folder note missing `## Incoming Tasks` section or task text mismatch.
+- **Remediation:** Add `## Incoming Tasks` heading to folder note. Ensure checkbox text matches exactly (trimmed comparison).
+
+#### 🚨 Symptom: Changes to source files have no effect in Obsidian.
+- **Root Cause:** Editing `main.js` directly or forgetting to rebuild.
+- **Remediation:** Edit source modules, run `node build.js`, reload plugin in Obsidian.
 
 ---
 ## 🚀 Go to...
@@ -167,5 +216,3 @@ $$\text{{{Formula Output Key}}} = \text{{{Operation}}}\left(\frac{\text{{{Var 1}
 - 🔹 [TERMS.md](TERMS.md)
 - 🔹 [TESTING.md](TESTING.md)
 - 🔹 [VERSIONS.md](VERSIONS.md)
-
-<!-- # TEMPLATE: MANUAL.template.md -->

@@ -1,15 +1,3 @@
-<!-- # TEMPLATE: TASKS.template.md -->
-<!-- 
-# INSTRUCTIONS FOR THE HUMAN DEVELOPER:
-# Any text bounded by double curly braces {{like this}} is a placeholder for you to fill out.
-# Replace those placeholders with real paths, rules, and project constraints.
-#
-# INSTRUCTIONS FOR THE AI AGENT:
-# This file tracks immediate development tasks and feature checklists.
-# Always update this backlog at the beginning of your turn (when new chat instructions 
-# are received) and mark items completed ([x]) once verified.
--->
-
 <!-- markdownlint-disable MD013 -->
 # TASKS
 
@@ -30,7 +18,6 @@
 - 🔹 [VERSIONS.md](VERSIONS.md)
 
 ## 🔍 Table of Contents
-## 🔍 Table of Contents
 - [[#💬 Incoming tasks from chat]] ^toc-chat
 - [[#🔄 New Changes]] ^toc-changes
 - [[#⚙️ New Settings]] ^toc-new-settings
@@ -45,86 +32,85 @@
 - [[#📦 Features]] ^toc-arch-features
 - [[#🚀 Go to...]] ^toc-goto
 
-<!-- 
-  INSTRUCTION: Detail direct feature and workflow requests from the user's chat stream.
-  State tasks explicitly and breakdown complex tasks into sub-bullets.
--->
 ## 💬 Incoming tasks from chat
 [[#^toc-chat|TOC]]
-- [ ] {{Immediate chat task title 1}}
-  - {{Sub-details or acceptance criteria string}}
-- [ ] {{Immediate chat task title 2}}
+- [x] Reverse engineer codebase and fill out AIMD markdown documentation
+  - Replace all `{{placeholder}}` text with project-specific content derived from source code
 
-<!-- 
-  INSTRUCTION: Checklists of ongoing file structural, layout, or backend changes.
--->
 ## 🔄 New Changes
 [[#^toc-changes|TOC]]
-- [ ] Change {{Source}} to {{Target}}
-  - {{Describe what is being reorganized or cleaned up in the files}}
+- [ ] Fix `menu-state.js` duplicate export bug
+  - Line 117 references `menuStateModule` before assignment; should use inline object or assign to variable first
+- [ ] Add build watch mode
+  - Auto-rebuild on source file changes during development
 
-<!-- 
-  INSTRUCTION: Specify any new application configurations, environment overrides, 
-  or system values in local settings containers (.json, .ini, .env).
--->
 ## ⚙️ New Settings
 [[#^toc-new-settings|TOC]]
-- [ ] {{Setting Key or Property Name}}
-  - {{Value format and explanation of how it affects runtime states}}
+- [ ] Configurable deploy path in `build.js`
+  - Read from environment variable instead of hardcoded `c:\_o\.obsidian\plugins`
 
-<!-- 
-  INSTRUCTION: Tasks mapping to newly registered commands (e.g., VS Code commands, AHK actions).
--->
 ## 🕹️ New Commands
 [[#^toc-new-commands|TOC]]
-- [ ] Command: `{{Command ID / Name}}`
-  - {{Key callback and functionality definition}}
+- [ ] No new Obsidian commands registered yet
+  - All interaction via code-block processor and in-grid UI
 
-<!-- 
-  INSTRUCTION: Tasks mapping to newly configured keystroke hotkeys or shortcuts.
--->
 ## ⌨️ New Bindings
 [[#^toc-new-bindings|TOC]]
-- [ ] Binding: `{{Keys Combination, e.g. Ctrl+Shift+S}}`
-  - {{Callback command or action triggering mapping}}
+- [ ] Document all bindings in plugin settings (future)
+  - Currently hardcoded: ScrollLock, Ctrl+Alt+T, arrow keys, F/C/L/S menu accelerators
 
-<!-- 
-  INSTRUCTION: Checklists of newly requested major feature modules.
--->
 ## 🚀 New Features
 [[#^toc-new-features|TOC]]
-- [ ] Feature Name: {{Feature Description}}
-  - {{User-facing outcome and core sub-modules list}}
+- [ ] Automated test suite
+  - No unit or integration tests exist; manual TESTING.md checklist only
+- [ ] Cross-platform AIP handler support
+  - Current launchers assume Windows `aip://` protocol registration
 
 ---
 
 ## 🛑 Blocked Items & Impediments
 [[#^toc-blocked|TOC]]
-- **Blocked Task:** {{TASK-00X}}
-  - **Reason for Block:** {{Describe the specific error, missing file, or ambiguity}}
-  - **Action Required From:** `[Human]` or `{{Agent Name}}`
+- **Blocked Task:** Vault notes `!🌐index.md` / `!🏗️setup.md`
+  - **Reason for Block:** Files live in Obsidian vault, not in this repo; agents must not modify
+  - **Action Required From:** `[Human]`
 
 ---
 
 ## 🗃️ Completed Backlog (Archive)
 [[#^toc-backlog|TOC]]
-- [x] **{{TASK-000}} - Baseline Environment Layout Initialization** (By {{AgentName}} on {{2026-06-23}})
+- [x] **TASK-001 - Reverse Engineer AIMD Documentation** (By Agent on 2026-06-25)
+- [x] **TASK-000 - Baseline Environment Layout Initialization** (By Agent on 2026-06-23)
 
 ### 🛠️ Settings
 [[#^toc-arch-settings|TOC]]
-- [ ] {{Configured/Established settings reference metadata}}
+- [x] Column schema in `grid-config.js` — 18 columns with types, defaults, widths, tutorKeys
+- [x] Deploy path hardcoded to `c:\_o\.obsidian\plugins\projectgrid\`
 
 ### 💻 Commands
 [[#^toc-arch-commands|TOC]]
-- [ ] {{Configured/Established commands reference metadata}}
+- [x] ScrollLock command menu — Filters, Columns, Launcher, Sort categories
+- [x] Hamburger ☰ toolbar button — opens same picker as ScrollLock
 
 ### 🔗 Bindings
 [[#^toc-arch-bindings|TOC]]
-- [ ] {{Configured/Established hotkeys reference metadata}}
+- [x] `ScrollLock` — open/close command picker
+- [x] `Ctrl+Alt+T` — toggle Tutor HUD
+- [x] `ArrowUp`/`ArrowDown` — cycle focused grid rows (filter input focused)
+- [x] `F`/`C`/`L`/`S` — menu category accelerators when picker level 1 open
+- [x] `Escape`/`Backspace` — retreat/close picker; Escape on select cell returns to filter
 
 ### 📦 Features
 [[#^toc-arch-features|TOC]]
-- [ ] {{Configured/Established user-facing features reference metadata}}
+- [x] Project matrix table from `projectgrid` code block
+- [x] YAML frontmatter editors (yaml-select columns)
+- [x] Tags multi-select cell
+- [x] Tasks todo column with markdown checkbox sync
+- [x] External launchers (dopus, cursor, obsidian)
+- [x] Git and AGENTS.md scanner columns
+- [x] Header column filters with count badges
+- [x] 3-column sort chain
+- [x] Tutor HUD overlay
+- [x] IIFE bundler with Obsidian auto-deploy
 
 ---
 ## 🚀 Go to...
@@ -143,5 +129,3 @@
 - 🔹 [TERMS.md](TERMS.md)
 - 🔹 [TESTING.md](TESTING.md)
 - 🔹 [VERSIONS.md](VERSIONS.md)
-
-<!-- # TEMPLATE: TASKS.template.md -->

@@ -1,15 +1,3 @@
-<!-- # TEMPLATE: BUILD.template.md -->
-<!-- 
-# INSTRUCTIONS FOR THE HUMAN DEVELOPER:
-# Any text bounded by double curly braces {{like this}} is a placeholder for you to fill out.
-# Replace those placeholders with real paths, rules, and project constraints.
-#
-# INSTRUCTIONS FOR THE AI AGENT:
-# This file serves as the system construction guide. It must document building blocks,
-# dependencies installation commands, target directory structures, packing pipelines,
-# and runtime execution.
--->
-
 <!-- markdownlint-disable MD013 -->
 # BUILD
 
@@ -38,56 +26,52 @@
 
 ## 📋 Prerequisites & Toolchain Setup
 [[#^toc-prereq|TOC]]
-- **Compiler/Runtime:** {{Specify runtime, e.g., Node.js v20.x, GCC v13.2, Aut2Exe v3.3+}}
-- **Global System Variables Required:**
-  - `{{VARIABLE_NAME}}`: {{Paths to external headers, global dependencies, or binary compiler folders}}
+- **Compiler/Runtime:** Node.js (any recent LTS; uses only built-in `fs` and `path` modules — no `npm install` required).
+- **Host Application:** Obsidian desktop app with a vault at `c:\_o` (or adjust deploy path in `build.js`).
+- **Global System Variables Required:** None. Deploy destination is hardcoded in `build.js`.
 
 ---
 
-<!-- 
-  INSTRUCTION: Detail the high-level architecture of the build system.
-  Mention variables compilation pathways, compiler tools, preprocessors, etc.
--->
 ## 🛠️ Build & Packaging Pipeline
 [[#^toc-pipeline|TOC]]
-- {{Describe the compilation pipeline here, with step-by-step logic detailing how source code converts into running software}}
+The build is a custom **IIFE Encapsulation Bundler** (`build.js`) that produces a single Obsidian-compatible plugin file.
+
+1. **Entry resolution**: Read `_main.js` from the project root.
+2. **Dependency inlining**: Regex-scan for `require('./module')` statements. For each local module (excluding `obsidian` and `electron`):
+   - Read module source.
+   - Recursively resolve nested requires.
+   - Strip START/END OF FILE region comments.
+   - Replace `module.exports =` with `return` inside an IIFE wrapper.
+   - Assign result to `globalThis.ModuleName`.
+3. **Output write**: Write bundled content to `main.js`.
+4. **Deploy sync**: Copy `main.js` and `manifest.json` to `c:\_o\.obsidian\plugins\projectgrid\` (folder name derived by stripping prefix before first `-` in repo folder name `op-project-grid` → `projectgrid`).
 
 ### 📦 Key Components
-- **`{{Component Path}}`**: {{Purpose of this file/directory inside the compilation chain}}
-- **`{{Compiler Tooling}}`**: {{Dependencies, binary packages, or transpilers required for completion}}
+- **`_main.js`**: Plugin entry — `ProjectGridPlugin` class, code-block processor registration.
+- **`build.js`**: Bundler and deploy script (not bundled into plugin).
+- **`main.js`**: Generated production bundle — do not edit directly.
+- **`manifest.json`**: Obsidian plugin metadata (id, name, version, description).
+- **37 source modules**: UI, menu, scanner, tasks sync, styles — all inlined at build time.
 
 ---
 
-<!-- 
-  INSTRUCTION: List the literal, usable CLI shell commands for restoring packages, 
-  launching development modes, linting files, and packaging production bundles.
--->
 ## 🚀 Execution & Packing Commands
 [[#^toc-commands|TOC]]
-- **Install Dependencies**:
-  ```bash
-  {{Package manager install command, e.g., npm install}}
-  ```
-- **Local Dev Server / Watch Mode**:
-  ```bash
-  {{Command for local standalone sandbox running, e.g., npm run dev}}
-  ```
-- **Verification / Linting**:
-  ```bash
-  {{Command for automated quality checks, e.g., npm run lint}}
-  ```
 - **Production Package Compilation**:
-  ```bash
-  {{Command to build distribution bundles, e.g., npm run build}}
+  ```cmd
+  node build.js
   ```
+- **Install Dependencies**: Not applicable — zero npm dependencies.
+- **Local Dev Server / Watch Mode**: Not implemented. Re-run `node build.js` after source edits, then reload Obsidian plugin (disable/enable or restart Obsidian).
+- **Verification / Linting**: No automated linter configured. Manual smoke test in Obsidian after deploy.
 
 ---
 
 ## 🧪 Post-Build Verification Rules
 [[#^toc-verify|TOC]]
-- 1. **Size Checking:** Verify that the output executable or bundle size is greater than `0 KB`.
-- 2. **Path Verification:** Check that the output file is located exactly within the target distribution directory layout.
-- 3. **Smoke Test Command:** `{{Enter a simple CLI verification test, e.g., bin\app.exe --version}}`
+- 1. **Size Checking:** Verify `main.js` exists and is greater than `0 KB` (typically ~100+ KB when all modules are inlined).
+- 2. **Path Verification:** Confirm files exist at `c:\_o\.obsidian\plugins\projectgrid\main.js` and `manifest.json`.
+- 3. **Smoke Test:** Enable the plugin in Obsidian Settings → Community plugins. Open a note containing a `projectgrid` code block. Confirm the matrix table renders without console errors.
 
 ---
 ## 🚀 Go to...
@@ -106,5 +90,3 @@
 - 🔹 [TERMS.md](TERMS.md)
 - 🔹 [TESTING.md](TESTING.md)
 - 🔹 [VERSIONS.md](VERSIONS.md)
-
-<!-- # TEMPLATE: BUILD.template.md -->

@@ -1,0 +1,27 @@
+{
+  "name": "projectgrid",
+  "version": "1.0.0",
+  "description": "Obsidian plugin: projectgrid code blocks render folder-note project matrices with metadata editors, task sync, and external launchers.",
+  "private": true,
+  "author": "AI Collaborator",
+  "homepage": "https://github.com/markcrobbins2112/op-project-grid#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markcrobbins2112/op-project-grid.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markcrobbins2112/op-project-grid/issues"
+  },
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node build.js"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "projectgrid"
+  ]
+}
